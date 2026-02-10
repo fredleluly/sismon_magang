@@ -1,0 +1,396 @@
+/* ===== QR CODE ADMIN PAGE ===== */
+.qr-date-bar {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f0fdf4 100%);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 24px;
+}
+
+.date-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.date-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.date-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.date-text h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.date-text p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* ===== QR LAYOUT ===== */
+.qr-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.qr-gen-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f0f0f0;
+}
+
+.qr-gen-header {
+  margin-bottom: 8px;
+}
+
+.qr-gen-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.qr-gen-sub {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.qr-preview-admin {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  min-height: 260px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px dashed #cbd5e1;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.qr-preview-admin canvas {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+.qr-preview-text {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+/* ===== TOKEN DISPLAY & COPY ===== */
+.qr-token-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #64748b;
+  word-break: break-all;
+}
+
+.qr-token-text {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.qr-token-text strong {
+  font-weight: 600;
+}
+
+.qr-token-code {
+  background: #e2e8f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+}
+
+.qr-copy-btn {
+  background: #0a6599;
+  color: white;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.qr-copy-btn:hover {
+  background: #07507d;
+  transform: translateY(-1px);
+}
+
+.qr-copy-btn:active {
+  transform: translateY(0);
+}
+
+.qr-copy-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ===== STATUS CARD ===== */
+.qr-status-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f0f0f0;
+}
+
+.qr-status-header {
+  margin-bottom: 16px;
+}
+
+.qr-status-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.qr-status-counts {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.qr-count-box {
+  flex: 1;
+  text-align: center;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.qr-count-box.total {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.qr-count-box.scanned {
+  background: #f0fdf4;
+  border: 1px solid #dcfce7;
+}
+
+.qr-count-box-value {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.qr-count-box.total .qr-count-box-value {
+  color: #0a6599;
+}
+
+.qr-count-box.scanned .qr-count-box-value {
+  color: #059669;
+}
+
+.qr-count-box-label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* ===== HISTORY CARDS ===== */
+.qr-history-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f0f0f0;
+}
+
+.qr-history-card h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.qr-history-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 16px;
+}
+
+.qr-history-empty {
+  text-align: center;
+  color: #94a3b8;
+  padding: 20px;
+}
+
+/* ===== TABLE STYLES ===== */
+.qr-attendance-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+.qr-attendance-table thead tr {
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.qr-attendance-table th {
+  padding: 10px 12px;
+  text-align: left;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.qr-attendance-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.qr-attendance-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.qr-attendance-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.qr-attendance-time {
+  font-weight: 600;
+  color: #0a6599;
+}
+
+.qr-status-badge {
+  background: #f0fdf4;
+  color: #16a34a;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+/* ===== HISTORY ITEM ===== */
+.qr-history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+.qr-history-item:last-child {
+  margin-bottom: 0;
+}
+
+.qr-history-item:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.qr-history-date {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.qr-history-count {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.qr-history-count-value {
+  font-weight: 700;
+  color: #0a6599;
+}
+
+.qr-history-count-label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .qr-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .qr-date-bar {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .date-info {
+    flex-direction: column;
+  }
+
+  .qr-layout {
+    gap: 16px;
+  }
+
+  .qr-gen-card,
+  .qr-status-card,
+  .qr-history-card {
+    padding: 16px;
+  }
+
+  .qr-status-counts {
+    flex-direction: column;
+  }
+
+  .qr-token-container {
+    flex-direction: column;
+  }
+
+  .qr-attendance-table {
+    font-size: 12px;
+  }
+
+  .qr-attendance-table th,
+  .qr-attendance-table td {
+    padding: 8px;
+  }
+
+  .qr-history-item {
+    flex-direction: column;
+    text-align: center;
+  }
+}

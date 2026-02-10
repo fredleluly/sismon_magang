@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" rx="20" fill="#FFD700"/>
+  <!-- Wave 1 (top) -->
+  <path d="M30 75 Q55 60 80 75 Q105 90 130 75 Q155 60 180 75" stroke="#29ABE2" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <!-- Wave 2 (middle) -->
+  <path d="M30 105 Q55 90 80 105 Q105 120 130 105 Q155 90 180 105" stroke="#29ABE2" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <!-- Wave 3 (bottom) -->
+  <path d="M30 135 Q55 120 80 135 Q105 150 130 135 Q155 120 180 135" stroke="#29ABE2" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <!-- Lightning bolt -->
+  <polygon points="115,15 60,100 95,100 75,185 140,95 105,95" fill="#D42027"/>
+</svg>
