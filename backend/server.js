@@ -38,7 +38,7 @@ app.use((err, req, res, next) => {
   console.error('Error:', err.message);
   res.status(err.status || 500).json({
     success: false,
-    message: err.message || 'Internal Server Error'
+    message: err.message || 'Internal Server Error',
   });
 });
 
@@ -47,7 +47,8 @@ const PORT = process.env.PORT || 5000;
 const HTTPS_PORT = process.env.HTTPS_PORT || 5443;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/pln_magang_monitoring';
 
-mongoose.connect(MONGODB_URI)
+mongoose
+  .connect(MONGODB_URI)
   .then(() => {
     console.log('✅ MongoDB Connected');
 
@@ -73,7 +74,7 @@ mongoose.connect(MONGODB_URI)
           const { execSync } = require('child_process');
           execSync(`openssl req -x509 -newkey rsa:2048 -keyout "${path.join(certPath, 'key.pem')}" -out "${path.join(certPath, 'cert.pem')}" -days 365 -nodes -subj "/CN=localhost"`, { stdio: 'pipe' });
           generated = true;
-        } catch(e) {
+        } catch (e) {
           // openssl not available, try selfsigned package
           try {
             const selfsigned = require('selfsigned');
@@ -82,7 +83,7 @@ mongoose.connect(MONGODB_URI)
             fs.writeFileSync(path.join(certPath, 'key.pem'), pems.private);
             fs.writeFileSync(path.join(certPath, 'cert.pem'), pems.cert);
             generated = true;
-          } catch(e2) {
+          } catch (e2) {
             console.log('⚠️  Install selfsigned untuk HTTPS: npm install selfsigned');
           }
         }
@@ -92,7 +93,7 @@ mongoose.connect(MONGODB_URI)
       if (fs.existsSync(path.join(certPath, 'key.pem'))) {
         const sslOptions = {
           key: fs.readFileSync(path.join(certPath, 'key.pem')),
-          cert: fs.readFileSync(path.join(certPath, 'cert.pem'))
+          cert: fs.readFileSync(path.join(certPath, 'cert.pem')),
         };
 
         https.createServer(sslOptions, app).listen(HTTPS_PORT, '0.0.0.0', () => {
@@ -106,7 +107,7 @@ mongoose.connect(MONGODB_URI)
       console.log('⚠️  HTTPS tidak aktif:', err.message);
     }
   })
-  .catch(err => {
+  .catch((err) => {
     console.error('❌ MongoDB connection error:', err.message);
     process.exit(1);
   });

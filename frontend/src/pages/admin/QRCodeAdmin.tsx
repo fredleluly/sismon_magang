@@ -191,26 +191,14 @@ const QRCodeAdmin: React.FC = () => {
       });
 
       // Create worksheet data
-      const wsData: any[] = [
-        ['DATA KEHADIRAN'],
-        [`Tanggal: ${selectedDate}`],
-        [`Total Peserta: ${selectedDayData.length}`],
-        [],
-        ['No', 'Nama', 'Institusi', 'Jam Masuk', 'Status'],
-      ];
+      const wsData: any[] = [['DATA KEHADIRAN'], [`Tanggal: ${selectedDate}`], [`Total Peserta: ${selectedDayData.length}`], [], ['No', 'Nama', 'Institusi', 'Jam Masuk', 'Status']];
 
       // Add attendance records
       selectedDayData.forEach((att, index) => {
         const name = typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown';
         const instansi = typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-';
         const status = isThresholdLoaded ? getStatusWithLate(att) : att.status;
-        wsData.push([
-          index + 1,
-          name,
-          instansi,
-          att.jamMasuk || '-',
-          status,
-        ]);
+        wsData.push([index + 1, name, instansi, att.jamMasuk || '-', status]);
       });
 
       // Create workbook and worksheet
@@ -219,13 +207,7 @@ const QRCodeAdmin: React.FC = () => {
       XLSX.utils.book_append_sheet(wb, ws, 'Kehadiran');
 
       // Set column widths
-      ws['!cols'] = [
-        { wch: 5 },
-        { wch: 20 },
-        { wch: 20 },
-        { wch: 12 },
-        { wch: 12 },
-      ];
+      ws['!cols'] = [{ wch: 5 }, { wch: 20 }, { wch: 20 }, { wch: 12 }, { wch: 12 }];
 
       // Generate filename
       const dateStr = new Date(selectedDayData[0]?.tanggal).toISOString().split('T')[0];
