@@ -31,16 +31,16 @@
 .profile-popup-header {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 20px;
+  gap: 14px;
+  padding: 18px 20px;
   border-bottom: 1px solid #f0f0f0;
   background: linear-gradient(135deg, #1a8fc9 0%, #0a6599 100%);
   color: white;
 }
 
 .profile-popup-avatar {
-  width: 50px;
-  height: 50px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.2);
   display: flex;
@@ -65,28 +65,31 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.3;
 }
 
 .profile-popup-info p {
-  margin: 4px 0 0;
+  margin: 5px 0 0;
   font-size: 13px;
   color: rgba(255, 255, 255, 0.9);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.4;
 }
 
 /* Body Section */
 .profile-popup-body {
-  padding: 16px 20px;
+  padding: 18px 20px;
   border-bottom: 1px solid #f0f0f0;
 }
 
 .profile-info-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 14px;
+  padding: 2px 0;
+  margin-bottom: 14px;
 }
 
 .profile-info-item:last-child {
@@ -104,21 +107,23 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .profile-info-item .label {
-  font-size: 12px;
+  font-size: 11px;
   color: #999;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 600;
+  line-height: 1.2;
 }
 
 .profile-info-item .value {
   font-size: 14px;
   color: #333;
   font-weight: 500;
+  line-height: 1.4;
 }
 
 /* Stats Section */
@@ -131,12 +136,12 @@
 
 .stat-popup-item {
   flex: 1;
-  padding: 16px 12px;
+  padding: 18px 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
   border-right: 1px solid #f0f0f0;
   text-align: center;
   transition: background-color 0.2s ease;
@@ -151,9 +156,10 @@
 }
 
 .stat-popup-value {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   color: #1a8fc9;
+  line-height: 1.2;
 }
 
 .stat-popup-label {
@@ -162,13 +168,14 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 600;
+  line-height: 1.3;
 }
 
 /* Footer Section */
 .profile-popup-footer {
   display: flex;
-  gap: 8px;
-  padding: 12px;
+  gap: 10px;
+  padding: 14px;
   background: #fafafa;
 }
 
@@ -177,7 +184,7 @@
   padding: 10px 12px;
   border: none;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -186,14 +193,14 @@
   gap: 6px;
   transition: all 0.2s ease;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.5;
 }
 
 .profile-popup-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   flex-shrink: 0;
+  stroke-width: 2.2;
 }
 
 .profile-popup-btn.edit {
@@ -236,13 +243,13 @@
   }
 
   .profile-popup-header {
-    padding: 16px;
+    padding: 15px 16px;
     gap: 12px;
   }
 
   .profile-popup-avatar {
-    width: 45px;
-    height: 45px;
+    width: 48px;
+    height: 48px;
     font-size: 16px;
   }
 
@@ -255,7 +262,13 @@
   }
 
   .profile-popup-body {
-    padding: 12px 16px;
+    padding: 14px 16px;
+  }
+
+  .profile-info-item {
+    gap: 12px;
+    padding: 1px 0;
+    margin-bottom: 12px;
   }
 
   .profile-info-item svg {
@@ -263,13 +276,28 @@
     height: 20px;
   }
 
+  .stat-popup-item {
+    padding: 16px 10px;
+    gap: 5px;
+  }
+
   .stat-popup-value {
-    font-size: 18px;
+    font-size: 20px;
+  }
+
+  .stat-popup-label {
+    font-size: 10px;
+  }
+
+  .profile-popup-footer {
+    padding: 12px;
+    gap: 8px;
   }
 
   .profile-popup-btn {
     font-size: 12px;
-    padding: 8px 10px;
+    padding: 9px 10px;
+    gap: 5px;
   }
 
   .profile-popup-btn svg {
