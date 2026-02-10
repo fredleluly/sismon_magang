@@ -303,6 +303,26 @@
   display: inline-block;
 }
 
+.qr-status-badge.telat {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.qr-status-badge.izin {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.qr-status-badge.sakit {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.qr-status-badge.alpha {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
 /* ===== HISTORY ITEM ===== */
 .qr-history-item {
   display: flex;
@@ -609,6 +629,9 @@
   margin-bottom: 20px;
   padding-bottom: 12px;
   border-bottom: 2px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .details-header h3 {
@@ -719,6 +742,11 @@
 .status-hadir {
   background: #f0fdf4;
   color: #16a34a;
+}
+
+.status-telat {
+  background: #fef3c7;
+  color: #b45309;
 }
 
 .status-izin {

@@ -51,9 +51,10 @@ mongoose.connect(MONGODB_URI)
   .then(() => {
     console.log('✅ MongoDB Connected');
 
-    // HTTP Server
-    app.listen(PORT, () => {
+    // HTTP Server - listening di semua interface untuk network access
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 HTTP  Server: http://localhost:${PORT}`);
+      console.log(`📱 Dari Jaringan: http://<LOCAL-IP>:${PORT}`);
       console.log(`📂 Frontend: http://localhost:${PORT}/login.html`);
     });
 

@@ -3,6 +3,7 @@ import { QRCodeAPI, UsersAPI, getToken, AttendanceAPI } from '../../services/api
 import { useToast } from '../../context/ToastContext';
 import type { QRCode, Attendance } from '../../types';
 import QRCodeLib from 'qrcode';
+import * as XLSX from 'xlsx';
 import './QRCodeAdmin.css';
 
 const QRCodeAdmin: React.FC = () => {
@@ -18,6 +19,11 @@ const QRCodeAdmin: React.FC = () => {
   const [attendanceData, setAttendanceData] = useState<Attendance[]>([]);
   const [selectedDayData, setSelectedDayData] = useState<Attendance[]>([]);
   const [calendarLoading, setCalendarLoading] = useState(false);
+
+  // Late threshold setting
+  const [lateThreshold, setLateThreshold] = useState<string>('08:00');
+  const [isEditingThreshold, setIsEditingThreshold] = useState(false);
+  const [isThresholdLoaded, setIsThresholdLoaded] = useState(false);
 
   const load = async () => {
     const qr = await QRCodeAPI.getToday();
@@ -132,6 +138,115 @@ const QRCodeAdmin: React.FC = () => {
     } else showToast(res?.message || 'Gagal generate', 'error');
   };
 
+  // Helper function to check if time is late - accept both HH:MM and HH.MM formats
+  const isLate = (jamMasuk: string | null | undefined): boolean => {
+    if (!jamMasuk) return false;
+    try {
+      // Replace period with colon to handle both formats (11.43 or 11:43)
+      const normalized = jamMasuk.replace('.', ':');
+      const [masukHours, masukMinutes] = normalized.split(':').map(Number);
+      const [thresholdHours, thresholdMinutes] = lateThreshold.split(':').map(Number);
+
+      if (isNaN(masukHours) || isNaN(masukMinutes) || isNaN(thresholdHours) || isNaN(thresholdMinutes)) {
+        return false;
+      }
+
+      const masukTime = masukHours * 60 + masukMinutes;
+      const thresholdTime = thresholdHours * 60 + thresholdMinutes;
+      return masukTime > thresholdTime;
+    } catch {
+      return false;
+    }
+  };
+
+  const getStatusWithLate = (att: any): string => {
+    if (typeof att.status === 'string' && att.status.toLowerCase() !== 'hadir') {
+      return att.status;
+    }
+    return isLate(att.jamMasuk) ? 'Telat' : att.status || 'Hadir';
+  };
+
+  const handleSaveThreshold = () => {
+    localStorage.setItem('lateThreshold', lateThreshold);
+    showToast('Jam telat berhasil diatur ke ' + lateThreshold, 'success');
+    setIsEditingThreshold(false);
+  };
+
+  const handleResetThreshold = () => {
+    setLateThreshold('08:00');
+  };
+
+  const downloadDayExcel = () => {
+    if (selectedDayData.length === 0) {
+      showToast('Tidak ada data untuk diunduh', 'error');
+      return;
+    }
+
+    try {
+      // Prepare data
+      const selectedDate = new Date(selectedDayData[0]?.tanggal).toLocaleDateString('id-ID', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+
+      // Create worksheet data
+      const wsData: any[] = [
+        ['DATA KEHADIRAN'],
+        [`Tanggal: ${selectedDate}`],
+        [`Total Peserta: ${selectedDayData.length}`],
+        [],
+        ['No', 'Nama', 'Institusi', 'Jam Masuk', 'Status'],
+      ];
+
+      // Add attendance records
+      selectedDayData.forEach((att, index) => {
+        const name = typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown';
+        const instansi = typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-';
+        const status = isThresholdLoaded ? getStatusWithLate(att) : att.status;
+        wsData.push([
+          index + 1,
+          name,
+          instansi,
+          att.jamMasuk || '-',
+          status,
+        ]);
+      });
+
+      // Create workbook and worksheet
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Kehadiran');
+
+      // Set column widths
+      ws['!cols'] = [
+        { wch: 5 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 12 },
+        { wch: 12 },
+      ];
+
+      // Generate filename
+      const dateStr = new Date(selectedDayData[0]?.tanggal).toISOString().split('T')[0];
+      const filename = `Kehadiran-${dateStr}.xlsx`;
+
+      // Download
+      XLSX.writeFile(wb, filename);
+      showToast('Excel berhasil diunduh!', 'success');
+    } catch (error) {
+      console.error('Error downloading Excel:', error);
+      showToast('Gagal mengunduh Excel', 'error');
+    }
+  };
+
+  // Load late threshold from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('lateThreshold');
+    if (saved) setLateThreshold(saved);
+    setIsThresholdLoaded(true);
+  }, []);
+
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
@@ -198,9 +313,55 @@ const QRCodeAdmin: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Late Threshold Setting */}
+          <div className="qr-status-card" style={{ marginTop: 16 }}>
+            <div className="qr-status-header">
+              <h3>Pengaturan Jam Telat</h3>
+            </div>
+            {!isEditingThreshold ? (
+              <div style={{ padding: '12px 0' }}>
+                <div style={{ fontSize: 13, color: '#64748b', marginBottom: 8 }}>Jam Batas Telat:</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: '#0a6599' }}>{lateThreshold}</div>
+                  <button onClick={() => setIsEditingThreshold(true)} style={{ padding: '6px 12px', background: '#e2e8f0', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                    Edit
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding: '12px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#1e293b' }}>
+                  Masukkan Jam Batas Telat (format HH:MM):
+                  <input
+                    type="time"
+                    value={lateThreshold}
+                    onChange={(e) => setLateThreshold(e.target.value)}
+                    style={{
+                      marginTop: 6,
+                      padding: '8px 10px',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: 6,
+                      fontSize: 14,
+                      width: '100%',
+                      fontFamily: 'inherit',
+                    }}
+                  />
+                </label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={handleSaveThreshold} style={{ flex: 1, padding: '8px 12px', background: '#22c55e', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                    Simpan
+                  </button>
+                  <button onClick={() => setIsEditingThreshold(false)} style={{ flex: 1, padding: '8px 12px', background: '#cbd5e1', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                    Batal
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-      <div className="qr-history-card">
+      <div className="qr-history-card hidden">
         <h3>Daftar Kehadiran Hari Ini</h3>
         {attendanceList.length === 0 ? (
           <p className="qr-history-empty">Belum ada peserta absen</p>
@@ -221,7 +382,7 @@ const QRCodeAdmin: React.FC = () => {
                   <td className="qr-attendance-name">{r.userId?.name || 'Unknown'}</td>
                   <td className="qr-attendance-time">{r.jamMasuk || '-'}</td>
                   <td>
-                    <span className="qr-status-badge">{r.status}</span>
+                    <span className={`qr-status-badge ${isThresholdLoaded ? getStatusWithLate(r).toLowerCase() : r.status?.toLowerCase()}`}>{isThresholdLoaded ? getStatusWithLate(r) : r.status}</span>
                   </td>
                 </tr>
               ))}
@@ -229,7 +390,7 @@ const QRCodeAdmin: React.FC = () => {
           </table>
         )}
       </div>
-      <div className="qr-history-card">
+      <div className="qr-history-card hidden">
         <h3>Riwayat QR Code</h3>
         <p className="qr-history-subtitle">7 hari terakhir</p>
         {history.length === 0 ? (
@@ -304,6 +465,32 @@ const QRCodeAdmin: React.FC = () => {
         <div className="attendance-details">
           <div className="details-header">
             <h3>Detail Kehadiran</h3>
+            {selectedDayData.length > 0 && (
+              <button
+                onClick={downloadDayExcel}
+                title="Download Excel data hari ini"
+                style={{
+                  padding: '6px 12px',
+                  background: '#22c55e',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '14px', height: '14px' }}>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Excel
+              </button>
+            )}
           </div>
 
           {selectedDayData.length === 0 ? (
@@ -335,7 +522,7 @@ const QRCodeAdmin: React.FC = () => {
                       <td>{typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-'}</td>
                       <td className="time-cell">{att.jamMasuk || '-'}</td>
                       <td>
-                        <span className={`status-badge status-${att.status.toLowerCase()}`}>{att.status}</span>
+                        <span className={`status-badge status-${isThresholdLoaded ? getStatusWithLate(att).toLowerCase() : att.status?.toLowerCase()}`}>{isThresholdLoaded ? getStatusWithLate(att) : att.status}</span>
                       </td>
                     </tr>
                   ))}
