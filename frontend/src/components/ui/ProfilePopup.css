@@ -34,7 +34,7 @@
   gap: 16px;
   padding: 20px;
   border-bottom: 1px solid #f0f0f0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1a8fc9 0%, #0a6599 100%);
   color: white;
 }
 
@@ -96,7 +96,7 @@
 .profile-info-item svg {
   width: 24px;
   height: 24px;
-  color: #667eea;
+  color: #1a8fc9;
   flex-shrink: 0;
 }
 
@@ -147,13 +147,13 @@
 }
 
 .stat-popup-item:hover {
-  background-color: #f8f9ff;
+  background-color: #e6f4fa;
 }
 
 .stat-popup-value {
   font-size: 20px;
   font-weight: 700;
-  color: #667eea;
+  color: #1a8fc9;
 }
 
 .stat-popup-label {
@@ -197,14 +197,14 @@
 }
 
 .profile-popup-btn.edit {
-  background: #667eea;
+  background: #1a8fc9;
   color: white;
 }
 
 .profile-popup-btn.edit:hover {
-  background: #5568d3;
+  background: #0d7ab5;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(26, 143, 201, 0.3);
 }
 
 .profile-popup-btn.edit:active {
