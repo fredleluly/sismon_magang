@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Chart, registerables } from 'chart.js';
 import * as XLSX from 'xlsx';
-import { DashboardAPI, getToken } from '../../services/api';
+import { DashboardAPI, getToken, ComplaintAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { AdminDashboard as AdminDashData } from '../../types';
 
@@ -34,6 +34,7 @@ const AdminDashboard: React.FC = () => {
   const { showToast } = useToast();
   const [data, setData] = useState<AdminDashData | null>(null);
   const [attendanceList, setAttendanceList] = useState<any[]>([]);
+  const [totalComplaints, setTotalComplaints] = useState(0);
   const weeklyRef = useRef<HTMLCanvasElement>(null);
   const donutRef = useRef<HTMLCanvasElement>(null);
   const attChartRef = useRef<HTMLCanvasElement>(null);
@@ -44,6 +45,10 @@ const AdminDashboard: React.FC = () => {
       if (res && res.success) setData(res.data);
       else showToast('Gagal memuat dashboard', 'error');
     });
+
+    // Load total complaints
+    loadComplaints();
+
     loadAttendance();
     const iv = setInterval(loadAttendance, 15000);
     return () => {
@@ -51,6 +56,17 @@ const AdminDashboard: React.FC = () => {
       charts.current.forEach((c) => c.destroy());
     };
   }, []);
+
+  const loadComplaints = async () => {
+    try {
+      const res = await ComplaintAPI.getAll();
+      if (res && res.success) {
+        setTotalComplaints((res.data || []).length);
+      }
+    } catch {
+      console.error('Failed to load complaints');
+    }
+  };
 
   const loadAttendance = async () => {
     try {
@@ -73,7 +89,7 @@ const AdminDashboard: React.FC = () => {
       const summaryData = [
         ['RINGKASAN DASHBOARD PESERTA MAGANG', ''],
         [''],
-        ['Total Pekerjaan Selesai', data.totalPekerjaanSelesai || 0],
+        ['Total Kendala', totalComplaints],
         ['Total Peserta Magang', data.totalPeserta || 0],
         ['Rata-rata Produktivitas (Item/hari)', data.avgProductivity || 0],
         ['Tingkat Kehadiran Hari Ini', (data.attendanceRate || 0) + '%'],
@@ -258,15 +274,10 @@ const AdminDashboard: React.FC = () => {
       <div className="admin-stats-grid">
         <div className="admin-stat-card">
           <div className="stat-info">
-            <div className="stat-label">Total Pekerjaan Selesai</div>
-            <div
-              className="stat-value stat-value-blue"
-              ref={(el) => {
-                if (el && data) animateCounter(el, data.totalPekerjaanSelesai || 0);
-              }}
-            ></div>
+            <div className="stat-label">Total Kendala</div>
+            <div className="stat-value stat-value-cyan">{totalComplaints}</div>
             <div className="stat-change">
-              <span>Completed</span>
+              <span>Laporan keluhan masuk</span>
             </div>
           </div>
         </div>
@@ -422,7 +433,6 @@ const AdminDashboard: React.FC = () => {
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontWeight: 700, fontSize: 14, color: '#0a6599' }}>{r.jamMasuk || '-'}</div>
-                 
                   </div>
                 </div>
               );

@@ -34,7 +34,7 @@ export interface Attendance {
   tanggal: string;
   jamMasuk?: string;
   jamKeluar?: string;
-  status: 'Hadir' | 'Izin' | 'Alpha';
+  status: 'Hadir' | 'Telat' | 'Izin' | 'Alpha';
   createdAt?: string;
 }
 

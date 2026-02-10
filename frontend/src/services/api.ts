@@ -45,12 +45,9 @@ async function apiRequest<T = unknown>(endpoint: string, options: RequestInit = 
 
 const API = {
   get: <T = unknown>(endpoint: string) => apiRequest<T>(endpoint),
-  post: <T = unknown>(endpoint: string, body?: unknown) =>
-    apiRequest<T>(endpoint, { method: 'POST', body: JSON.stringify(body) }),
-  put: <T = unknown>(endpoint: string, body?: unknown) =>
-    apiRequest<T>(endpoint, { method: 'PUT', body: JSON.stringify(body) }),
-  delete: <T = unknown>(endpoint: string) =>
-    apiRequest<T>(endpoint, { method: 'DELETE' }),
+  post: <T = unknown>(endpoint: string, body?: unknown) => apiRequest<T>(endpoint, { method: 'POST', body: JSON.stringify(body) }),
+  put: <T = unknown>(endpoint: string, body?: unknown) => apiRequest<T>(endpoint, { method: 'PUT', body: JSON.stringify(body) }),
+  delete: <T = unknown>(endpoint: string) => apiRequest<T>(endpoint, { method: 'DELETE' }),
 };
 
 // ===== AUTH API =====
@@ -129,6 +126,8 @@ export const AttendanceAPI = {
   scan: (token: string) => API.post<Attendance>('/attendance/scan', { token }),
   checkout: (id: string) => API.put<Attendance>(`/attendance/${id}/checkout`),
   getToday: () => API.get<Attendance[]>('/attendance/today'),
+  getLateThreshold: () => API.get<{ lateThreshold: string }>('/attendance/settings/late-threshold'),
+  setLateThreshold: (threshold: string) => API.post<{ lateThreshold: string }>('/attendance/settings/late-threshold', { threshold }),
 };
 
 // ===== COMPLAINTS API =====

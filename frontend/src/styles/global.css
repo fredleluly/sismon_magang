@@ -973,6 +973,10 @@ img {
   background: #fde8e8;
   color: #dc2626;
 }
+.status-badge.telat {
+  background: #fed7aa;
+  color: #b45309;
+}
 
 /* ===== ABSENSI ===== */
 .absensi-date-bar {

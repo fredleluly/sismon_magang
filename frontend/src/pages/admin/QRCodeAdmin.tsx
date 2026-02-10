@@ -166,10 +166,17 @@ const QRCodeAdmin: React.FC = () => {
     return isLate(att.jamMasuk) ? 'Telat' : att.status || 'Hadir';
   };
 
-  const handleSaveThreshold = () => {
-    localStorage.setItem('lateThreshold', lateThreshold);
-    showToast('Jam telat berhasil diatur ke ' + lateThreshold, 'success');
-    setIsEditingThreshold(false);
+  const handleSaveThreshold = async () => {
+    // Save to backend
+    const res = await AttendanceAPI.setLateThreshold(lateThreshold);
+    if (res && res.success) {
+      // Also save to localStorage for fallback
+      localStorage.setItem('lateThreshold', lateThreshold);
+      showToast('Jam telat berhasil diatur ke ' + lateThreshold, 'success');
+      setIsEditingThreshold(false);
+    } else {
+      showToast(res?.message || 'Gagal menyimpan', 'error');
+    }
   };
 
   const handleResetThreshold = () => {
@@ -224,9 +231,20 @@ const QRCodeAdmin: React.FC = () => {
 
   // Load late threshold from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem('lateThreshold');
-    if (saved) setLateThreshold(saved);
-    setIsThresholdLoaded(true);
+    const loadThreshold = async () => {
+      // Try to load from backend first
+      const res = await AttendanceAPI.getLateThreshold();
+      if (res && res.success) {
+        setLateThreshold(res.data.lateThreshold);
+        localStorage.setItem('lateThreshold', res.data.lateThreshold);
+      } else {
+        // Fallback to localStorage
+        const saved = localStorage.getItem('lateThreshold');
+        if (saved) setLateThreshold(saved);
+      }
+      setIsThresholdLoaded(true);
+    };
+    loadThreshold();
   }, []);
 
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });

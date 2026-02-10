@@ -20,15 +20,45 @@ const Absensi: React.FC = () => {
     if (res && res.success) setRecords(res.data || []);
   }, []);
 
-  // Load late threshold from localStorage
+  // Load late threshold from backend or localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('lateThreshold');
-    if (saved) setLateThreshold(saved);
+    const loadThreshold = async () => {
+      try {
+        const res = await AttendanceAPI.getLateThreshold();
+        if (res && res.success) {
+          setLateThreshold(res.data.lateThreshold);
+        } else {
+          // Fallback to localStorage
+          const saved = localStorage.getItem('lateThreshold');
+          if (saved) setLateThreshold(saved);
+        }
+      } catch {
+        // If error, use localStorage fallback
+        const saved = localStorage.getItem('lateThreshold');
+        if (saved) setLateThreshold(saved);
+      }
+    };
+    loadThreshold();
   }, []);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Helper function to check if time is late
+  const isLate = (jamMasuk: string | null | undefined): boolean => {
+    if (!jamMasuk) return false;
+    try {
+      const normalized = jamMasuk.replace('.', ':');
+      const [masukHours, masukMinutes] = normalized.split(':').map(Number);
+      const [thresholdHours, thresholdMinutes] = lateThreshold.split(':').map(Number);
+      const masukTime = masukHours * 60 + masukMinutes;
+      const thresholdTime = thresholdHours * 60 + thresholdMinutes;
+      return masukTime > thresholdTime;
+    } catch {
+      return false;
+    }
+  };
 
   // Helper function to check if current time is late
   const isCurrentTimeLate = (): boolean => {
@@ -70,7 +100,7 @@ const Absensi: React.FC = () => {
   const submitAbsensi = async (token: string) => {
     const res = await AttendanceAPI.scan(token);
     if (res && res.success) {
-      showToast('Absensi berhasil! ✅', 'success');
+      showToast('Absensi berhasil!', 'success');
       setScanStatus('✅ Absensi berhasil tercatat!');
       loadData();
     } else {
@@ -290,13 +320,27 @@ const Absensi: React.FC = () => {
             ) : (
               records.slice(0, 7).map((r) => {
                 const d = new Date(r.tanggal).toLocaleDateString('id-ID');
-                const cls = r.status === 'Hadir' ? 'selesai' : r.status === 'Izin' ? 'pending' : '';
+                // Determine correct status: if original status is Hadir, check if it's actually late
+                let displayStatus: string = r.status;
+                let cls = '';
+
+                if (r.status === 'Hadir' && isLate(r.jamMasuk)) {
+                  displayStatus = 'Telat';
+                  cls = 'telat';
+                } else if (displayStatus === 'Hadir') {
+                  cls = 'selesai';
+                } else if (displayStatus === 'Izin') {
+                  cls = 'pending';
+                } else if (displayStatus === 'Telat' || displayStatus === 'telat') {
+                  cls = 'telat';
+                }
+
                 return (
                   <tr key={r._id}>
                     <td>{d}</td>
                     <td>{r.jamMasuk || '-'}</td>
                     <td>
-                      <span className={`status-badge ${cls}`}>{r.status}</span>
+                      <span className={`status-badge ${cls}`}>{displayStatus}</span>
                     </td>
                   </tr>
                 );
