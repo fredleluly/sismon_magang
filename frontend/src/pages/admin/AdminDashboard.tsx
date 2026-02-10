@@ -422,7 +422,7 @@ const AdminDashboard: React.FC = () => {
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontWeight: 700, fontSize: 14, color: '#0a6599' }}>{r.jamMasuk || '-'}</div>
-                    <div style={{ fontSize: 10, color: '#94a3b8' }}>{r.jamKeluar ? 'Keluar: ' + r.jamKeluar : 'Belum keluar'}</div>
+                 
                   </div>
                 </div>
               );

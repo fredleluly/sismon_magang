@@ -55,14 +55,8 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       {/* Auth routes */}
-      <Route
-        path="/login"
-        element={isLoggedIn ? <Navigate to={user?.role === 'admin' ? '/admin' : '/dashboard'} replace /> : <Login />}
-      />
-      <Route
-        path="/register"
-        element={isLoggedIn ? <Navigate to={user?.role === 'admin' ? '/admin' : '/dashboard'} replace /> : <Register />}
-      />
+      <Route path="/login" element={isLoggedIn ? <Navigate to={user?.role === 'admin' ? '/admin' : '/dashboard'} replace /> : <Login />} />
+      <Route path="/register" element={isLoggedIn ? <Navigate to={user?.role === 'admin' ? '/admin' : '/dashboard'} replace /> : <Register />} />
 
       {/* User routes */}
       <Route

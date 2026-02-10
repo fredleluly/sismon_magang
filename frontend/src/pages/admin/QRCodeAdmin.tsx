@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { QRCodeAPI, UsersAPI, getToken } from '../../services/api';
+import { QRCodeAPI, UsersAPI, getToken, AttendanceAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
-import type { QRCode } from '../../types';
+import type { QRCode, Attendance } from '../../types';
 import QRCodeLib from 'qrcode';
 import './QRCodeAdmin.css';
 
@@ -12,6 +12,12 @@ const QRCodeAdmin: React.FC = () => {
   const [totalPeserta, setTotalPeserta] = useState(0);
   const [attendanceList, setAttendanceList] = useState<any[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Calendar states
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [attendanceData, setAttendanceData] = useState<Attendance[]>([]);
+  const [selectedDayData, setSelectedDayData] = useState<Attendance[]>([]);
+  const [calendarLoading, setCalendarLoading] = useState(false);
 
   const load = async () => {
     const qr = await QRCodeAPI.getToday();
@@ -37,11 +43,76 @@ const QRCodeAdmin: React.FC = () => {
     } catch {}
   };
 
+  // Calendar functions
+  const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  const getFirstDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+
+  const loadAttendanceData = async () => {
+    setCalendarLoading(true);
+    try {
+      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59);
+      const from = startOfMonth.toISOString().split('T')[0];
+      const to = endOfMonth.toISOString().split('T')[0];
+      const res = await AttendanceAPI.getAll(`from=${from}&to=${to}&limit=1000`);
+      if (res && res.success) {
+        setAttendanceData(res.data || []);
+      } else {
+        showToast('Gagal memuat data kehadiran', 'error');
+      }
+    } catch (error) {
+      showToast('Error memuat data', 'error');
+    } finally {
+      setCalendarLoading(false);
+    }
+  };
+
+  const getAttendanceForDay = (day: number): Attendance[] => {
+    const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    const dateStr = toDateString(targetDate);
+    return attendanceData.filter((a) => a.tanggal.toString().split('T')[0] === dateStr);
+  };
+
+  const handlePreviousMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+  };
+
+  const handleDayClick = (day: number) => {
+    const dayData = getAttendanceForDay(day);
+    setSelectedDayData(dayData);
+  };
+
+  const getAttendanceCount = (day: number) => {
+    return getAttendanceForDay(day).length;
+  };
+
+  const getTotalPeserta = () => {
+    const uniqueUsers = new Set(attendanceData.map((a) => (typeof a.userId === 'string' ? a.userId : a.userId?._id)));
+    return uniqueUsers.size;
+  };
+
+  // Helper untuk convert date ke YYYY-MM-DD tanpa timezone conversion
+  const toDateString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   useEffect(() => {
     load();
+    loadAttendanceData();
     const iv = setInterval(loadAttendance, 15000);
     return () => clearInterval(iv);
   }, []);
+
+  useEffect(() => {
+    loadAttendanceData();
+  }, [currentDate]);
 
   const handleCopyToken = async () => {
     if (!todayQR?.token) return;
@@ -182,6 +253,112 @@ const QRCodeAdmin: React.FC = () => {
             );
           })
         )}
+      </div>
+
+      {/* CALENDAR SECTION */}
+      <div className="calendar-wrapper">
+        <div className="calendar-card">
+          <div className="calendar-header">
+            <button className="calendar-nav-btn" onClick={handlePreviousMonth}>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <h2 className="calendar-title">
+              {['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][currentDate.getMonth()]} {currentDate.getFullYear()}
+            </h2>
+            <button className="calendar-nav-btn" onClick={handleNextMonth}>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+
+          <div className="calendar-day-names">
+            {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((day) => (
+              <div key={day} className="day-name">
+                {day}
+              </div>
+            ))}
+          </div>
+
+          <div className="calendar-grid">
+            {Array.from({ length: getFirstDayOfMonth(currentDate) }, (_, i) => (
+              <div key={`empty-${i}`} className="calendar-empty"></div>
+            ))}
+            {Array.from({ length: getDaysInMonth(currentDate) }, (_, i) => {
+              const day = i + 1;
+              const count = getAttendanceCount(day);
+              const targetDate = toDateString(new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
+              const isSelected = selectedDayData.length > 0 && selectedDayData[0]?.tanggal.toString().split('T')[0] === targetDate;
+              return (
+                <div key={day} className={`calendar-day ${count > 0 ? 'has-data' : ''} ${isSelected ? 'selected' : ''}`} onClick={() => handleDayClick(day)} title={`${count} orang absen`}>
+                  <div className="day-number">{day}</div>
+                  {count > 0 && <div className="day-badge">{count}</div>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="attendance-details">
+          <div className="details-header">
+            <h3>Detail Kehadiran</h3>
+          </div>
+
+          {selectedDayData.length === 0 ? (
+            <div className="no-selection">
+              <p>Pilih tanggal untuk melihat detail kehadiran</p>
+            </div>
+          ) : (
+            <div className="details-content">
+              <div className="day-info">
+                <h4>{new Date(selectedDayData[0]?.tanggal).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</h4>
+                <p>{selectedDayData.length} peserta hadir</p>
+              </div>
+
+              <table className="attendance-table">
+                <thead>
+                  <tr>
+                    <th>No</th>
+                    <th>Nama</th>
+                    <th>Institusi</th>
+                    <th>Jam Masuk</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedDayData.map((att, i) => (
+                    <tr key={att._id}>
+                      <td>{i + 1}</td>
+                      <td className="name-cell">{typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown'}</td>
+                      <td>{typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-'}</td>
+                      <td className="time-cell">{att.jamMasuk || '-'}</td>
+                      <td>
+                        <span className={`status-badge status-${att.status.toLowerCase()}`}>{att.status}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="summary-stats">
+            <div className="stat-box">
+              <div className="stat-label">Total Peserta</div>
+              <div className="stat-value">{getTotalPeserta()}</div>
+            </div>
+            <div className="stat-box">
+              <div className="stat-label">Hari Ini</div>
+              <div className="stat-value">{getAttendanceCount(new Date().getDate())}</div>
+            </div>
+            <div className="stat-box">
+              <div className="stat-label">Bulan Ini</div>
+              <div className="stat-value">{attendanceData.length}</div>
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );
