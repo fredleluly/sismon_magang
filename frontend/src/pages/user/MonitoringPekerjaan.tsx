@@ -446,6 +446,11 @@ const MonitoringPekerjaan: React.FC = () => {
 
     const monthName = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][monthIndex];
 
+    // Helper function to check if a date has data
+    const hasDataOnDate = (dateStr: string) => {
+      return workData.some((w) => w.tanggal.split('T')[0] === dateStr);
+    };
+
     const days = [];
     const firstDay = getFirstDayOfMonth();
     const daysInMonth = getDaysInMonth();
@@ -457,14 +462,18 @@ const MonitoringPekerjaan: React.FC = () => {
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const isSelected = dateStr === exportSelectedDate;
+      const hasData = hasDataOnDate(dateStr);
+      const dataCount = workData.filter((w) => w.tanggal.split('T')[0] === dateStr).length;
 
       days.push(
         <div
           key={day}
-          className={`export-harian-calendar-cell ${isSelected ? 'selected' : ''}`}
+          className={`export-harian-calendar-cell ${isSelected ? 'selected' : ''} ${hasData ? 'has-data' : ''}`}
           onClick={() => setExportSelectedDate(dateStr)}
+          title={hasData ? `${dataCount} pekerjaan` : 'Tidak ada data'}
         >
-          {day}
+          <div className="cell-day">{day}</div>
+          {hasData && <div className="cell-indicator" title={`${dataCount} pekerjaan`}>{dataCount}</div>}
         </div>
       );
     }
@@ -576,7 +585,7 @@ const MonitoringPekerjaan: React.FC = () => {
   return (
     <>
       <div className="page-header">
-        <h1>Monitoring Pekerjaan</h1>
+        <h1>Statistik Pekerjaan</h1>
         <p>Monitor statistik pekerjaan harian, mingguan, atau bulanan</p>
       </div>
 
@@ -587,19 +596,19 @@ const MonitoringPekerjaan: React.FC = () => {
             className={`filter-btn ${filterType === 'harian' ? 'active' : ''}`}
             onClick={() => handleFilterChange('harian')}
           >
-            Harian
+            Today
           </button>
           <button
             className={`filter-btn ${filterType === 'mingguan' ? 'active' : ''}`}
             onClick={() => handleFilterChange('mingguan')}
           >
-            Mingguan
+            Weekly
           </button>
           <button
             className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`}
             onClick={() => handleFilterChange('bulanan')}
           >
-            Bulanan
+            Monthly
           </button>
           <button
             className={`filter-btn ${filterType === 'custom' ? 'active' : ''}`}
@@ -610,7 +619,7 @@ const MonitoringPekerjaan: React.FC = () => {
               }
             }}
           >
-            Kustom
+            Custom
           </button>
         </div>
 
@@ -886,7 +895,7 @@ const MonitoringPekerjaan: React.FC = () => {
               <div className="modal-body">
                 {filterType === 'harian' && (
                   <div className="export-harian-section">
-                    <p className="export-modal-label">Pilih tanggal yang ingin diunduh:</p>
+                    <p className="export-modal-label">Select a date to download:</p>
                     {renderExportHarianCalendarMonth()}
                     <p className="export-modal-info">
                       Total data: {workData.filter((w) => w.tanggal.split('T')[0] === exportSelectedDate).length} pekerjaan
@@ -896,7 +905,7 @@ const MonitoringPekerjaan: React.FC = () => {
 
                 {filterType === 'mingguan' && (
                   <div className="export-mingguan-section">
-                    <p className="export-modal-label">Unduh data pekerjaan minggu ini?</p>
+                    <p className="export-modal-label">Download this week's data?</p>
                     <p className="export-modal-info">
                       {(() => {
                         const now = new Date();
@@ -912,7 +921,7 @@ const MonitoringPekerjaan: React.FC = () => {
 
                 {filterType === 'bulanan' && (
                   <div className="export-bulanan-section">
-                    <p className="export-modal-label">Unduh data pekerjaan bulan ini?</p>
+                    <p className="export-modal-label">Download this month's data?</p>
                     <p className="export-modal-info">
                       {(() => {
                         const monthName = [
@@ -938,7 +947,7 @@ const MonitoringPekerjaan: React.FC = () => {
 
                 {filterType === 'custom' && (
                   <div className="export-custom-section">
-                    <p className="export-modal-label">Pilih rentang tanggal yang ingin diunduh:</p>
+                    <p className="export-modal-label">Select a date range to download:</p>
                     <button
                       className="export-date-range-toggle"
                       onClick={() => setIsExportDateRangeOpen(!isExportDateRangeOpen)}
