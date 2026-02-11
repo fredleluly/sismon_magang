@@ -112,6 +112,7 @@ export const UsersAPI = {
   create: (data: Partial<User & { password: string }>) => API.post<User>('/users', data),
   update: (id: string, data: Partial<User>) => API.put<User>(`/users/${id}`, data),
   delete: (id: string) => API.delete(`/users/${id}`),
+  resetPassword: (id: string, newPassword: string) => API.put(`/users/${id}/reset-password`, { newPassword }),
 };
 
 // ===== WORK LOGS API =====

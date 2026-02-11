@@ -90,6 +90,26 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
   }
 });
 
+// PUT /api/users/:id/reset-password — admin reset user password
+router.put('/:id/reset-password', auth, adminOnly, async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password minimal 6 karakter.' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ success: true, message: 'Password berhasil direset.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // DELETE /api/users/:id — admin delete user
 router.delete('/:id', auth, adminOnly, async (req, res) => {
   try {

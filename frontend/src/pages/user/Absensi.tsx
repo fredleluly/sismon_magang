@@ -146,26 +146,49 @@ const Absensi: React.FC = () => {
   // ========== CAMERA & FACE DETECTION ==========
 
   const startCamera = async () => {
+    // Check for Secure Context (HTTPS or localhost)
+    if (!window.isSecureContext) {
+      showToast('Kamera memerlukan koneksi HTTPS aman. Jika testing di HP via IP, browser memblokir akses kamera.', 'error');
+      return;
+    }
+
+    // Check implementation support
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showToast('Browser ini tidak mendukung akses kamera.', 'error');
+      return;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
         audio: false,
       });
+
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.onloadedmetadata = () => {
           videoRef.current?.play();
           setCameraActive(true);
-          
-          // Start MediaPipe face detection once camera is ready
-          if (faceDetection.ready && videoRef.current) {
-            faceDetection.startDetection(videoRef.current);
-          }
         };
       }
-    } catch (err) {
-      showToast('Gagal mengakses kamera. Pastikan izin kamera diberikan.', 'error');
+    } catch (err: any) {
+      console.error('Camera Error:', err);
+      let msg = 'Gagal mengakses kamera.';
+      
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        msg = 'Izin kamera ditolak. Mohon izinkan akses kamera di pengaturan browser Anda.';
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        msg = 'Kamera tidak ditemukan pada perangkat ini.';
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        msg = 'Kamera sedang digunakan oleh aplikasi lain.';
+      } else if (err.name === 'OverconstrainedError') {
+        msg = 'Kamera tidak memenuhi resolusi yang diminta.';
+      } else if (err.name === 'SecurityError') {
+        msg = 'Browser memblokir akses kamera (masalah HTTPS/security).';
+      }
+
+      showToast(msg, 'error');
     }
   };
 
