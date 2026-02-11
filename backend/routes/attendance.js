@@ -115,6 +115,40 @@ router.put('/:id/checkout', auth, async (req, res) => {
   }
 });
 
+// PUT /api/attendance/:id/status — admin: update attendance status and jamMasuk
+router.put('/:id/status', auth, adminOnly, async (req, res) => {
+  try {
+    const { status, jamMasuk } = req.body;
+    if (!status) return res.status(400).json({ success: false, message: 'Status wajib diisi.' });
+
+    const allowed = ['Hadir', 'Telat', 'Izin', 'Sakit', 'Alpha'];
+    if (!allowed.includes(status)) return res.status(400).json({ success: false, message: 'Status tidak valid.' });
+
+    const att = await Attendance.findById(req.params.id);
+    if (!att) return res.status(404).json({ success: false, message: 'Data absensi tidak ditemukan.' });
+
+    att.status = status;
+
+    // Update jamMasuk if provided (format: HH:MM)
+    if (jamMasuk) {
+      // Validate format
+      if (!/^\d{2}:\d{2}$/.test(jamMasuk)) {
+        return res.status(400).json({ success: false, message: 'Format jam masuk harus HH:MM (contoh: 08:30)' });
+      }
+      att.jamMasuk = jamMasuk;
+    }
+
+    await att.save();
+
+    // return populated user info for frontend convenience
+    const populated = await Attendance.findById(att._id).populate('userId', 'name email instansi');
+
+    res.json({ success: true, message: 'Data absensi berhasil diperbarui.', data: populated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // GET /api/attendance/today — admin: who attended today
 router.get('/today', auth, adminOnly, async (req, res) => {
   try {

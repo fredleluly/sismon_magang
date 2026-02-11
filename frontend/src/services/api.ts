@@ -128,6 +128,7 @@ export const AttendanceAPI = {
   getToday: () => API.get<Attendance[]>('/attendance/today'),
   getLateThreshold: () => API.get<{ lateThreshold: string }>('/attendance/settings/late-threshold'),
   setLateThreshold: (threshold: string) => API.post<{ lateThreshold: string }>('/attendance/settings/late-threshold', { threshold }),
+  updateStatus: (id: string, status: string, jamMasuk?: string) => API.put<Attendance>(`/attendance/${id}/status`, { status, ...(jamMasuk && { jamMasuk }) }),
 };
 
 // ===== COMPLAINTS API =====
