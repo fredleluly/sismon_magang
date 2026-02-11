@@ -1,4 +1,4 @@
-import type { ApiResponse, User, WorkLog, Attendance, Complaint, QRCode, UserDashboard, AdminDashboard, WorkStats } from '../types';
+import type { ApiResponse, User, WorkLog, Attendance, Complaint, QRCode, UserDashboard, AdminDashboard, WorkStats, TargetSection, PerformanceEvaluation, PerformanceCalculation } from '../types';
 
 const API_BASE = '/api';
 
@@ -160,4 +160,26 @@ export const QRCodeAPI = {
 export const DashboardAPI = {
   getAdmin: () => API.get<AdminDashboard>('/dashboard/admin'),
   getUser: () => API.get<UserDashboard>('/dashboard/user'),
+};
+
+// ===== TARGET SECTION API =====
+export const TargetSectionAPI = {
+  getAll: () => API.get<TargetSection[]>('/target-section'),
+  bulkUpdate: (targets: { jenis: string; targetPerDay: number }[]) =>
+    API.put<TargetSection[]>('/target-section', { targets }),
+};
+
+// ===== PERFORMANCE API =====
+export const PerformanceAPI = {
+  calculate: (userId: string, bulan: number, tahun: number) =>
+    API.get<PerformanceCalculation>(`/performance/calculate/${userId}?bulan=${bulan}&tahun=${tahun}`),
+  save: (data: { userId: string; bulan: number; tahun: number; absen: number; kuantitas: number; kualitas: number; laporan: boolean; status: string }) =>
+    API.post<PerformanceEvaluation>('/performance', data),
+  getAll: (bulan: number, tahun: number) =>
+    API.get<PerformanceEvaluation[]>(`/performance?bulan=${bulan}&tahun=${tahun}`),
+  getRanking: (bulan: number, tahun: number) =>
+    API.get<PerformanceEvaluation[]>(`/performance/ranking?bulan=${bulan}&tahun=${tahun}`),
+  delete: (id: string) => API.delete(`/performance/${id}`),
+  deleteAllFinals: (bulan: number, tahun: number) => 
+    API.delete(`/performance/delete-all-finals/${bulan}/${tahun}`),
 };

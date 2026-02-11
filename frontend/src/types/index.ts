@@ -124,3 +124,41 @@ export interface Toast {
   message: string;
   type: ToastType;
 }
+
+// ===== TARGET SECTION =====
+export interface TargetSection {
+  _id: string;
+  jenis: string;
+  targetPerDay: number;
+}
+
+// ===== PERFORMANCE EVALUATION =====
+export interface PerformanceEvaluation {
+  _id: string;
+  userId: User | string;
+  bulan: number;
+  tahun: number;
+  absen: number;
+  kuantitas: number;
+  kualitas: number;
+  laporan: boolean;
+  hasil: number;
+  status: 'Draft' | 'Final';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PerformanceCalculation {
+  userId: string;
+  userName: string;
+  bulan: number;
+  tahun: number;
+  absen: number;
+  kuantitas: number; // Default 0, manual input
+  detail: {
+    totalWorkingDays: number;
+    attendedDays: number;
+    totalPoints: number;
+    avgPoints: number;
+  };
+}
