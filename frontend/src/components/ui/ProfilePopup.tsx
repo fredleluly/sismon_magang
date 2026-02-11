@@ -13,6 +13,7 @@ interface Props {
 
 const ProfilePopup: React.FC<Props> = ({ user, onClose, onViewProfile, onLogout }) => {
   const [stats, setStats] = useState<WorkStats>({ berkas: 0, buku: 0, bundle: 0 });
+  const [isClosing, setIsClosing] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -22,18 +23,30 @@ const ProfilePopup: React.FC<Props> = ({ user, onClose, onViewProfile, onLogout 
   }, []);
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    const handleMouseDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setIsClosing(true);
+        setTimeout(() => onClose(), 300);
+      }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => document.removeEventListener('mousedown', handleMouseDown);
+  }, [onClose]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsClosing(true);
+      setTimeout(() => onClose(), 300);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, [onClose]);
 
   if (!user) return null;
   const initials = getInitials(user.name);
 
   return (
-    <div className="profile-popup active" ref={ref} style={{ display: 'block' }}>
+    <div className={`profile-popup active ${isClosing ? 'closing' : ''}`} ref={ref} style={{ display: 'block' }}>
       <div className="profile-popup-header">
         <div className="profile-popup-avatar">{initials}</div>
         <div className="profile-popup-info">

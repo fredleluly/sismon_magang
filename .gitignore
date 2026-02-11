@@ -102,3 +102,4 @@ pnpm-lock.yaml
 *.temp
 temp/
 tmp/
+vite.config.ts

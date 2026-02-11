@@ -66,6 +66,20 @@ body {
   color: var(--gray-800);
   background: var(--gray-50);
   overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+/* Smooth scroll for all scrollable containers */
+*[style*="overflow-y"],
+[class*="scroll"],
+[class*="container"],
+[class*="sidebar"],
+[class*="content"],
+[class*="modal"],
+[class*="dropdown"],
+[class*="list"] {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
 }
 a {
   text-decoration: none;
@@ -523,6 +537,8 @@ img {
   transition: var(--transition-smooth);
   overflow-y: auto;
   overflow-x: hidden;
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
 }
 .sidebar-brand {
   display: flex;
@@ -2066,6 +2082,7 @@ img {
     display: block;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
   }
 
   /* Absensi */

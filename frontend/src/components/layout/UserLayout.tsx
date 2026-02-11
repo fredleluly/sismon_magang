@@ -6,6 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import Dashboard from '../../pages/user/Dashboard';
 import Absensi from '../../pages/user/Absensi';
 import InputPekerjaan from '../../pages/user/InputPekerjaan';
+import MonitoringPekerjaan from '../../pages/user/MonitoringPekerjaan';
 import LaporanKendala from '../../pages/user/LaporanKendala';
 import Profil from '../../pages/user/Profil';
 import ProfilePopup from '../ui/ProfilePopup';
@@ -40,6 +41,7 @@ const UserLayout: React.FC = () => {
       case 'dashboard': return <Dashboard />;
       case 'absensi': return <Absensi />;
       case 'input-pekerjaan': return <InputPekerjaan />;
+      case 'monitoring-pekerjaan': return <MonitoringPekerjaan />;
       case 'laporan-kendala': return <LaporanKendala />;
       case 'profil': return <Profil />;
       default: return <Dashboard />;

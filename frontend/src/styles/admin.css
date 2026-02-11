@@ -113,6 +113,9 @@ img {
   position: relative;
 }
 
+/* When a modal is open, add .paused to prevent background interactions */
+.app-wrapper.paused { pointer-events: none; user-select: none; }
+
 .app-bg {
   position: fixed;
   inset: 0;
@@ -148,6 +151,8 @@ img {
   transition: var(--transition-smooth);
   overflow-y: auto;
   overflow-x: hidden;
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
 }
 .sidebar-brand {
   display: flex;
@@ -428,6 +433,13 @@ img {
   width: 18px;
   height: 18px;
 }
+.btn-danger {
+  background: linear-gradient(135deg, var(--accent-red), #ff3a47);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(255, 71, 87, 0.3);
+}
+.btn-danger:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,71,87,0.4); }
+.btn-danger:active { transform: translateY(0); }
 .btn-full {
   width: 100%;
 }
@@ -1680,17 +1692,23 @@ img {
 }
 .modal-card {
   background: #fff;
-  border-radius: 0;
-  padding: 48px;
-  width: 100%;
-  height: 100%;
-  max-height: 100vh;
+  border-radius: 16px;
+  padding: 30px;
+  width: 90%;
+  max-width: 540px;
+  max-height: 90vh;
   overflow-y: auto;
-  box-shadow: none;
-  transform: translateY(0) scale(1);
+  scroll-behavior: smooth;
+  scroll-padding-top: 40px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(20px) scale(0.95);
   transition: var(--transition-base);
-  display: flex;
-  flex-direction: column;
+}
+
+.modal-card.export-modal-card {
+  max-width: 680px;
+  overflow-y: visible;
+  max-height: none;
 }
 .modal-overlay.active .modal-card {
   transform: translateY(0) scale(1);
@@ -1699,8 +1717,8 @@ img {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 48px;
-  padding-bottom: 24px;
+  margin-bottom: 30px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--gray-200);
 }
 .modal-header h3 {
@@ -1736,7 +1754,7 @@ img {
   max-width: 600px;
 }
 .modal-body .form-group {
-  margin-bottom: 24px;
+  margin-bottom: 10px;
 }
 .modal-body .form-group label {
   display: block;
@@ -1766,7 +1784,7 @@ img {
   display: flex;
   gap: 12px;
   justify-content: flex-start;
-  margin-top: 48px;
+  margin-top: 10px;
   padding-top: 24px;
   border-top: 1px solid var(--gray-200);
 }
@@ -2195,6 +2213,7 @@ img {
   .table-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
   }
 }
 @media (max-width: 480px) {

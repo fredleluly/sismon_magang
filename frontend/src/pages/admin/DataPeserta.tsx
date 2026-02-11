@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { UsersAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { User } from '../../types';
@@ -10,6 +11,7 @@ const DataPeserta: React.FC = () => {
   const [modal, setModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', email: '', instansi: '', password: '', status: 'Aktif' });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: string | null }>({ show: false, id: null });
 
   const load = useCallback(async () => {
     const res = await UsersAPI.getAll();
@@ -21,13 +23,27 @@ const DataPeserta: React.FC = () => {
   }, [load]);
 
   useEffect(() => {
+    const app = document.querySelector('.app-wrapper');
+    const escHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    };
+
     if (modal) {
       document.body.style.overflow = 'hidden';
+      if (app) app.classList.add('paused');
+      window.addEventListener('keydown', escHandler, true);
     } else {
       document.body.style.overflow = 'unset';
+      if (app) app.classList.remove('paused');
     }
+
     return () => {
       document.body.style.overflow = 'unset';
+      if (app) app.classList.remove('paused');
+      window.removeEventListener('keydown', escHandler, true);
     };
   }, [modal]);
 
@@ -65,12 +81,18 @@ const DataPeserta: React.FC = () => {
   };
 
   const del = async (id: string) => {
-    if (!confirm('Yakin ingin menghapus?')) return;
-    const res = await UsersAPI.delete(id);
+    // show custom confirmation modal instead of browser confirm
+    setDeleteConfirm({ show: true, id });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm.id) return;
+    const res = await UsersAPI.delete(deleteConfirm.id);
     if (res && res.success) {
       showToast('Berhasil dihapus', 'success');
       load();
     } else showToast(res?.message || 'Gagal', 'error');
+    setDeleteConfirm({ show: false, id: null });
   };
 
   const avColors = ['av-a', 'av-b', 'av-c', 'av-d', 'av-e'];
@@ -153,53 +175,73 @@ const DataPeserta: React.FC = () => {
               );
             })}
           </tbody>
+            {deleteConfirm.show &&
+              ReactDOM.createPortal(
+                <div className="modal-overlay active">
+                  <div className="modal-card modal-delete-confirm">
+                    <div className="modal-header">
+                      <h3>Konfirmasi Penghapusan</h3>
+                      <div className="modal-close" onClick={() => setDeleteConfirm({ show: false, id: null })}>
+                        ✕
+                      </div>
+                    </div>
+                    <div className="modal-body">
+                      <p style={{ textAlign: 'center', color: '#666', marginBottom: '20px' }}>Apakah Anda yakin ingin menghapus peserta ini? Tindakan ini tidak dapat dibatalkan.</p>
+                    </div>
+                    <div className="modal-footer">
+                      <button className="btn-outline" onClick={() => setDeleteConfirm({ show: false, id: null })}>Batal</button>
+                      <button className="btn btn-danger" onClick={confirmDelete}>Hapus Peserta</button>
+                    </div>
+                  </div>
+                </div>,
+                document.body
+              )}
         </table>
       </div>
-      {modal && (
-        <div
-          className="modal-overlay active"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setModal(false);
-          }}
-        >
-          <div className="modal-card">
-            <div className="modal-header">
-              <h3>{editingId ? 'Edit Data Peserta' : 'Tambah Peserta'}</h3>
-              <div className="modal-close" onClick={() => setModal(false)}>
-                ✕
-              </div>
-            </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Nama Lengkap</label>
-                <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nama lengkap" />
-              </div>
-              <div className="form-group">
-                <label>Email</label>
-                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@example.com" />
-              </div>
-              <div className="form-group">
-                <label>Instansi</label>
-                <input type="text" value={form.instansi} onChange={(e) => setForm({ ...form, instansi: e.target.value })} placeholder="Universitas" />
-              </div>
-              {!editingId && (
-                <div className="form-group">
-                  <label>Password</label>
-                  <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Default: magang123" />
+      {modal &&
+        ReactDOM.createPortal(
+          <div
+              className="modal-overlay active"
+          >
+            <div className="modal-card">
+              <div className="modal-header">
+                <h3>{editingId ? 'Edit Data Peserta' : 'Tambah Peserta'}</h3>
+                <div className="modal-close" onClick={() => setModal(false)}>
+                  ✕
                 </div>
-              )}
+              </div>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label>Nama Lengkap</label>
+                  <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nama lengkap" />
+                </div>
+                <div className="form-group">
+                  <label>Email</label>
+                  <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@example.com" />
+                </div>
+                <div className="form-group">
+                  <label>Instansi</label>
+                  <input type="text" value={form.instansi} onChange={(e) => setForm({ ...form, instansi: e.target.value })} placeholder="Universitas" />
+                </div>
+                {!editingId && (
+                  <div className="form-group">
+                    <label>Password</label>
+                    <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Default: magang123" />
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button className="btn-outline" disabled title="Gunakan tombol ✕ untuk menutup">
+                  Batal
+                </button>
+                <button className="btn btn-primary" onClick={save}>
+                  Simpan
+                </button>
+              </div>
             </div>
-            <div className="modal-footer">
-              <button className="btn-outline" onClick={() => setModal(false)}>
-                Batal
-              </button>
-              <button className="btn btn-primary" onClick={save}>
-                Simpan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </>
   );
 };
