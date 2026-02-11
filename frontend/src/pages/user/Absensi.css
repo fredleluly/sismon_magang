@@ -170,8 +170,22 @@
   display: block;
 }
 
-/* Overlay */
-/* Overlay removed */
+/* Face Validation Checklist */
+.face-validation-checklist {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.face-validation-checklist .check-ok {
+  color: #15803d;
+}
+
+.face-validation-checklist .check-fail {
+  color: #dc2626;
+}
 
 
 .face-countdown-overlay {
@@ -313,3 +327,143 @@
   border: 1px solid var(--gray-300);
   border-radius: var(--radius-md);
 }
+
+/* Face Detection Status */
+.face-detection-status-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.face-detection-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.face-detection-loading {
+  background: var(--blue-50);
+  color: var(--primary-600);
+  border: 1px solid var(--primary-200);
+}
+
+.face-detection-ready {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #86efac;
+  animation: pulse-green 2s ease-in-out infinite;
+}
+
+.face-detection-searching {
+  background: var(--orange-50);
+  color: var(--orange-700);
+  border: 1px solid var(--orange-200);
+}
+
+.face-detection-error {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn-retry {
+  background: var(--primary-600);
+  color: white;
+  border: none;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-retry:hover {
+  background: var(--primary-700);
+  transform: translateY(-1px);
+}
+
+/* Status Spinner */
+.status-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--primary-200);
+  border-top-color: var(--primary-600);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Searching Icon */
+.searching-icon {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--orange-400);
+  border-radius: 50%;
+  position: relative;
+  animation: radar 2s ease-in-out infinite;
+}
+
+.searching-icon::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: var(--orange-600);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes radar {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.7;
+  }
+}
+
+@keyframes pulse-green {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .face-detection-status {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .face-detection-error {
+    font-size: 0.75rem;
+  }
+
+  .face-validation-checklist {
+    gap: 0.5rem;
+    font-size: 0.7rem;
+  }
+}
+

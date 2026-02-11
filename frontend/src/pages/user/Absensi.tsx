@@ -3,6 +3,7 @@ import { AttendanceAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import type { Attendance } from '../../types';
+import { useFaceDetection } from '../../hooks/useFaceLandmarkDetection';
 import './Absensi.css';
 
 const Absensi: React.FC = () => {
@@ -17,10 +18,12 @@ const Absensi: React.FC = () => {
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [captureTimestamp, setCaptureTimestamp] = useState<string>('');
   const [captureTimezone, setCaptureTimezone] = useState<string>('');
-  const [faceDetected, setFaceDetected] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Initialize face detection only when face tab is active (lazy loading)
+  const faceDetection = useFaceDetection(activeTab === 'face');
 
   // QR states
   const [qrToken, setQrToken] = useState('');
@@ -154,9 +157,11 @@ const Absensi: React.FC = () => {
         videoRef.current.onloadedmetadata = () => {
           videoRef.current?.play();
           setCameraActive(true);
-          videoRef.current?.play();
-          setCameraActive(true);
-          // startFaceDetection(); // Removed as requested
+          
+          // Start MediaPipe face detection once camera is ready
+          if (faceDetection.ready && videoRef.current) {
+            faceDetection.startDetection(videoRef.current);
+          }
         };
       }
     } catch (err) {
@@ -173,8 +178,9 @@ const Absensi: React.FC = () => {
       clearInterval(faceDetectionIntervalRef.current);
       faceDetectionIntervalRef.current = null;
     }
+    // Stop MediaPipe face detection
+    faceDetection.stopDetection();
     setCameraActive(false);
-    setFaceDetected(false);
   };
 
   // No longer using face detection blocking, but we can still keep the camera active state
@@ -244,6 +250,12 @@ const Absensi: React.FC = () => {
   };
 
   const handleCapture = () => {
+    // Check if face is detected before allowing capture
+    if (!faceDetection.faceDetected) {
+      showToast('Wajah tidak terdeteksi. Posisikan wajah Anda di depan kamera.', 'error');
+      return;
+    }
+
     // Direct capture with countdown
     setCountdown(3);
     let c = 3;
@@ -365,10 +377,18 @@ const Absensi: React.FC = () => {
     setActiveTab(tab);
     if (tab === 'qr') {
       stopCamera();
+      faceDetection.stopDetection();
     } else {
       setCapturedPhoto(null);
     }
   };
+
+  // Start face detection when ready and camera is active
+  useEffect(() => {
+    if (faceDetection.ready && cameraActive && videoRef.current) {
+      faceDetection.startDetection(videoRef.current);
+    }
+  }, [faceDetection.ready, cameraActive]);
 
   return (
     <>
@@ -437,6 +457,64 @@ const Absensi: React.FC = () => {
             <span>{liveTime} WIB</span>
           </div>
 
+          {/* Face Detection Status */}
+          {activeTab === 'face' && (
+            <div className="face-detection-status-container">
+              {faceDetection.loading && (
+                <div className="face-detection-status face-detection-loading">
+                  <div className="status-spinner"></div>
+                  <span>Menyiapkan deteksi wajah...</span>
+                </div>
+              )}
+              {faceDetection.error && (
+                <div className="face-detection-status face-detection-error">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}>
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="15" y1="9" x2="9" y2="15" />
+                    <line x1="9" y1="9" x2="15" y2="15" />
+                  </svg>
+                  <span>{faceDetection.error}</span>
+                  <button className="btn-retry" onClick={faceDetection.retryInit}>Coba Lagi</button>
+                </div>
+              )}
+              {faceDetection.ready && cameraActive && !faceDetection.error && (
+                <div className={`face-detection-status ${faceDetection.faceDetected ? 'face-detection-ready' : 'face-detection-searching'}`}>
+                  {faceDetection.faceDetected ? (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}>
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                      </svg>
+                      <span>{faceDetection.validation?.message || 'Wajah terdeteksi ✓'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="searching-icon"></div>
+                      <span>{faceDetection.validation?.message || 'Mencari wajah...'}</span>
+                    </>
+                  )}
+                </div>
+              )}
+              {/* Detail validation checklist */}
+              {faceDetection.ready && cameraActive && faceDetection.validation && faceDetection.validation.hasFace && (
+                <div className="face-validation-checklist">
+                  <span className={faceDetection.validation.hasEyes ? 'check-ok' : 'check-fail'}>
+                    {faceDetection.validation.hasEyes ? '✓' : '✗'} Mata
+                  </span>
+                  <span className={faceDetection.validation.hasMouth ? 'check-ok' : 'check-fail'}>
+                    {faceDetection.validation.hasMouth ? '✓' : '✗'} Mulut
+                  </span>
+                  <span className={faceDetection.validation.hasNose ? 'check-ok' : 'check-fail'}>
+                    {faceDetection.validation.hasNose ? '✓' : '✗'} Hidung
+                  </span>
+                  <span className={faceDetection.validation.isProperSize ? 'check-ok' : 'check-fail'}>
+                    {faceDetection.validation.isProperSize ? '✓' : '✗'} Jarak
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Camera view or captured result */}
           {!capturedPhoto ? (
             <div className="face-camera-container">
@@ -454,8 +532,7 @@ const Absensi: React.FC = () => {
                     display: cameraActive ? 'block' : 'none',
                   }}
                 />
-                {/* Face oval overlay */}
-                {/* Face oval overlay REMOVED */}
+
 
                 {/* Countdown overlay */}
                 {countdown !== null && (
@@ -474,29 +551,44 @@ const Absensi: React.FC = () => {
                 )}
               </div>
               <canvas ref={canvasRef} style={{ display: 'none' }} />
-              <canvas ref={overlayCanvasRef} style={{ display: 'none' }} />
 
               <div className="face-camera-actions">
                 {!cameraActive ? (
-                  <button className="btn btn-primary" onClick={startCamera}>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={startCamera}
+                    disabled={faceDetection.loading || !!faceDetection.error}
+                  >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 18, height: 18, marginRight: 6 }}>
                       <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                       <circle cx="12" cy="13" r="4" />
                     </svg>
-                    Buka Kamera
+                    {faceDetection.loading ? 'Memuat...' : 'Buka Kamera'}
                   </button>
                 ) : (
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn btn-primary" onClick={handleCapture} disabled={countdown !== null}>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 18, height: 18, marginRight: 6 }}>
-                        <circle cx="12" cy="12" r="10" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                      {countdown !== null ? `${countdown}...` : 'Ambil Foto'}
-                    </button>
-                    <button className="btn-outline" onClick={stopCamera}>
-                      Batal
-                    </button>
+                  <div style={{ display: 'flex', gap: 8, flexDirection: 'column', alignItems: 'center' }}>
+                    {!faceDetection.faceDetected && faceDetection.ready && faceDetection.validation && (
+                      <p style={{ fontSize: '0.875rem', color: 'var(--orange-600)', margin: 0, textAlign: 'center' }}>
+                        ⚠️ {faceDetection.validation.message}
+                      </p>
+                    )}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button 
+                        className="btn btn-primary" 
+                        onClick={handleCapture} 
+                        disabled={countdown !== null || !faceDetection.faceDetected || faceDetection.loading}
+                        title={!faceDetection.faceDetected ? 'Wajah belum terdeteksi' : 'Ambil foto'}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 18, height: 18, marginRight: 6 }}>
+                          <circle cx="12" cy="12" r="10" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        {countdown !== null ? `${countdown}...` : 'Ambil Foto'}
+                      </button>
+                      <button className="btn-outline" onClick={stopCamera}>
+                        Batal
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
