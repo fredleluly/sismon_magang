@@ -14,14 +14,34 @@ const AttendanceCalendar: React.FC = () => {
   const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   const getFirstDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 
+  const handleDownloadPhoto = async (attendanceId: string, userName: string, date: string) => {
+    try {
+      showToast('Mengunduh foto...', 'info');
+      const res = await AttendanceAPI.getPhoto(attendanceId);
+      if (res && res.success && res.data.foto) {
+        const link = document.createElement('a');
+        link.href = res.data.foto;
+        link.download = `Absensi_${userName.replace(/\s+/g, '_')}_${date}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('Foto berhasil diunduh', 'success');
+      } else {
+        showToast('Foto tidak tersedia', 'error');
+      }
+    } catch (error) {
+      showToast('Gagal mengunduh foto', 'error');
+    }
+  };
+
   const loadAttendanceData = async () => {
     setLoading(true);
     try {
       const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
       const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59);
 
-      const from = startOfMonth.toISOString().split('T')[0];
-      const to = endOfMonth.toISOString().split('T')[0];
+      const from = `${startOfMonth.getFullYear()}-${String(startOfMonth.getMonth() + 1).padStart(2, '0')}-${String(startOfMonth.getDate()).padStart(2, '0')}`;
+      const to = `${endOfMonth.getFullYear()}-${String(endOfMonth.getMonth() + 1).padStart(2, '0')}-${String(endOfMonth.getDate()).padStart(2, '0')}`;
 
       const res = await AttendanceAPI.getAll(`from=${from}&to=${to}&limit=1000`);
       if (res && res.success) {
@@ -41,9 +61,20 @@ const AttendanceCalendar: React.FC = () => {
   }, [currentDate]);
 
   const getAttendanceForDay = (day: number): Attendance[] => {
+    // Create date for the specific day in current month
     const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    const dateStr = targetDate.toISOString().split('T')[0];
-    return attendanceData.filter((a) => a.tanggal.toString().split('T')[0] === dateStr);
+    
+    // Format to YYYY-MM-DD using local time components to avoid UTC shift
+    const year = targetDate.getFullYear();
+    const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const date = String(targetDate.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${date}`;
+
+    return attendanceData.filter((a) => {
+      // Backend returns ISO string (e.g. 2024-02-11T00:00:00.000Z)
+      // We just need the date part
+      return a.tanggal.toString().split('T')[0] === dateStr;
+    });
   };
 
   const handlePreviousMonth = () => {
@@ -115,7 +146,10 @@ const AttendanceCalendar: React.FC = () => {
             ))}
             {days.map((day) => {
               const count = getAttendanceCount(day);
-              const isSelected = selectedDayData.length > 0 && selectedDayData[0]?.tanggal.toString().split('T')[0] === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split('T')[0];
+              const isSelected =
+                selectedDayData.length > 0 &&
+                selectedDayData[0]?.tanggal.toString().split('T')[0] ===
+                  `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
               return (
                 <div key={day} className={`calendar-day ${count > 0 ? 'has-data' : ''} ${isSelected ? 'selected' : ''}`} onClick={() => handleDayClick(day)} title={`${count} orang absen`}>
                   <div className="day-number">{day}</div>
@@ -151,6 +185,7 @@ const AttendanceCalendar: React.FC = () => {
                     <th>Jam Masuk</th>
                     <th>Jam Keluar</th>
                     <th>Status</th>
+                    <th>Foto</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -163,6 +198,37 @@ const AttendanceCalendar: React.FC = () => {
                       <td className="time-cell">{att.jamKeluar || 'Belum Keluar'}</td>
                       <td>
                         <span className={`status-badge status-${att.status.toLowerCase()}`}>{att.status}</span>
+                      </td>
+                      <td>
+                        {att.fotoAbsensi ? (
+                          <button
+                            className="btn-icon-small"
+                            onClick={() =>
+                              handleDownloadPhoto(
+                                att._id,
+                                typeof att.userId === 'string' ? 'User' : att.userId?.name || 'User',
+                                new Date(att.tanggal).toISOString().split('T')[0]
+                              )
+                            }
+                            title="Download Foto"
+                            style={{
+                              background: 'none',
+                              border: '1px solid var(--gray-300)',
+                              borderRadius: '4px',
+                              padding: '4px',
+                              cursor: 'pointer',
+                              color: 'var(--primary-600)',
+                            }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                              <polyline points="7 10 12 15 17 10"></polyline>
+                              <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                          </button>
+                        ) : (
+                          <span style={{ color: 'var(--gray-400)', fontSize: '12px' }}>-</span>
+                        )}
                       </td>
                     </tr>
                   ))}

@@ -1,0 +1,355 @@
+/* Absensi.css */
+
+.absensi-date-bar {
+  display: flex !important;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.5rem;
+}
+
+.date-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.date-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--blue-50);
+  color: var(--primary-600);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.date-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.date-text h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 0 0 0.25rem 0;
+}
+
+.date-text p {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.last-absensi {
+  text-align: right;
+}
+
+.last-absensi span {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin-bottom: 0.25rem;
+}
+
+.last-absensi .time {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+/* Tabs */
+.absensi-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--gray-200);
+  padding-bottom: 0.5rem;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tab-btn.active {
+  background: var(--primary-50);
+  color: var(--primary-600);
+}
+
+.tab-btn:hover:not(.active) {
+  background: var(--gray-50);
+  color: var(--gray-700);
+}
+
+/* Face Capture Section */
+.qr-section {
+  text-align: center;
+  background: white;
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.qr-icon {
+  width: 56px;
+  height: 56px;
+  background: var(--blue-50);
+  color: var(--primary-600);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.qr-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.face-live-clock {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+  background: var(--gray-50);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+}
+
+/* Camera Container */
+.face-camera-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.face-camera-wrapper {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: black;
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 3/4; /* Maintains standard webcam aspect ratio usually */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.face-camera-wrapper video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Overlay */
+.face-oval-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none; /* Let clicks pass through if needed */
+}
+
+.face-oval-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.face-detection-status {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.face-detection-status.detected {
+  background: rgba(34, 197, 94, 0.9);
+}
+
+.face-countdown-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 20;
+}
+
+.face-countdown-number {
+  font-size: 8rem;
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 4px 8px rgba(0,0,0,0.5);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.face-camera-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: var(--gray-400);
+  text-align: center;
+  padding: 2rem;
+  border: 2px dashed var(--gray-200);
+  border-radius: var(--radius-md);
+  width: 100%;
+  max-width: 400px;
+}
+
+.face-camera-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.face-result-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.face-result-photo {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.face-result-timestamp {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.face-result-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Result Table */
+.absensi-history {
+  background: white;
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.absensi-history h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  margin-bottom: 0.25rem;
+}
+
+.history-sub {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+  margin-bottom: 1.5rem;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.history-table th {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.history-table td {
+  padding: 1rem 0;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--gray-100);
+  color: var(--gray-700);
+}
+
+.history-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* QR Specifics */
+#reader {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.token-input-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+.token-input {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+}

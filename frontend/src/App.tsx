@@ -18,6 +18,7 @@ import QRCodeAdmin from './pages/admin/QRCodeAdmin';
 import DataPeserta from './pages/admin/DataPeserta';
 import LogAktivitas from './pages/admin/LogAktivitas';
 import KelolaKeluhan from './pages/admin/KelolaKeluhan';
+import AttendanceCalendar from './pages/admin/AttendanceCalendar';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -82,6 +83,7 @@ const AppRoutes: React.FC = () => {
         <Route path="peserta" element={<DataPeserta />} />
         <Route path="log" element={<LogAktivitas />} />
         <Route path="keluhan" element={<KelolaKeluhan />} />
+        <Route path="absensi" element={<AttendanceCalendar />} />
       </Route>
 
       {/* Default redirect */}
