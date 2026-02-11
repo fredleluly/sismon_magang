@@ -38,7 +38,7 @@ const LogAktivitas: React.FC = () => {
             const name = (l.userId as any)?.name||'Unknown';
             const initials = name.split(' ').map((n:string)=>n[0]).join('').substring(0,2).toUpperCase();
             const dateStr = l.tanggal ? new Date(l.tanggal).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : '-';
-            return <tr key={l._id}><td><div className="user-cell"><div className={`user-avatar ${avColors[i%5]}`}>{initials}</div><span className="user-name">{name}</span></div></td><td>{dateStr}</td><td><span className="job-badge">{l.jenis||'-'}</span></td><td>{l.keterangan||'-'}</td><td><span className="data-highlight">{l.berkas||0}</span></td><td><span className="data-highlight">{l.buku||0}</span></td><td><span className="data-highlight">{l.bundle||0}</span></td></tr>;
+            return <tr key={l._id}><td><div className="user-cell"><span className="user-name">{name}</span></div></td><td>{dateStr}</td><td><span className="job-badge">{l.jenis||'-'}</span></td><td>{l.keterangan||'-'}</td><td><span className="data-highlight">{l.berkas||0}</span></td><td><span className="data-highlight">{l.buku||0}</span></td><td><span className="data-highlight">{l.bundle||0}</span></td></tr>;
           })}</tbody>
         </table>
       </div>
