@@ -31,6 +31,7 @@ app.use('/api/attendance', require('./routes/attendance'));
 app.use('/api/complaints', require('./routes/complaints'));
 app.use('/api/qrcode', require('./routes/qrcode'));
 app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/seed', require('./routes/seed'));
 
 // Fallback: serve frontend
 app.get('*', (req, res) => {
