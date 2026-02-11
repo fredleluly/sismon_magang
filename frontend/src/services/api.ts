@@ -82,6 +82,10 @@ export const AuthAPI = {
     return res;
   },
 
+  async changePassword(data: { newPassword: string }) {
+    return API.post('/auth/change-password', data);
+  },
+
   logout() {
     removeToken();
     window.location.href = '/login';

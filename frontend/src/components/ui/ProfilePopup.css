@@ -1,7 +1,7 @@
 .profile-popup {
-  position: absolute;
-  top: 60px;
-  right: 0;
+  position: fixed;
+  top: 70px;
+  right: 20px;
   background: white;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
@@ -253,8 +253,8 @@
 @media (max-width: 640px) {
   .profile-popup {
     width: 280px;
-    top: 50px;
-    right: 10px;
+    top: 60px;
+    right: 12px;
   }
 
   .profile-popup-header {
