@@ -11,7 +11,10 @@ const DataPeserta: React.FC = () => {
   const [modal, setModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', email: '', instansi: '', password: '', status: 'Aktif' });
+
   const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: string | null }>({ show: false, id: null });
+  const [resetPassword, setResetPassword] = useState<{ show: boolean; id: string | null; name: string }>({ show: false, id: null, name: '' });
+  const [newPassword, setNewPassword] = useState('');
 
   const load = useCallback(async () => {
     const res = await UsersAPI.getAll();
@@ -47,6 +50,8 @@ const DataPeserta: React.FC = () => {
     };
   }, [modal]);
 
+
+
   const filtered = peserta.filter((p) => (p.name || '').toLowerCase().includes(search.toLowerCase()) || (p.instansi || '').toLowerCase().includes(search.toLowerCase()));
 
   const openAdd = () => {
@@ -60,6 +65,30 @@ const DataPeserta: React.FC = () => {
     setEditingId(id);
     setForm({ name: p.name, email: p.email, instansi: p.instansi || '', password: '', status: p.status || 'Aktif' });
     setModal(true);
+  };
+
+  const openResetPassword = (id: string, name: string) => {
+    setNewPassword('');
+    setResetPassword({ show: true, id, name });
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetPassword.id || !newPassword) {
+      showToast('Password baru wajib diisi!', 'error');
+      return;
+    }
+    if (newPassword.length < 6) {
+      showToast('Password minimal 6 karakter!', 'error');
+      return;
+    }
+
+    const res = await UsersAPI.resetPassword(resetPassword.id, newPassword);
+    if (res && res.success) {
+      showToast('Password berhasil direset', 'success');
+      setResetPassword({ show: false, id: null, name: '' });
+    } else {
+      showToast(res?.message || 'Gagal mereset password', 'error');
+    }
   };
 
   const save = async () => {
@@ -163,10 +192,13 @@ const DataPeserta: React.FC = () => {
                   </td>
                   <td>
                     <div className="action-btns">
-                      <button className="action-btn edit" onClick={() => openEdit(p._id)}>
+                      <button className="action-btn edit" onClick={() => openEdit(p._id)} title="Edit Peserta">
                         ✏️
                       </button>
-                      <button className="action-btn delete" onClick={() => del(p._id)}>
+                      <button className="action-btn warning" onClick={() => openResetPassword(p._id, p.name)} title="Reset Password" style={{ background: '#f59e0b', color: 'white' }}>
+                        🔑
+                      </button>
+                      <button className="action-btn delete" onClick={() => del(p._id)} title="Hapus Peserta">
                         🗑️
                       </button>
                     </div>
@@ -191,6 +223,43 @@ const DataPeserta: React.FC = () => {
                     <div className="modal-footer">
                       <button className="btn-outline" onClick={() => setDeleteConfirm({ show: false, id: null })}>Batal</button>
                       <button className="btn btn-danger" onClick={confirmDelete}>Hapus Peserta</button>
+                    </div>
+                  </div>
+                </div>,
+                document.body
+              )}
+            {resetPassword.show &&
+              ReactDOM.createPortal(
+                <div className="modal-overlay active">
+                  <div className="modal-card">
+                    <div className="modal-header">
+                      <h3>Reset Password</h3>
+                      <div className="modal-close" onClick={() => setResetPassword({ show: false, id: null, name: '' })}>
+                        ✕
+                      </div>
+                    </div>
+                    <div className="modal-body">
+                      <p style={{ marginBottom: '15px' }}>
+                        Masukkan password baru untuk pengguna <strong>{resetPassword.name}</strong>.
+                      </p>
+                      <div className="form-group">
+                        <label>Password Baru</label>
+                        <input
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Minimal 6 karakter"
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+                    <div className="modal-footer">
+                      <button className="btn-outline" onClick={() => setResetPassword({ show: false, id: null, name: '' })}>
+                        Batal
+                      </button>
+                      <button className="btn btn-primary" onClick={handleResetPassword}>
+                        Simpan Password Baru
+                      </button>
                     </div>
                   </div>
                 </div>,
