@@ -271,6 +271,7 @@ img {
   position: relative;
   z-index: 1;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* ===== TOPBAR ===== */
@@ -2148,6 +2149,265 @@ img {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ============================================
+   REKAPITULASI PAGE
+   ============================================ */
+.rekap-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  box-shadow: var(--shadow-card);
+  animation: slideUp 0.4s ease 0.1s both;
+}
+.rekap-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+.rekap-filter-group label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.rekap-input {
+  padding: 10px 14px;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--gray-700);
+  background: var(--gray-50);
+  transition: var(--transition-fast);
+  min-width: 170px;
+}
+.rekap-input:focus {
+  border-color: var(--primary-400);
+  background: #fff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(10, 101, 153, 0.1);
+}
+.rekap-user-filter {
+  position: relative;
+}
+.rekap-user-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--gray-700);
+  background: var(--gray-50);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  min-width: 190px;
+  white-space: nowrap;
+}
+.rekap-user-btn:hover {
+  border-color: var(--primary-300);
+  background: #fff;
+}
+.rekap-user-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 240px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  padding: 6px 0;
+  animation: fadeInUp 0.2s ease;
+}
+.rekap-user-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--gray-700);
+  transition: var(--transition-fast);
+}
+.rekap-user-option:hover {
+  background: var(--primary-50);
+  color: var(--primary-700);
+}
+.rekap-user-option input[type="checkbox"] {
+  accent-color: var(--primary-500);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+.rekap-user-dropdown-divider {
+  height: 1px;
+  background: var(--gray-100);
+  margin: 4px 0;
+}
+.rekap-filter-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-left: auto;
+}
+
+/* Info bar */
+.rekap-info-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  animation: slideUp 0.4s ease 0.15s both;
+}
+.rekap-info-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, var(--primary-50), #e6f4fa);
+  border: 1px solid var(--primary-100);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary-700);
+}
+.rekap-info-badge svg {
+  flex-shrink: 0;
+}
+
+/* Table card */
+.rekap-table-card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  box-shadow: var(--shadow-card);
+  animation: slideUp 0.5s ease 0.2s both;
+}
+.rekap-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.rekap-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.rekap-table thead th {
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 10px;
+  text-align: center;
+  border: 1px solid var(--primary-500);
+  white-space: nowrap;
+}
+.rekap-th-sticky {
+  position: sticky;
+  left: 0;
+  z-index: 12;
+  background: var(--primary-800) !important;
+  min-width: 150px;
+  text-align: left !important;
+  box-shadow: 3px 0 6px -2px rgba(0, 0, 0, 0.15);
+}
+.rekap-th-group {
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600)) !important;
+  font-size: 11px !important;
+}
+.rekap-th-sub {
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-500)) !important;
+  font-size: 10px !important;
+  padding: 8px 8px !important;
+}
+.rekap-th-sub-total {
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600)) !important;
+}
+.rekap-th-total {
+  background: linear-gradient(135deg, var(--primary-700), var(--primary-800)) !important;
+  min-width: 70px;
+}
+.rekap-table tbody td {
+  padding: 10px;
+  font-size: 13px;
+  border: 1px solid var(--gray-100);
+  transition: var(--transition-fast);
+}
+.rekap-td-name {
+  position: sticky;
+  left: 0;
+  z-index: 6;
+  background: #fff;
+  font-weight: 600;
+  color: var(--gray-800);
+  white-space: nowrap;
+  min-width: 150px;
+  border-right: 2px solid var(--gray-200) !important;
+  box-shadow: 3px 0 6px -2px rgba(0, 0, 0, 0.08);
+}
+.rekap-td-num {
+  text-align: center;
+  color: var(--gray-600);
+  font-variant-numeric: tabular-nums;
+}
+.rekap-td-subtotal {
+  font-weight: 700;
+  color: var(--primary-700);
+  background: rgba(10, 101, 153, 0.04);
+}
+.rekap-td-grandtotal {
+  font-weight: 800;
+  color: var(--primary-800);
+  background: linear-gradient(135deg, rgba(10, 101, 153, 0.08), rgba(10, 101, 153, 0.04));
+  font-size: 14px;
+}
+.rekap-table tbody tr:hover td {
+  background: var(--primary-50);
+}
+.rekap-table tbody tr:hover .rekap-td-name {
+  background: var(--primary-50);
+  color: var(--primary-700);
+}
+.rekap-table tbody tr:hover .rekap-td-subtotal {
+  background: rgba(10, 101, 153, 0.1);
+}
+.rekap-table tbody tr:hover .rekap-td-grandtotal {
+  background: rgba(10, 101, 153, 0.14);
+}
+.rekap-total-row td {
+  background: linear-gradient(135deg, var(--gray-50), var(--gray-100)) !important;
+  font-weight: 700 !important;
+  color: var(--gray-800) !important;
+  border-top: 2px solid var(--primary-300) !important;
+}
+.rekap-total-row .rekap-td-name {
+  background: linear-gradient(135deg, var(--gray-50), var(--gray-100)) !important;
+}
+.rekap-total-row .rekap-td-grandtotal {
+  background: linear-gradient(135deg, var(--primary-100), var(--primary-50)) !important;
+  color: var(--primary-800) !important;
+  font-size: 15px;
+}
+
 @media (max-width: 1024px) {
   .charts-row {
     grid-template-columns: 1fr;
@@ -2214,6 +2474,12 @@ img {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
+  }
+  .rekap-filters {
+    flex-wrap: wrap;
+  }
+  .rekap-table-wrapper {
+    max-width: calc(100vw - 32px);
   }
 }
 @media (max-width: 480px) {

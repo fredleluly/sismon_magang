@@ -8,7 +8,6 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # Environment variables
-.env
 .env.local
 .env.*.local
 .env.development.local
@@ -104,3 +103,5 @@ temp/
 tmp/
 vite.config.ts
 Capaian Arsip Oktober.xlsx
+read_excel_summary.py
+~$Capaian Arsip Oktober.xlsx

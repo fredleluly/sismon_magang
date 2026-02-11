@@ -22,6 +22,7 @@ import AttendanceCalendar from './pages/admin/AttendanceCalendar';
 import TargetSection from './pages/admin/TargetSection';
 import PenilaianPerforma from './pages/admin/PenilaianPerforma';
 import Ranking from './pages/admin/Ranking';
+import Rekapitulasi from './pages/admin/Rekapitulasi';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -90,6 +91,7 @@ const AppRoutes: React.FC = () => {
         <Route path="target-section" element={<TargetSection />} />
         <Route path="penilaian" element={<PenilaianPerforma />} />
         <Route path="ranking" element={<Ranking />} />
+        <Route path="rekapitulasi" element={<Rekapitulasi />} />
       </Route>
 
       {/* Default redirect */}
