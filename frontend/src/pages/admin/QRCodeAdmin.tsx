@@ -29,10 +29,6 @@ const QRCodeAdmin: React.FC = () => {
     const qr = await QRCodeAPI.getToday();
     if (qr && qr.success && qr.data) {
       setTodayQR(qr.data);
-      if (canvasRef.current) {
-        const url = window.location.origin + '/absensi-scan?token=' + qr.data.token;
-        QRCodeLib.toCanvas(canvasRef.current, url, { width: 220, color: { dark: '#0a6599' } });
-      }
     }
     const hist = await QRCodeAPI.getHistory();
     if (hist && hist.success) setHistory(hist.data || []);
@@ -40,6 +36,15 @@ const QRCodeAdmin: React.FC = () => {
     if (users && users.success) setTotalPeserta(users.data.length);
     loadAttendance();
   };
+
+  useEffect(() => {
+    if (todayQR && canvasRef.current) {
+      const url = window.location.origin + '/absensi-scan?token=' + todayQR.token;
+      QRCodeLib.toCanvas(canvasRef.current, url, { width: 220, color: { dark: '#0a6599' } }, (error) => {
+        if (error) console.error('QR Gen Error:', error);
+      });
+    }
+  }, [todayQR]);
 
   const loadAttendance = async () => {
     try {

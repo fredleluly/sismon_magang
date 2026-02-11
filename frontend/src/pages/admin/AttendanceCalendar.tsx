@@ -11,6 +11,28 @@ const AttendanceCalendar: React.FC = () => {
   const [selectedDayData, setSelectedDayData] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Late threshold (same logic as QRCodeAdmin)
+  const [lateThreshold, setLateThreshold] = useState<string>('08:00');
+  const [isThresholdLoaded, setIsThresholdLoaded] = useState(false);
+
+  const isLate = (jamMasuk: string | null | undefined): boolean => {
+    if (!jamMasuk) return false;
+    try {
+      const normalized = jamMasuk.replace('.', ':');
+      const [masukHours, masukMinutes] = normalized.split(':').map(Number);
+      const [thresholdHours, thresholdMinutes] = lateThreshold.split(':').map(Number);
+      if (isNaN(masukHours) || isNaN(masukMinutes) || isNaN(thresholdHours) || isNaN(thresholdMinutes)) return false;
+      return masukHours * 60 + masukMinutes > thresholdHours * 60 + thresholdMinutes;
+    } catch { return false; }
+  };
+
+  const getStatusWithLate = (att: Attendance): string => {
+    if (typeof att.status === 'string' && att.status.toLowerCase() !== 'hadir') {
+      return att.status;
+    }
+    return isLate(att.jamMasuk) ? 'Telat' : att.status || 'Hadir';
+  };
+
   const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   const getFirstDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 
@@ -59,6 +81,21 @@ const AttendanceCalendar: React.FC = () => {
   useEffect(() => {
     loadAttendanceData();
   }, [currentDate]);
+
+  // Load late threshold from backend
+  useEffect(() => {
+    const loadThreshold = async () => {
+      const res = await AttendanceAPI.getLateThreshold();
+      if (res && res.success) {
+        setLateThreshold(res.data.lateThreshold);
+      } else {
+        const saved = localStorage.getItem('lateThreshold');
+        if (saved) setLateThreshold(saved);
+      }
+      setIsThresholdLoaded(true);
+    };
+    loadThreshold();
+  }, []);
 
   const getAttendanceForDay = (day: number): Attendance[] => {
     // Create date for the specific day in current month
@@ -183,9 +220,8 @@ const AttendanceCalendar: React.FC = () => {
                     <th>Nama</th>
                     <th>Institusi</th>
                     <th>Jam Masuk</th>
-                    <th>Jam Keluar</th>
                     <th>Status</th>
-                    <th>Foto</th>
+                    <th>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -195,12 +231,11 @@ const AttendanceCalendar: React.FC = () => {
                       <td className="name-cell">{typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown'}</td>
                       <td>{typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-'}</td>
                       <td className="time-cell">{att.jamMasuk || '-'}</td>
-                      <td className="time-cell">{att.jamKeluar || 'Belum Keluar'}</td>
                       <td>
-                        <span className={`status-badge status-${att.status.toLowerCase()}`}>{att.status}</span>
+                        <span className={`status-badge status-${(isThresholdLoaded ? getStatusWithLate(att) : att.status).toLowerCase().replace(/\s+/g, '-')}`}>{isThresholdLoaded ? getStatusWithLate(att) : att.status}</span>
                       </td>
                       <td>
-                        {att.fotoAbsensi ? (
+                        {att.fotoAbsensi && (
                           <button
                             className="btn-icon-small"
                             onClick={() =>
@@ -226,8 +261,6 @@ const AttendanceCalendar: React.FC = () => {
                               <line x1="12" y1="15" x2="12" y2="3"></line>
                             </svg>
                           </button>
-                        ) : (
-                          <span style={{ color: 'var(--gray-400)', fontSize: '12px' }}>-</span>
                         )}
                       </td>
                     </tr>

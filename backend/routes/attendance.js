@@ -2,6 +2,39 @@ const router = require('express').Router();
 const Attendance = require('../models/Attendance');
 const QRCode = require('../models/QRCode');
 const { auth, adminOnly } = require('../middleware/auth');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Multer setup untuk upload foto
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'absensi-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) {
+      cb(null, true);
+    } else {
+      cb(new Error('Hanya file gambar (JPG, PNG) yang diizinkan'));
+    }
+  }
+});
 
 // Helper: Check if time is late
 const isLate = (timeStr, threshold = '08:00') => {
@@ -97,10 +130,15 @@ router.post('/scan', auth, async (req, res) => {
 });
 
 // POST /api/attendance/photo-checkin — user takes photo to record attendance
-router.post('/photo-checkin', auth, async (req, res) => {
+// Supports both base64 (foto field) and file upload (foto file)
+router.post('/photo-checkin', auth, upload.single('foto'), async (req, res) => {
   try {
     const { foto, timestamp, timezone } = req.body;
-    if (!foto) return res.status(400).json({ success: false, message: 'Foto wajib diambil untuk absensi.' });
+    
+    // Check if photo provided (either as file or base64)
+    if (!req.file && !foto) {
+      return res.status(400).json({ success: false, message: 'Foto wajib diambil untuk absensi.' });
+    }
 
     // Check if already scanned today
     const today = new Date().toISOString().split('T')[0];
@@ -130,15 +168,24 @@ router.post('/photo-checkin', auth, async (req, res) => {
       ? new Date(timestamp).toLocaleString('id-ID', { timeZone: timezone || 'Asia/Jakarta' })
       : new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 
-    const attendance = await Attendance.create({
+    // Prepare attendance data
+    const attendanceData = {
       userId: req.userId,
       tanggal: new Date(today),
       jamMasuk,
       jamKeluar: '',
       status,
-      fotoAbsensi: foto,
       fotoTimestamp,
-    });
+    };
+
+    // If file uploaded, store URL; otherwise store base64
+    if (req.file) {
+      attendanceData.fotoUrl = `/uploads/${req.file.filename}`;
+    } else if (foto) {
+      attendanceData.fotoAbsensi = foto;
+    }
+
+    const attendance = await Attendance.create(attendanceData);
 
     res.status(201).json({ success: true, message: 'Absensi dengan foto berhasil!', data: attendance });
   } catch (err) {
@@ -149,47 +196,30 @@ router.post('/photo-checkin', auth, async (req, res) => {
   }
 });
 
-// GET /api/attendance/:id/photo — get attendance photo
-router.get('/:id/photo', auth, async (req, res) => {
+// POST /api/attendance/photo-upload — upload photo file and get URL
+router.post('/photo-upload', auth, upload.single('foto'), async (req, res) => {
   try {
-    const att = await Attendance.findById(req.params.id);
-    if (!att) return res.status(404).json({ success: false, message: 'Data absensi tidak ditemukan.' });
-
-    // Only the user or admin can view the photo
-    if (att.userId.toString() !== req.userId.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, message: 'Akses ditolak.' });
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
 
-    if (!att.fotoAbsensi) {
-      return res.status(404).json({ success: false, message: 'Foto absensi tidak tersedia.' });
-    }
-
-    res.json({ success: true, data: { foto: att.fotoAbsensi, fotoTimestamp: att.fotoTimestamp } });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// PUT /api/attendance/:id/checkout — clock out
-router.put('/:id/checkout', auth, async (req, res) => {
-  try {
-    const att = await Attendance.findById(req.params.id);
-    if (!att) return res.status(404).json({ success: false, message: 'Data absensi tidak ditemukan.' });
-    if (att.userId.toString() !== req.userId.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, message: 'Akses ditolak.' });
-    }
-
-    const now = new Date();
-    att.jamKeluar = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    await att.save();
-
-    res.json({ success: true, message: 'Berhasil clock out.', data: att });
+    // Return the file URL path
+    const fotoUrl = `/uploads/${req.file.filename}`;
+    res.json({ 
+      success: true, 
+      data: { 
+        fotoUrl,
+        filename: req.file.filename,
+        size: req.file.size 
+      } 
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
 // GET /api/attendance/today — admin: who attended today
+// NOTE: Static routes MUST be defined before parameterized routes (/:id)
 router.get('/today', auth, adminOnly, async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
@@ -220,11 +250,75 @@ router.post('/settings/late-threshold', auth, adminOnly, async (req, res) => {
     if (!threshold || !/^\d{2}:\d{2}$/.test(threshold)) {
       return res.status(400).json({ success: false, message: 'Format threshold harus HH:MM (contoh: 08:00)' });
     }
-    // In production, save to database or config file
-    // For now, we use environment variable approach
-    // You can extend this to save in a Settings model
     process.env.LATE_THRESHOLD = threshold;
     res.json({ success: true, message: 'Late threshold berhasil diubah', data: { lateThreshold: threshold } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/attendance/:id/photo — get attendance photo
+router.get('/:id/photo', auth, async (req, res) => {
+  try {
+    const att = await Attendance.findById(req.params.id);
+    if (!att) return res.status(404).json({ success: false, message: 'Data absensi tidak ditemukan.' });
+
+    // Only the user or admin can view the photo
+    if (att.userId.toString() !== req.userId.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Akses ditolak.' });
+    }
+
+    // Priority: fotoUrl (file upload) > fotoAbsensi (base64)
+    let fotoData;
+    if (att.fotoUrl) {
+      // If photo stored as file, return full URL
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      fotoData = `${baseUrl}${att.fotoUrl}`;
+    } else if (att.fotoAbsensi) {
+      // Fall back to base64
+      fotoData = att.fotoAbsensi;
+    } else {
+      return res.status(404).json({ success: false, message: 'Foto absensi tidak tersedia.' });
+    }
+
+    res.json({ success: true, data: { foto: fotoData, fotoTimestamp: att.fotoTimestamp } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// PUT /api/attendance/:id/checkout — clock out
+router.put('/:id/checkout', auth, async (req, res) => {
+  try {
+    const att = await Attendance.findById(req.params.id);
+    if (!att) return res.status(404).json({ success: false, message: 'Data absensi tidak ditemukan.' });
+    if (att.userId.toString() !== req.userId.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Akses ditolak.' });
+    }
+
+    const now = new Date();
+    att.jamKeluar = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    await att.save();
+
+    res.json({ success: true, message: 'Berhasil clock out.', data: att });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// PUT /api/attendance/:id — admin update
+router.put('/:id', auth, adminOnly, async (req, res) => {
+  try {
+    const { jamMasuk, jamKeluar, status } = req.body;
+    const att = await Attendance.findById(req.params.id);
+    if (!att) return res.status(404).json({ success: false, message: 'Data tidak ditemukan' });
+
+    if (jamMasuk !== undefined) att.jamMasuk = jamMasuk;
+    if (jamKeluar !== undefined) att.jamKeluar = jamKeluar;
+    if (status !== undefined) att.status = status;
+
+    await att.save();
+    res.json({ success: true, message: 'Data berhasil diperbarui', data: att });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

@@ -5,9 +5,10 @@ const attendanceSchema = new mongoose.Schema({
   tanggal: { type: Date, required: true },
   jamMasuk: { type: String, default: '' },
   jamKeluar: { type: String, default: '' },
-  status: { type: String, enum: ['Hadir', 'Izin', 'Sakit', 'Alpha', 'Telat'], default: 'Hadir' },
+  status: { type: String, enum: ['Hadir', 'Izin', 'Sakit', 'Alpha', 'Telat', 'Tidak Hadir'], default: 'Hadir' },
   qrCodeId: { type: mongoose.Schema.Types.ObjectId, ref: 'QRCode' },
   fotoAbsensi: { type: String, default: '' }, // base64 encoded photo
+  fotoUrl: { type: String, default: '' }, // URL to uploaded photo file
   fotoTimestamp: { type: String, default: '' }, // timestamp from user's device timezone
 }, { timestamps: true });
 
