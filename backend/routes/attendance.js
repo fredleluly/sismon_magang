@@ -224,7 +224,7 @@ router.put('/:id/status', auth, adminOnly, async (req, res) => {
     const { status, jamMasuk } = req.body;
     if (!status) return res.status(400).json({ success: false, message: 'Status wajib diisi.' });
 
-    const allowed = ['Hadir', 'Telat', 'Izin', 'Sakit', 'Alpha', 'Hari Libur'];
+    const allowed = ['Hadir', 'Telat', 'Izin', 'Sakit', 'Alpha', 'Hari Libur', 'Belum Absen'];
     if (!allowed.includes(status)) return res.status(400).json({ success: false, message: 'Status tidak valid.' });
 
     const att = await Attendance.findById(req.params.id);
@@ -247,6 +247,54 @@ router.put('/:id/status', auth, adminOnly, async (req, res) => {
     const populated = await Attendance.findById(att._id).populate('userId', 'name email instansi');
 
     res.json({ success: true, message: 'Data absensi berhasil diperbarui.', data: populated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/attendance/bulk-holiday — admin: set all users to Hari Libur for a given date
+router.post('/bulk-holiday', auth, adminOnly, async (req, res) => {
+  try {
+    const { tanggal } = req.body;
+    if (!tanggal) return res.status(400).json({ success: false, message: 'Tanggal wajib diisi.' });
+
+    const User = require('../models/User');
+    const users = await User.find({ role: 'user' });
+
+    const dateStr = new Date(tanggal).toISOString().split('T')[0];
+    const targetDate = new Date(dateStr);
+
+    let created = 0;
+    let updated = 0;
+
+    for (const user of users) {
+      const existing = await Attendance.findOne({
+        userId: user._id,
+        tanggal: { $gte: new Date(dateStr), $lt: new Date(dateStr + 'T23:59:59') },
+      });
+
+      if (existing) {
+        existing.status = 'Hari Libur';
+        existing.jamMasuk = '-';
+        await existing.save();
+        updated++;
+      } else {
+        await Attendance.create({
+          userId: user._id,
+          tanggal: targetDate,
+          jamMasuk: '-',
+          jamKeluar: '',
+          status: 'Hari Libur',
+        });
+        created++;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Hari libur berhasil diterapkan. ${created} dibuat, ${updated} diperbarui.`,
+      data: { created, updated, total: users.length },
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

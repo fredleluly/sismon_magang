@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AttendanceAPI, UsersAPI, getToken } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
-import type { Attendance } from '../../types';
+import type { Attendance, User } from '../../types';
 import * as XLSX from 'xlsx';
 import './AttendanceCalendar.css';
 
@@ -13,6 +13,10 @@ const AttendanceCalendar: React.FC = () => {
   const [attendanceData, setAttendanceData] = useState<Attendance[]>([]);
   const [selectedDayData, setSelectedDayData] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(false);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [holidayLoading, setHolidayLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [showHolidayConfirm, setShowHolidayConfirm] = useState(false);
   const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
   const [viewingPhotoName, setViewingPhotoName] = useState<string>('');
   const [editingAtt, setEditingAtt] = useState<any | null>(null);
@@ -60,16 +64,24 @@ const AttendanceCalendar: React.FC = () => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
 
+  // Load all users (non-admin)
+  const loadAllUsers = async () => {
+    try {
+      const users = await UsersAPI.getAll();
+      if (users && users.success) {
+        const nonAdmin = users.data.filter((u: User) => u.role !== 'admin');
+        setAllUsers(nonAdmin);
+        setTotalPeserta(nonAdmin.length);
+      }
+    } catch {}
+  };
+
   // Load today's attendance count and total peserta
   const loadTodayStats = async () => {
     try {
       const res = await fetch('/api/attendance/today', { headers: { Authorization: 'Bearer ' + getToken() } });
       const d = await res.json();
       if (d.success) setTodayAttendanceCount((d.data || []).length);
-    } catch {}
-    try {
-      const users = await UsersAPI.getAll();
-      if (users && users.success) setTotalPeserta(users.data.length);
     } catch {}
   };
 
@@ -84,7 +96,7 @@ const AttendanceCalendar: React.FC = () => {
     }
   };
 
-  // Load late threshold
+  // Load late threshold, all users, and today stats
   useEffect(() => {
     const loadThreshold = async () => {
       const res = await AttendanceAPI.getLateThreshold();
@@ -98,6 +110,7 @@ const AttendanceCalendar: React.FC = () => {
       setIsThresholdLoaded(true);
     };
     loadThreshold();
+    loadAllUsers();
     loadTodayStats();
     const iv = setInterval(loadTodayStats, 30000);
     return () => clearInterval(iv);
@@ -124,12 +137,14 @@ const AttendanceCalendar: React.FC = () => {
     setEditStatus(att.status || 'Hadir');
     const jam = att.jamMasuk ? att.jamMasuk.replace('.', ':') : '00:00';
     setEditJamMasuk(jam);
+    document.body.style.overflow = 'hidden';
   };
 
   const closeEdit = () => {
     setEditingAtt(null);
     setEditStatus('Hadir');
     setEditJamMasuk('');
+    document.body.style.overflow = '';
   };
 
   const handleSaveStatus = async () => {
@@ -203,13 +218,39 @@ const AttendanceCalendar: React.FC = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
   };
 
+  // Merge attendance data with all users — users without records get 'Belum Absen'
+  const mergeUsersWithAttendance = (dayAttendance: Attendance[], dateStr: string): Attendance[] => {
+    const attendedUserIds = new Set(dayAttendance.map(a => {
+      if (typeof a.userId === 'string') return a.userId;
+      return a.userId?._id || '';
+    }));
+
+    const belumAbsen: Attendance[] = allUsers
+      .filter(u => !attendedUserIds.has(u._id))
+      .map(u => ({
+        _id: `belum-${u._id}`,
+        userId: u as any,
+        tanggal: dateStr,
+        jamMasuk: '-',
+        jamKeluar: '',
+        status: 'Belum Absen' as const,
+      }));
+
+    return [...dayAttendance, ...belumAbsen];
+  };
+
   const handleDayClick = (day: number) => {
     const dayData = getAttendanceForDay(day);
-    setSelectedDayData(dayData);
-    // When clicking a day, switch filter mode to harian and show that day
-    setFilterMode('harian');
-    setFilterData(dayData);
     const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    const dateStr = toDateStr(targetDate);
+    setSelectedDate(dateStr);
+    
+    // Merge with all users to show Belum Absen
+    const merged = mergeUsersWithAttendance(dayData, dateStr);
+    setSelectedDayData(merged);
+    
+    setFilterMode('harian');
+    setFilterData(merged);
     setFilterLabel(targetDate.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
   };
 
@@ -347,6 +388,39 @@ const AttendanceCalendar: React.FC = () => {
     }
   };
 
+  // Handle bulk holiday
+  const handleBulkHoliday = async () => {
+    if (!selectedDate) {
+      showToast('Pilih tanggal terlebih dahulu dari kalender', 'error');
+      return;
+    }
+    setShowHolidayConfirm(true);
+  };
+
+  const confirmBulkHoliday = async () => {
+    setShowHolidayConfirm(false);
+    
+    setHolidayLoading(true);
+    try {
+      const res = await AttendanceAPI.bulkHoliday(selectedDate);
+      if (res && res.success) {
+        showToast(res.message || 'Hari libur berhasil diterapkan!', 'success');
+        // Refresh data
+        await loadAttendanceData();
+        loadTodayStats();
+        // Re-click day to refresh merged view
+        const day = parseInt(selectedDate.split('-')[2]);
+        setTimeout(() => handleDayClick(day), 300);
+      } else {
+        showToast(res?.message || 'Gagal menerapkan hari libur', 'error');
+      }
+    } catch {
+      showToast('Error menerapkan hari libur', 'error');
+    } finally {
+      setHolidayLoading(false);
+    }
+  };
+
   // Data to display in detail table - use filterData when filter is non-harian, selectedDayData for harian
   const displayData = filterMode === 'harian' ? selectedDayData : filterData;
 
@@ -432,8 +506,8 @@ const AttendanceCalendar: React.FC = () => {
           </div>
 
           <div className="calendar-day-names">
-            {dayNames.map((day) => (
-              <div key={day} className="day-name">
+            {dayNames.map((day, idx) => (
+              <div key={day} className="day-name" style={idx === 0 || idx === 6 ? { color: '#dc2626' } : {}}>
                 {day}
               </div>
             ))}
@@ -449,8 +523,12 @@ const AttendanceCalendar: React.FC = () => {
                 selectedDayData.length > 0 &&
                 selectedDayData[0]?.tanggal.toString().split('T')[0] ===
                   `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              const dayOfWeek = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).getDay();
+              const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+              const dayAtt = getAttendanceForDay(day);
+              const isHoliday = dayAtt.length > 0 && dayAtt.every(a => a.status === 'Hari Libur');
               return (
-                <div key={day} className={`calendar-day ${count > 0 ? 'has-data' : ''} ${isSelected ? 'selected' : ''}`} onClick={() => handleDayClick(day)} title={`${count} orang absen`}>
+                <div key={day} className={`calendar-day ${count > 0 ? 'has-data' : ''} ${isSelected ? 'selected' : ''} ${isWeekend || isHoliday ? 'is-holiday' : ''}`} onClick={() => handleDayClick(day)} title={`${count} orang absen`}>
                   <div className="day-number">{day}</div>
                   {count > 0 && <div className="day-badge">{count}</div>}
                 </div>
@@ -536,9 +614,39 @@ const AttendanceCalendar: React.FC = () => {
             )}
           </div>
 
-          {/* Export Button */}
+          {/* Action Buttons */}
           {displayData.length > 0 && (
-            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+              {/* Hari Libur Button - only for harian mode */}
+              {filterMode === 'harian' && selectedDate && (
+                <button
+                  onClick={handleBulkHoliday}
+                  disabled={holidayLoading}
+                  style={{
+                    padding: '8px 16px',
+                    background: '#f59e0b',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: holidayLoading ? 'not-allowed' : 'pointer',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    opacity: holidayLoading ? 0.7 : 1,
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  {holidayLoading ? 'Memproses...' : 'Tandai Hari Libur'}
+                </button>
+              )}
+              {filterMode !== 'harian' && <div />}
               <button
                 onClick={handleExportExcel}
                 style={{
@@ -576,6 +684,7 @@ const AttendanceCalendar: React.FC = () => {
                 <p>{displayData.length} data kehadiran</p>
               </div>
 
+              <div style={{ maxHeight: displayData.length > 6 ? '360px' : 'none', overflowY: displayData.length > 6 ? 'auto' : 'visible', borderRadius: 8, border: displayData.length > 6 ? '1px solid #e2e8f0' : 'none' }}>
               <table className="attendance-table">
                 <thead>
                   <tr>
@@ -633,16 +742,23 @@ const AttendanceCalendar: React.FC = () => {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
 
-          <div className="summary-stats">
+          <div className="summary-stats" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
             <div className="stat-box">
               <div className="stat-label">Total Hadir</div>
               <div className="stat-value">
+                {displayData.filter((a) => (a.status || '').toLowerCase() === 'hadir').length}
+              </div>
+            </div>
+            <div className="stat-box">
+              <div className="stat-label">Total Telat</div>
+              <div className="stat-value" style={{ color: '#ea580c' }}>
                 {displayData.filter((a) => {
-                  const s = (a.status || '').toLowerCase();
-                  return s === 'hadir' || s === 'telat';
+                  const s = isThresholdLoaded ? getStatusWithLate(a) : a.status;
+                  return (s || '').toLowerCase() === 'telat';
                 }).length}
               </div>
             </div>
@@ -666,55 +782,107 @@ const AttendanceCalendar: React.FC = () => {
       {editingAtt && (
         <div
           className="modal-overlay active"
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
           onClick={closeEdit}
         >
           <div
-            style={{ background: 'white', borderRadius: 12, padding: 24, width: '100%', maxWidth: 400, boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}
+            style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 440, boxShadow: '0 25px 60px rgba(0,0,0,0.3)', overflow: 'hidden', animation: 'slideUp 0.3s ease' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ marginBottom: 20 }}>
-              <h3 style={{ margin: 0, marginBottom: 4, fontSize: 18, fontWeight: 700, color: '#1e293b' }}>Edit Kehadiran</h3>
-              <p style={{ margin: 0, fontSize: 14, color: '#64748b' }}>{typeof editingAtt.userId === 'string' ? 'Unknown' : editingAtt.userId?.name}</p>
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Jam Masuk:</label>
-              <input
-                type="time"
-                value={editJamMasuk}
-                onChange={(e) => setEditJamMasuk(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box' }}
-              />
-            </div>
-
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Pilih Status:</label>
-              <select
-                value={editStatus}
-                onChange={(e) => setEditStatus(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box', background: 'white' }}
-              >
-                <option value="Hadir">Hadir</option>
-                <option value="Telat">Telat</option>
-                <option value="Izin">Izin</option>
-                <option value="Alpha">Alpa</option>
-                <option value="Hari Libur">Hari Libur</option>
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={handleSaveStatus}
-                style={{ flex: 1, padding: '10px 14px', background: '#22c55e', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}
-              >
-                Simpan
-              </button>
+            {/* Header */}
+            <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'white' }}>Edit Kehadiran</h3>
+                  <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>Ubah status kehadiran peserta</p>
+                </div>
+              </div>
               <button
                 onClick={closeEdit}
-                style={{ flex: 1, padding: '10px 14px', background: '#e2e8f0', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#475569' }}
+                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 16, transition: 'background 0.2s' }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.3)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.15)')}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* User Info */}
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 16, fontWeight: 700 }}>
+                  {(typeof editingAtt.userId === 'string' ? 'U' : editingAtt.userId?.name?.charAt(0) || 'U').toUpperCase()}
+                </div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: '#1e293b' }}>{typeof editingAtt.userId === 'string' ? 'Unknown' : editingAtt.userId?.name}</div>
+                  <div style={{ fontSize: 12, color: '#94a3b8' }}>{typeof editingAtt.userId === 'string' ? '-' : editingAtt.userId?.instansi || '-'}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Form */}
+            <div style={{ padding: '20px 24px' }}>
+              <div style={{ marginBottom: 18 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 8 }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  Jam Masuk
+                </label>
+                <input
+                  type="time"
+                  value={editJamMasuk}
+                  onChange={(e) => setEditJamMasuk(e.target.value)}
+                  style={{ width: '100%', padding: '11px 14px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box', transition: 'border-color 0.2s', outline: 'none' }}
+                  onFocus={(e) => (e.target.style.borderColor = '#667eea')}
+                  onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+                />
+              </div>
+
+              <div style={{ marginBottom: 24 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 8 }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+                  Status Kehadiran
+                </label>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  style={{ width: '100%', padding: '11px 14px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box', background: 'white', transition: 'border-color 0.2s', outline: 'none', cursor: 'pointer' }}
+                  onFocus={(e) => (e.target.style.borderColor = '#667eea')}
+                  onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+                >
+                  <option value="Hadir">✅ Hadir</option>
+                  <option value="Telat">⏰ Telat</option>
+                  <option value="Izin">📋 Izin</option>
+                  <option value="Sakit">🏥 Sakit</option>
+                  <option value="Alpha">❌ Alpa</option>
+                  <option value="Hari Libur">🎉 Hari Libur</option>
+                  <option value="Belum Absen">⏳ Belum Absen</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: '16px 24px', background: '#f8fafc', borderTop: '1px solid #f1f5f9', display: 'flex', gap: 10 }}>
+              <button
+                onClick={closeEdit}
+                style={{ flex: 1, padding: '11px 14px', background: 'white', border: '2px solid #e2e8f0', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#64748b', transition: 'all 0.2s' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = 'white'; }}
               >
                 Batal
+              </button>
+              <button
+                onClick={handleSaveStatus}
+                style={{ flex: 1, padding: '11px 14px', background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)', color: 'white', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 600, boxShadow: '0 4px 12px rgba(34,197,94,0.3)', transition: 'all 0.2s' }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(34,197,94,0.4)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(34,197,94,0.3)'; }}
+              >
+                💾 Simpan Perubahan
               </button>
             </div>
           </div>
@@ -745,6 +913,49 @@ const AttendanceCalendar: React.FC = () => {
               alt={`Foto absensi ${viewingPhotoName}`}
               style={{ width: '100%', borderRadius: 8, maxHeight: '60vh', objectFit: 'contain' }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Holiday Confirmation Modal */}
+      {showHolidayConfirm && (
+        <div
+          className="modal-overlay active"
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+          onClick={() => setShowHolidayConfirm(false)}
+        >
+          <div
+            style={{ background: 'white', borderRadius: 12, padding: 24, maxWidth: 420, width: '90%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)', textAlign: 'center' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+            </div>
+            <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 700, color: '#1e293b' }}>Tandai Hari Libur?</h3>
+            <p style={{ margin: '0 0 20px', fontSize: 14, color: '#64748b', lineHeight: 1.5 }}>
+              Semua peserta akan ditandai <strong style={{ color: '#f59e0b' }}>Hari Libur</strong> pada tanggal:<br />
+              <strong style={{ color: '#1e293b' }}>{selectedDate ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''}</strong>
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setShowHolidayConfirm(false)}
+                style={{ flex: 1, padding: '10px 14px', background: '#e2e8f0', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#475569' }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmBulkHoliday}
+                disabled={holidayLoading}
+                style={{ flex: 1, padding: '10px 14px', background: '#f59e0b', color: 'white', border: 'none', borderRadius: 8, cursor: holidayLoading ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 600, opacity: holidayLoading ? 0.7 : 1 }}
+              >
+                {holidayLoading ? 'Memproses...' : 'Ya, Tandai'}
+              </button>
+            </div>
           </div>
         </div>
       )}
