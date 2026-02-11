@@ -34,9 +34,6 @@ const AttendanceCalendar: React.FC = () => {
   const [isEditingThreshold, setIsEditingThreshold] = useState(false);
   const [isThresholdLoaded, setIsThresholdLoaded] = useState(false);
 
-  // Late threshold (same logic as QRCodeAdmin)
-  const [lateThreshold, setLateThreshold] = useState<string>('08:00');
-  const [isThresholdLoaded, setIsThresholdLoaded] = useState(false);
 
   const isLate = (jamMasuk: string | null | undefined): boolean => {
     if (!jamMasuk) return false;
@@ -191,20 +188,6 @@ const AttendanceCalendar: React.FC = () => {
     loadAttendanceData();
   }, [currentDate]);
 
-  // Load late threshold from backend
-  useEffect(() => {
-    const loadThreshold = async () => {
-      const res = await AttendanceAPI.getLateThreshold();
-      if (res && res.success) {
-        setLateThreshold(res.data.lateThreshold);
-      } else {
-        const saved = localStorage.getItem('lateThreshold');
-        if (saved) setLateThreshold(saved);
-      }
-      setIsThresholdLoaded(true);
-    };
-    loadThreshold();
-  }, []);
 
   const getAttendanceForDay = (day: number): Attendance[] => {
     const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
@@ -616,8 +599,7 @@ const AttendanceCalendar: React.FC = () => {
                       )}
                       <td className="time-cell">{att.jamMasuk || '-'}</td>
                       <td>
-<<<<<<< HEAD
-                        <span className={`status-badge status-${(att.status || '').toLowerCase()}`}>{att.status}</span>
+                        <span className={`status-badge status-${(isThresholdLoaded ? getStatusWithLate(att) : att.status || '').toLowerCase().replace(/\s+/g, '-')}`}>{isThresholdLoaded ? getStatusWithLate(att) : att.status}</span>
                       </td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -635,12 +617,6 @@ const AttendanceCalendar: React.FC = () => {
                           ) : (
                             <span style={{ width: 26 }}></span>
                           )}
-=======
-                        <span className={`status-badge status-${(isThresholdLoaded ? getStatusWithLate(att) : att.status).toLowerCase().replace(/\s+/g, '-')}`}>{isThresholdLoaded ? getStatusWithLate(att) : att.status}</span>
-                      </td>
-                      <td>
-                        {att.fotoAbsensi && (
->>>>>>> ac51f1f6dc67188e5080d197741d574a83f1e3b6
                           <button
                             onClick={() => openEditStatus(att)}
                             title="Edit Status"
@@ -651,11 +627,7 @@ const AttendanceCalendar: React.FC = () => {
                               <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
                             </svg>
                           </button>
-<<<<<<< HEAD
                         </div>
-=======
-                        )}
->>>>>>> ac51f1f6dc67188e5080d197741d574a83f1e3b6
                       </td>
                     </tr>
                   ))}
