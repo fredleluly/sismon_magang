@@ -96,6 +96,80 @@ router.post('/scan', auth, async (req, res) => {
   }
 });
 
+// POST /api/attendance/photo-checkin — user takes photo to record attendance
+router.post('/photo-checkin', auth, async (req, res) => {
+  try {
+    const { foto, timestamp, timezone } = req.body;
+    if (!foto) return res.status(400).json({ success: false, message: 'Foto wajib diambil untuk absensi.' });
+
+    // Check if already scanned today
+    const today = new Date().toISOString().split('T')[0];
+    const existingAttendance = await Attendance.findOne({
+      userId: req.userId,
+      tanggal: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59') },
+    });
+    if (existingAttendance) {
+      return res.status(400).json({ success: false, message: 'Anda sudah absen hari ini.' });
+    }
+
+    // Use timestamp from user's device if provided, otherwise server time
+    let jamMasuk;
+    if (timestamp) {
+      const userDate = new Date(timestamp);
+      jamMasuk = userDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    } else {
+      const now = new Date();
+      jamMasuk = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Get late threshold (default 08:00)
+    const lateThreshold = process.env.LATE_THRESHOLD || '08:00';
+    const status = isLate(jamMasuk, lateThreshold) ? 'Telat' : 'Hadir';
+
+    const fotoTimestamp = timestamp
+      ? new Date(timestamp).toLocaleString('id-ID', { timeZone: timezone || 'Asia/Jakarta' })
+      : new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+
+    const attendance = await Attendance.create({
+      userId: req.userId,
+      tanggal: new Date(today),
+      jamMasuk,
+      jamKeluar: '',
+      status,
+      fotoAbsensi: foto,
+      fotoTimestamp,
+    });
+
+    res.status(201).json({ success: true, message: 'Absensi dengan foto berhasil!', data: attendance });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ success: false, message: 'Anda sudah absen hari ini.' });
+    }
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/attendance/:id/photo — get attendance photo
+router.get('/:id/photo', auth, async (req, res) => {
+  try {
+    const att = await Attendance.findById(req.params.id);
+    if (!att) return res.status(404).json({ success: false, message: 'Data absensi tidak ditemukan.' });
+
+    // Only the user or admin can view the photo
+    if (att.userId.toString() !== req.userId.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Akses ditolak.' });
+    }
+
+    if (!att.fotoAbsensi) {
+      return res.status(404).json({ success: false, message: 'Foto absensi tidak tersedia.' });
+    }
+
+    res.json({ success: true, data: { foto: att.fotoAbsensi, fotoTimestamp: att.fotoTimestamp } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // PUT /api/attendance/:id/checkout — clock out
 router.put('/:id/checkout', auth, async (req, res) => {
   try {
@@ -130,7 +204,7 @@ router.get('/today', auth, adminOnly, async (req, res) => {
 });
 
 // GET /api/attendance/settings/late-threshold — get late threshold
-router.get('/settings/late-threshold', auth, adminOnly, async (req, res) => {
+router.get('/settings/late-threshold', auth, async (req, res) => {
   try {
     const threshold = process.env.LATE_THRESHOLD || '08:00';
     res.json({ success: true, data: { lateThreshold: threshold } });

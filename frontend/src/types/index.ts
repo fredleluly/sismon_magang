@@ -35,6 +35,8 @@ export interface Attendance {
   jamMasuk?: string;
   jamKeluar?: string;
   status: 'Hadir' | 'Telat' | 'Izin' | 'Alpha';
+  fotoAbsensi?: string;
+  fotoTimestamp?: string;
   createdAt?: string;
 }
 

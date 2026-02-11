@@ -124,6 +124,9 @@ export const WorkLogAPI = {
 export const AttendanceAPI = {
   getAll: (params = '') => API.get<Attendance[]>(`/attendance${params ? '?' + params : ''}`),
   scan: (token: string) => API.post<Attendance>('/attendance/scan', { token }),
+  photoCheckin: (foto: string, timestamp: string, timezone: string) =>
+    API.post<Attendance>('/attendance/photo-checkin', { foto, timestamp, timezone }),
+  getPhoto: (id: string) => API.get<{ foto: string; fotoTimestamp: string }>(`/attendance/${id}/photo`),
   checkout: (id: string) => API.put<Attendance>(`/attendance/${id}/checkout`),
   getToday: () => API.get<Attendance[]>('/attendance/today'),
   getLateThreshold: () => API.get<{ lateThreshold: string }>('/attendance/settings/late-threshold'),
