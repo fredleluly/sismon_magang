@@ -132,9 +132,11 @@ export const AttendanceAPI = {
     API.post<Attendance>('/attendance/photo-checkin', { foto, timestamp, timezone }),
   getPhoto: (id: string) => API.get<{ foto: string; fotoTimestamp: string }>(`/attendance/${id}/photo`),
   checkout: (id: string) => API.put<Attendance>(`/attendance/${id}/checkout`),
+  update: (id: string, data: Partial<Attendance>) => API.put<Attendance>(`/attendance/${id}`, data),
   getToday: () => API.get<Attendance[]>('/attendance/today'),
   getLateThreshold: () => API.get<{ lateThreshold: string }>('/attendance/settings/late-threshold'),
   setLateThreshold: (threshold: string) => API.post<{ lateThreshold: string }>('/attendance/settings/late-threshold', { threshold }),
+  updateStatus: (id: string, status: string, jamMasuk?: string) => API.put<Attendance>(`/attendance/${id}/status`, { status, ...(jamMasuk && { jamMasuk }) }),
 };
 
 // ===== COMPLAINTS API =====

@@ -14,7 +14,7 @@ import UserLayout from './components/layout/UserLayout';
 // Admin pages
 import AdminLayout from './components/layout/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import QRCodeAdmin from './pages/admin/QRCodeAdmin';
+
 import DataPeserta from './pages/admin/DataPeserta';
 import LogAktivitas from './pages/admin/LogAktivitas';
 import KelolaKeluhan from './pages/admin/KelolaKeluhan';
@@ -79,7 +79,7 @@ const AppRoutes: React.FC = () => {
         }
       >
         <Route index element={<AdminDashboard />} />
-        <Route path="qrcode" element={<QRCodeAdmin />} />
+
         <Route path="peserta" element={<DataPeserta />} />
         <Route path="log" element={<LogAktivitas />} />
         <Route path="keluhan" element={<KelolaKeluhan />} />

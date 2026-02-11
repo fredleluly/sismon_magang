@@ -154,7 +154,9 @@ const Absensi: React.FC = () => {
         videoRef.current.onloadedmetadata = () => {
           videoRef.current?.play();
           setCameraActive(true);
-          startFaceDetection();
+          videoRef.current?.play();
+          setCameraActive(true);
+          // startFaceDetection(); // Removed as requested
         };
       }
     } catch (err) {
@@ -175,58 +177,8 @@ const Absensi: React.FC = () => {
     setFaceDetected(false);
   };
 
-  // Simple face detection using skin-color heuristic on the center oval region
-  const startFaceDetection = () => {
-    if (faceDetectionIntervalRef.current) clearInterval(faceDetectionIntervalRef.current);
-
-    faceDetectionIntervalRef.current = setInterval(() => {
-      if (!videoRef.current || !overlayCanvasRef.current) return;
-      const video = videoRef.current;
-      const canvas = overlayCanvasRef.current;
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      if (!ctx) return;
-
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
-
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      // Sample center oval area for skin-tone pixels
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2 - 20;
-      const ovalW = canvas.width * 0.28;
-      const ovalH = canvas.height * 0.38;
-
-      const samplePoints = [];
-      for (let angle = 0; angle < Math.PI * 2; angle += 0.3) {
-        for (let r = 0.3; r <= 0.9; r += 0.2) {
-          const sx = Math.round(centerX + ovalW * r * Math.cos(angle));
-          const sy = Math.round(centerY + ovalH * r * Math.sin(angle));
-          if (sx >= 0 && sx < canvas.width && sy >= 0 && sy < canvas.height) {
-            samplePoints.push({ x: sx, y: sy });
-          }
-        }
-      }
-
-      let skinPixels = 0;
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      for (const { x, y } of samplePoints) {
-        const idx = (y * canvas.width + x) * 4;
-        const r = imageData.data[idx];
-        const g = imageData.data[idx + 1];
-        const b = imageData.data[idx + 2];
-
-        // Skin color detection (RGB heuristic)
-        if (r > 95 && g > 40 && b > 20 && r > g && r > b && Math.abs(r - g) > 15 && r - b > 15) {
-          skinPixels++;
-        }
-      }
-
-      const skinRatio = samplePoints.length > 0 ? skinPixels / samplePoints.length : 0;
-      setFaceDetected(skinRatio > 0.35);
-    }, 500);
-  };
-
+  // No longer using face detection blocking, but we can still keep the camera active state
+  
   const capturePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
@@ -244,25 +196,45 @@ const Absensi: React.FC = () => {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     ctx.restore();
 
-    // Add timestamp overlay on the captured photo
+    // Add timestamp watermark directly on photo
     const now = new Date();
-    const timeStr = now.toLocaleString('id-ID', {
-      weekday: 'long',
+    const dateStr = now.toLocaleString('id-ID', {
+      weekday: 'long', 
+      day: 'numeric', 
+      month: 'long', 
       year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
+    });
+    const timeDetailStr = now.toLocaleString('id-ID', {
+      hour: '2-digit', 
       minute: '2-digit',
       second: '2-digit',
-    });
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '14px Plus Jakarta Sans, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(timeStr, canvas.width / 2, canvas.height - 15);
+    }) + ' WIB';
+    
+    // Bottom-Left Watermark - larger, more visible
+    const fontSize = Math.max(16, canvas.width * 0.038);
+    const lineHeight = fontSize * 1.3;
+    const padding = Math.max(12, canvas.width * 0.025);
 
-    const photo = canvas.toDataURL('image/jpeg', 0.7);
+    ctx.font = `700 ${fontSize}px "Plus Jakarta Sans", sans-serif`;
+    ctx.textAlign = 'left';
+
+    // Draw text with stroke outline for readability on any background
+    ctx.lineWidth = Math.max(3, fontSize * 0.15);
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.lineJoin = 'round';
+
+    // Date line
+    ctx.strokeText(dateStr, padding, canvas.height - padding - lineHeight);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.fillText(dateStr, padding, canvas.height - padding - lineHeight);
+
+    // Time line
+    ctx.font = `600 ${fontSize * 0.85}px "Plus Jakarta Sans", sans-serif`;
+    ctx.strokeText(timeDetailStr, padding, canvas.height - padding);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fillText(timeDetailStr, padding, canvas.height - padding);
+
+    const photo = canvas.toDataURL('image/jpeg', 0.8);
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     setCapturedPhoto(photo);
@@ -272,11 +244,7 @@ const Absensi: React.FC = () => {
   };
 
   const handleCapture = () => {
-    if (!faceDetected) {
-      showToast('Wajah tidak terdeteksi. Posisikan wajah di dalam oval.', 'error');
-      return;
-    }
-    // Countdown 3-2-1 before capture
+    // Direct capture with countdown
     setCountdown(3);
     let c = 3;
     const timer = setInterval(() => {
@@ -487,32 +455,8 @@ const Absensi: React.FC = () => {
                   }}
                 />
                 {/* Face oval overlay */}
-                {cameraActive && (
-                  <div className="face-oval-overlay">
-                    <svg viewBox="0 0 400 480" className="face-oval-svg" preserveAspectRatio="none">
-                      <defs>
-                        <mask id="ovalMask">
-                          <rect width="100%" height="100%" fill="white" />
-                          <ellipse cx="50%" cy="46%" rx="28%" ry="32%" fill="black" />
-                        </mask>
-                      </defs>
-                      <rect width="100%" height="100%" fill="rgba(0,0,0,0.5)" mask="url(#ovalMask)" />
-                      <ellipse
-                        cx="50%"
-                        cy="46%"
-                        rx="28%"
-                        ry="32%"
-                        fill="none"
-                        stroke={faceDetected ? '#22c55e' : '#ff4757'}
-                        strokeWidth="3"
-                        strokeDasharray={faceDetected ? '0' : '10 5'}
-                      />
-                    </svg>
-                    <div className={`face-detection-status ${faceDetected ? 'detected' : ''}`}>
-                      {faceDetected ? '✅ Wajah terdeteksi' : '👤 Posisikan wajah di dalam oval'}
-                    </div>
-                  </div>
-                )}
+                {/* Face oval overlay REMOVED */}
+
                 {/* Countdown overlay */}
                 {countdown !== null && (
                   <div className="face-countdown-overlay">
@@ -543,7 +487,7 @@ const Absensi: React.FC = () => {
                   </button>
                 ) : (
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn btn-primary" onClick={handleCapture} disabled={!faceDetected || countdown !== null}>
+                    <button className="btn btn-primary" onClick={handleCapture} disabled={countdown !== null}>
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 18, height: 18, marginRight: 6 }}>
                         <circle cx="12" cy="12" r="10" />
                         <circle cx="12" cy="12" r="3" />
@@ -561,17 +505,6 @@ const Absensi: React.FC = () => {
             <div className="face-result-container">
               <div className="face-result-photo">
                 <img src={capturedPhoto} alt="Foto absensi" style={{ width: '100%', maxWidth: 400, borderRadius: 'var(--radius-md)' }} />
-                <div className="face-result-timestamp">
-                  {new Date(captureTimestamp).toLocaleString('id-ID', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                  })} WIB
-                </div>
               </div>
               <div className="face-result-actions">
                 <button className="btn-outline" onClick={retakePhoto} disabled={submitting}>

@@ -13,6 +13,9 @@ const QRCodeAdmin: React.FC = () => {
   const [totalPeserta, setTotalPeserta] = useState(0);
   const [attendanceList, setAttendanceList] = useState<any[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [editingAtt, setEditingAtt] = useState<any | null>(null);
+  const [editStatus, setEditStatus] = useState<string>('Hadir');
+  const [editJamMasuk, setEditJamMasuk] = useState<string>('');
 
   // Calendar states
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -29,10 +32,6 @@ const QRCodeAdmin: React.FC = () => {
     const qr = await QRCodeAPI.getToday();
     if (qr && qr.success && qr.data) {
       setTodayQR(qr.data);
-      if (canvasRef.current) {
-        const url = window.location.origin + '/absensi-scan?token=' + qr.data.token;
-        QRCodeLib.toCanvas(canvasRef.current, url, { width: 220, color: { dark: '#0a6599' } });
-      }
     }
     const hist = await QRCodeAPI.getHistory();
     if (hist && hist.success) setHistory(hist.data || []);
@@ -40,6 +39,15 @@ const QRCodeAdmin: React.FC = () => {
     if (users && users.success) setTotalPeserta(users.data.length);
     loadAttendance();
   };
+
+  useEffect(() => {
+    if (todayQR && canvasRef.current) {
+      const url = window.location.origin + '/absensi-scan?token=' + todayQR.token;
+      QRCodeLib.toCanvas(canvasRef.current, url, { width: 220, color: { dark: '#0a6599' } }, (error) => {
+        if (error) console.error('QR Gen Error:', error);
+      });
+    }
+  }, [todayQR]);
 
   const loadAttendance = async () => {
     try {
@@ -136,6 +144,51 @@ const QRCodeAdmin: React.FC = () => {
       showToast('QR Code berhasil di-generate!', 'success');
       load();
     } else showToast(res?.message || 'Gagal generate', 'error');
+  };
+
+  const openEditStatus = (att: any) => {
+    console.log('openEditStatus called with:', att);
+    setEditingAtt(att);
+    setEditStatus(att.status || 'Hadir');
+    // Convert jamMasuk to time input format (HH:MM) - handle both HH:MM and HH.MM
+    const jam = att.jamMasuk ? att.jamMasuk.replace('.', ':') : '00:00';
+    setEditJamMasuk(jam);
+    console.log('Modal should be visible now, editingAtt:', att);
+  };
+
+  const closeEdit = () => {
+    setEditingAtt(null);
+    setEditStatus('Hadir');
+    setEditJamMasuk('');
+  };
+
+  const handleSaveStatus = async () => {
+    if (!editingAtt) return;
+    try {
+      const res = await AttendanceAPI.updateStatus(editingAtt._id, editStatus, editJamMasuk);
+      if (res && res.success) {
+        showToast('Data kehadiran berhasil diperbarui', 'success');
+        closeEdit();
+        // Refresh all data
+        const [attRes] = await Promise.all([
+          AttendanceAPI.getAll(`from=${new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString().split('T')[0]}&to=${new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59).toISOString().split('T')[0]}&limit=1000`),
+          loadAttendance(),
+        ]);
+        if (attRes && attRes.success) {
+          const newData = attRes.data || [];
+          setAttendanceData(newData);
+          // Refresh selectedDayData if a day was selected
+          if (selectedDayData.length > 0) {
+            const selectedDate = selectedDayData[0]?.tanggal.toString().split('T')[0];
+            setSelectedDayData(newData.filter((a: any) => a.tanggal.toString().split('T')[0] === selectedDate));
+          }
+        }
+      } else {
+        showToast(res?.message || 'Gagal memperbarui data', 'error');
+      }
+    } catch (err) {
+      showToast('Gagal memperbarui data', 'error');
+    }
   };
 
   // Helper function to check if time is late - accept both HH:MM and HH.MM formats
@@ -515,17 +568,36 @@ const QRCodeAdmin: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedDayData.map((att, i) => (
-                    <tr key={att._id}>
-                      <td>{i + 1}</td>
-                      <td className="name-cell">{typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown'}</td>
-                      <td>{typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-'}</td>
-                      <td className="time-cell">{att.jamMasuk || '-'}</td>
-                      <td>
-                        <span className={`status-badge status-${isThresholdLoaded ? getStatusWithLate(att).toLowerCase() : att.status?.toLowerCase()}`}>{isThresholdLoaded ? getStatusWithLate(att) : att.status}</span>
-                      </td>
-                    </tr>
-                  ))}
+                  {selectedDayData.map((att, i) => {
+                    console.log(`Row ${i}:`, att);
+                    return (
+                      <tr key={att._id}>
+                        <td>{i + 1}</td>
+                        <td className="name-cell">{typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown'}</td>
+                        <td>{typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-'}</td>
+                        <td className="time-cell">{att.jamMasuk || '-'}</td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span className={`status-badge status-${isThresholdLoaded ? getStatusWithLate(att).toLowerCase() : (att.status || '').toLowerCase()}`}>{isThresholdLoaded ? getStatusWithLate(att) : att.status}</span>
+                            <button
+                              onClick={() => {
+                                console.log('Button clicked for att:', att);
+                                openEditStatus(att);
+                              }}
+                              className="edit-status-btn"
+                              title="Edit status"
+                              style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 6, color: '#0a6599' }}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}>
+                                <path d="M12 20h9" />
+                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -533,20 +605,129 @@ const QRCodeAdmin: React.FC = () => {
 
           <div className="summary-stats">
             <div className="stat-box">
-              <div className="stat-label">Total Peserta</div>
-              <div className="stat-value">{getTotalPeserta()}</div>
+              <div className="stat-label">Total Hadir</div>
+              <div className="stat-value">
+                {
+                  selectedDayData.filter((a) => {
+                    const s = (a.status || '').toLowerCase();
+                    return s === 'hadir' || s === 'telat';
+                  }).length
+                }
+              </div>
             </div>
             <div className="stat-box">
-              <div className="stat-label">Hari Ini</div>
-              <div className="stat-value">{getAttendanceCount(new Date().getDate())}</div>
+              <div className="stat-label">Total Izin</div>
+              <div className="stat-value">{selectedDayData.filter((a) => (a.status || '').toLowerCase() === 'izin').length}</div>
             </div>
             <div className="stat-box">
-              <div className="stat-label">Bulan Ini</div>
-              <div className="stat-value">{attendanceData.length}</div>
+              <div className="stat-label">Total Alfa</div>
+              <div className="stat-value">
+                {
+                  selectedDayData.filter((a) => {
+                    const s = (a.status || '').toLowerCase();
+                    return s === 'alpha' || s === 'alpa';
+                  }).length
+                }
+              </div>
             </div>
           </div>
         </div>
       </div>
+      {editingAtt && (
+        <>
+          {console.log('MODAL RENDERING - editingAtt:', editingAtt)}
+          <div className="modal-overlay active" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+            <div className="modal" style={{ background: 'white', borderRadius: 12, padding: 24, width: '100%', maxWidth: 400, boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
+              <div style={{ marginBottom: 20 }}>
+                <h3 style={{ margin: 0, marginBottom: 4, fontSize: 18, fontWeight: 700, color: '#1e293b' }}>Edit Kehadiran</h3>
+                <p style={{ margin: 0, fontSize: 14, color: '#64748b' }}>{typeof editingAtt.userId === 'string' ? 'Unknown' : editingAtt.userId?.name}</p>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Jam Masuk:</label>
+                <input
+                  type="time"
+                  value={editJamMasuk}
+                  onChange={(e) => setEditJamMasuk(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontFamily: 'inherit',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Pilih Status:</label>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontFamily: 'inherit',
+                    boxSizing: 'border-box',
+                    background: 'white',
+                  }}
+                >
+                  <option value="Hadir">Hadir</option>
+                  <option value="Telat">Telat</option>
+                  <option value="Izin">Izin</option>
+                  <option value="Alpha">Alpha</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  onClick={handleSaveStatus}
+                  style={{
+                    flex: 1,
+                    padding: '10px 14px',
+                    background: '#22c55e',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.background = '#16a34a')}
+                  onMouseOut={(e) => (e.currentTarget.style.background = '#22c55e')}
+                >
+                  Simpan
+                </button>
+                <button
+                  onClick={closeEdit}
+                  style={{
+                    flex: 1,
+                    padding: '10px 14px',
+                    background: '#e2e8f0',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: '#475569',
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.background = '#cbd5e1')}
+                  onMouseOut={(e) => (e.currentTarget.style.background = '#e2e8f0')}
+                >
+                  Batal
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 };

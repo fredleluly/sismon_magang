@@ -171,38 +171,8 @@
 }
 
 /* Overlay */
-.face-oval-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 10;
-  pointer-events: none; /* Let clicks pass through if needed */
-}
+/* Overlay removed */
 
-.face-oval-svg {
-  width: 100%;
-  height: 100%;
-}
-
-.face-detection-status {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
-  padding: 6px 16px;
-  border-radius: 20px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.face-detection-status.detected {
-  background: rgba(34, 197, 94, 0.9);
-}
 
 .face-countdown-overlay {
   position: absolute;
@@ -265,17 +235,7 @@
   box-shadow: var(--shadow-md);
 }
 
-.face-result-timestamp {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background: rgba(0,0,0,0.6);
-  color: white;
-  padding: 0.5rem;
-  font-size: 0.75rem;
-  text-align: center;
-}
+/* timestamp is now embedded as watermark in the photo canvas */
 
 .face-result-actions {
   display: flex;
