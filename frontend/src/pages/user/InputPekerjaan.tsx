@@ -49,6 +49,24 @@ const InputPekerjaan: React.FC = () => {
     } else showToast(res?.message || 'Gagal mengirim', 'error');
   };
 
+  const submitAllPending = async () => {
+    if (pendingData.length === 0) return;
+    if (!confirm(`Kirim final semua ${pendingData.length} data draft?`)) return;
+    let success = 0;
+    let fail = 0;
+    for (const item of pendingData) {
+      const res = await WorkLogAPI.submit(item._id);
+      if (res && res.success) success++;
+      else fail++;
+    }
+    if (fail === 0) {
+      showToast(`${success} data berhasil dikirim final!`, 'success');
+    } else {
+      showToast(`${success} berhasil, ${fail} gagal dikirim`, 'error');
+    }
+    loadPending();
+  };
+
   const deletePending = async (id: string) => {
     if (!confirm('Hapus data pending ini?')) return;
     const res = await WorkLogAPI.delete(id);
@@ -130,7 +148,14 @@ const InputPekerjaan: React.FC = () => {
       <div className="pending-list-card">
         <div className="pending-header">
           <h3>Data Pending</h3>
-          <span className="pending-count">{pendingData.length}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="pending-count">{pendingData.length}</span>
+            {pendingData.length > 1 && (
+              <button className="btn-send" onClick={submitAllPending} style={{ fontSize: '12px', padding: '4px 12px' }}>
+                Kirim Semua
+              </button>
+            )}
+          </div>
         </div>
         <p className="pending-subtitle">Data yang belum dikirim final.</p>
         <div>
