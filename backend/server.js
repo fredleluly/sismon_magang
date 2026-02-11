@@ -20,6 +20,9 @@ app.use(morgan('dev'));
 // Serve frontend static files
 app.use(express.static(path.join(__dirname, '../pln-magang')));
 
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // ===== ROUTES =====
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
