@@ -94,4 +94,27 @@ router.put('/profile', auth, async (req, res) => {
   }
 });
 
+// POST /api/auth/change-password — change user password
+router.post('/change-password', auth, async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    const user = req.user;
+
+    if (!newPassword) {
+      return res.status(400).json({ success: false, message: 'Password baru wajib diisi.' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password minimal 6 karakter.' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ success: true, message: 'Password berhasil diubah.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;

@@ -284,12 +284,14 @@ const MonitoringPekerjaan: React.FC = () => {
     try {
       let dataToDownload: WorkLog[] = [];
       let dateRangeStr = '';
+      let filename = '';
 
       if (filterType === 'harian') {
         const selectedDate = new Date(exportSelectedDate);
         const dateStr = toDateString(selectedDate);
         dataToDownload = workData.filter((w) => w.tanggal.split('T')[0] === dateStr);
         dateRangeStr = selectedDate.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        filename = `Statistik-Pekerjaan-Today-${exportSelectedDate}.xlsx`;
       } else if (filterType === 'mingguan') {
         dataToDownload = workData;
         const now = new Date();
@@ -297,12 +299,14 @@ const MonitoringPekerjaan: React.FC = () => {
         const weekStart = new Date(now.setDate(first));
         const weekEnd = new Date(now.setDate(first + 6));
         dateRangeStr = `${toDateString(weekStart)} sampai ${toDateString(weekEnd)}`;
+        filename = `Statistik-Pekerjaan-Weekly-${toDateString(weekStart)}-sampai-${toDateString(weekEnd)}.xlsx`;
       } else if (filterType === 'bulanan') {
         dataToDownload = workData;
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         const monthName = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][month];
         dateRangeStr = `${monthName} ${year}`;
+        filename = `Statistik-Pekerjaan-Monthly-${monthName}-${year}.xlsx`;
       } else if (filterType === 'custom') {
         if (!tempExportDateStart || !tempExportDateEnd) {
           showToast('Pilih rentang tanggal terlebih dahulu', 'error');
@@ -313,6 +317,7 @@ const MonitoringPekerjaan: React.FC = () => {
           return workDate >= tempExportDateStart && workDate <= tempExportDateEnd;
         });
         dateRangeStr = `${tempExportDateStart} sampai ${tempExportDateEnd}`;
+        filename = `Statistik-Pekerjaan-Custom-${tempExportDateStart}-sampai-${tempExportDateEnd}.xlsx`;
       }
 
       if (dataToDownload.length === 0) {
@@ -338,7 +343,6 @@ const MonitoringPekerjaan: React.FC = () => {
       XLSX.utils.book_append_sheet(wb, ws, 'Monitoring');
       ws['!cols'] = [{ wch: 5 }, { wch: 12 }, { wch: 18 }, { wch: 20 }, { wch: 8 }, { wch: 8 }, { wch: 8 }];
 
-      const filename = `Monitor-Pekerjaan-${toDateString(new Date())}.xlsx`;
       XLSX.writeFile(wb, filename);
       showToast('Excel berhasil diunduh!', 'success');
       setIsExportModalOpen(false);
