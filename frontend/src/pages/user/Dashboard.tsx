@@ -16,10 +16,11 @@ interface JobDeskRecap {
 }
 
 const JOB_COLORS: Record<string, string> = {
+  'Sortir': '#4db8e8', 'Register': '#0a6599', 'Pencopotan Steples': '#8b5cf6',
+  'Scanning': '#22c55e', 'Rekardus': '#fb923c', 'Stikering': '#ffd600',
   'Sortir Dokumen': '#4db8e8', 'Registering': '#0a6599', 'Melepas Step': '#8b5cf6',
-  'Scanning': '#22c55e', 'Menyusun ke Kardus': '#fb923c', 'Stikering': '#ffd600',
   'Melakukan Scanning': '#22c55e', 'Menginput data arsipan (Registering)': '#0a6599',
-  'Menyusun arsip kedalam kardus': '#fb923c', 'Lainnya': '#94a3b8',
+  'Menyusun arsip kedalam kardus': '#fb923c', 'Menyusun ke Kardus': '#fb923c', 'Lainnya': '#94a3b8',
 };
 
 function animateCounter(el: HTMLElement | null, target: number) {
@@ -42,7 +43,7 @@ const Dashboard: React.FC = () => {
   const { showToast } = useToast();
   const [data, setData] = useState<UserDashboard | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
-  
+
   // Dashboard filter states
   const [dashboardFilterType, setDashboardFilterType] = useState<'bulanan' | 'custom'>('bulanan');
   const [dashboardDateRangeStart, setDashboardDateRangeStart] = useState<string>('');
@@ -52,7 +53,7 @@ const Dashboard: React.FC = () => {
   const [dashboardTempDateRangeStart, setDashboardTempDateRangeStart] = useState<string>('');
   const [dashboardTempDateRangeEnd, setDashboardTempDateRangeEnd] = useState<string>('');
   const [dashboardIsSelectingStart, setDashboardIsSelectingStart] = useState(true);
-  
+
   // Recap filter states
   const [recapFilterType, setRecapFilterType] = useState<'bulanan' | 'custom'>('bulanan');
   const [recapDateRangeStart, setRecapDateRangeStart] = useState<string>('');
@@ -233,7 +234,7 @@ const Dashboard: React.FC = () => {
       const res = await WorkLogAPI.getAll(`from=${range.from}&to=${range.to}&status=Selesai&limit=1000`);
       if (res && res.success) {
         const works = res.data || [];
-        
+
         // Aggregate data
         const totalBerkas = works.reduce((sum, w) => sum + (w.berkas || 0), 0);
         const totalBuku = works.reduce((sum, w) => sum + (w.buku || 0), 0);
@@ -525,15 +526,15 @@ const Dashboard: React.FC = () => {
       if (weeklyChart.current) weeklyChart.current.destroy();
       const wp = data.weeklyProgress || [];
       const labels = wp.map(w => { const d = new Date(w._id); return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }); });
-      
+
       weeklyChart.current = new Chart(weeklyRef.current, {
         type: 'line',
         data: {
           labels: labels.length ? labels : ['1', '2', '3', '4', '5'],
           datasets: [
-            { 
-              label: 'Berkas', 
-              data: wp.map(w => w.berkas || 0), 
+            {
+              label: 'Berkas',
+              data: wp.map(w => w.berkas || 0),
               borderColor: '#4db8e8',
               backgroundColor: 'rgba(77, 184, 232, 0.1)',
               borderWidth: 2.5,
@@ -545,9 +546,9 @@ const Dashboard: React.FC = () => {
               tension: 0.4,
               fill: false,
             },
-            { 
-              label: 'Buku', 
-              data: wp.map(w => w.buku || 0), 
+            {
+              label: 'Buku',
+              data: wp.map(w => w.buku || 0),
               borderColor: '#ffd600',
               backgroundColor: 'rgba(255, 214, 0, 0.1)',
               borderWidth: 2.5,
@@ -559,9 +560,9 @@ const Dashboard: React.FC = () => {
               tension: 0.4,
               fill: false,
             },
-            { 
-              label: 'Bundle', 
-              data: wp.map(w => w.bundle || 0), 
+            {
+              label: 'Bundle',
+              data: wp.map(w => w.bundle || 0),
               borderColor: '#22c55e',
               backgroundColor: 'rgba(34, 197, 94, 0.1)',
               borderWidth: 2.5,
@@ -575,13 +576,13 @@ const Dashboard: React.FC = () => {
             },
           ],
         },
-        options: { 
-          responsive: true, 
+        options: {
+          responsive: true,
           maintainAspectRatio: false,
           clip: false,
-          plugins: { 
-            legend: { 
-              display: true, 
+          plugins: {
+            legend: {
+              display: true,
               position: 'bottom' as const,
               labels: {
                 color: '#64748b',
@@ -592,30 +593,30 @@ const Dashboard: React.FC = () => {
                 padding: 12,
               }
             },
-            tooltip: { 
+            tooltip: {
               enabled: true,
-              backgroundColor: 'rgba(15, 23, 42, 0.9)', 
-              titleColor: '#fff', 
-              bodyColor: '#e2e8f0', 
-              borderColor: '#475569', 
-              borderWidth: 1, 
-              cornerRadius: 6, 
+              backgroundColor: 'rgba(15, 23, 42, 0.9)',
+              titleColor: '#fff',
+              bodyColor: '#e2e8f0',
+              borderColor: '#475569',
+              borderWidth: 1,
+              cornerRadius: 6,
               padding: 10,
               displayColors: true,
-            } 
-          }, 
-          scales: { 
-            x: { 
+            }
+          },
+          scales: {
+            x: {
               offset: false,
-              grid: { display: false }, 
-              ticks: { color: '#94a3b8', font: { size: 11, weight: 'normal' as const } } 
-            }, 
-            y: { 
-              grid: { color: 'rgba(226,232,240,0.3)' }, 
+              grid: { display: false },
+              ticks: { color: '#94a3b8', font: { size: 11, weight: 'normal' as const } }
+            },
+            y: {
+              grid: { color: 'rgba(226,232,240,0.3)' },
               ticks: { color: '#94a3b8', font: { size: 10 } },
-              beginAtZero: true 
-            } 
-          } 
+              beginAtZero: true
+            }
+          }
         },
       });
     }
@@ -645,7 +646,7 @@ const Dashboard: React.FC = () => {
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div className="page-header"><h1>Dashboard</h1></div>
-        
+
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: '4px' }}>
             <button
@@ -828,14 +829,14 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
       <div className="stats-grid">
-        <div className="stat-card"><div className="stat-info"><div className="stat-label">Total Berkas</div><div className="stat-value" ref={berkasRef}>0</div><div className="stat-change"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span>+12% dari minggu lalu</span></div></div><div className="stat-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg></div></div>
-        <div className="stat-card"><div className="stat-info"><div className="stat-label">Total Buku</div><div className="stat-value" ref={bukuRef}>0</div><div className="stat-change"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span>+8% dari minggu lalu</span></div></div><div className="stat-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg></div></div>
-        <div className="stat-card"><div className="stat-info"><div className="stat-label">Total Bundle</div><div className="stat-value" ref={bundleRef}>0</div><div className="stat-change"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span>+15% dari minggu lalu</span></div></div><div className="stat-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></div></div>
+        <div className="stat-card"><div className="stat-info"><div className="stat-label">Total Berkas</div><div className="stat-value" ref={berkasRef}>0</div><div className="stat-change"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg><span>+12% dari minggu lalu</span></div></div><div className="stat-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /></svg></div></div>
+        <div className="stat-card"><div className="stat-info"><div className="stat-label">Total Buku</div><div className="stat-value" ref={bukuRef}>0</div><div className="stat-change"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg><span>+8% dari minggu lalu</span></div></div><div className="stat-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></svg></div></div>
+        <div className="stat-card"><div className="stat-info"><div className="stat-label">Total Bundle</div><div className="stat-value" ref={bundleRef}>0</div><div className="stat-change"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg><span>+15% dari minggu lalu</span></div></div><div className="stat-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m7.5 4.27 9 5.15" /><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" /></svg></div></div>
       </div>
       <div className="charts-row">
         <div className="chart-card"><div className="chart-header"><h3>Progres Kerja</h3><p>Jumlah item yang diproses per hari</p></div><div className="chart-canvas-wrapper"><canvas ref={weeklyRef} /></div></div>
-        <div className="chart-card"><div className="chart-header"><h3>Distribusi Pekerjaan</h3><p>Rincian jenis pekerjaan</p></div><div className="chart-canvas-wrapper" style={{height:220}}><canvas ref={donutRef} /></div>
-          <div className="donut-legend">{donutLabels.map((l,i) => <div key={l} className="legend-item"><span className="legend-dot" style={{background:donutColors[i]}} />{l}</div>)}</div>
+        <div className="chart-card"><div className="chart-header"><h3>Distribusi Pekerjaan</h3><p>Rincian jenis pekerjaan</p></div><div className="chart-canvas-wrapper" style={{ height: 220 }}><canvas ref={donutRef} /></div>
+          <div className="donut-legend">{donutLabels.map((l, i) => <div key={l} className="legend-item"><span className="legend-dot" style={{ background: donutColors[i] }} />{l}</div>)}</div>
         </div>
       </div>
       <div className="activity-card">
@@ -957,69 +958,69 @@ const Dashboard: React.FC = () => {
                           boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
                           minWidth: '580px',
                         }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <button onClick={handleDatePickerPrevMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}>←</button>
-                        <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Select Date Range</span>
-                        <button onClick={handleDatePickerNextMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}>→</button>
-                      </div>
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                          <button onClick={handleDatePickerPrevMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}>←</button>
+                          <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Select Date Range</span>
+                          <button onClick={handleDatePickerNextMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}>→</button>
+                        </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
-                        {renderCalendarMonth(0)}
-                        {renderCalendarMonth(1)}
-                      </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
+                          {renderCalendarMonth(0)}
+                          {renderCalendarMonth(1)}
+                        </div>
 
-                      <div style={{ marginBottom: '12px', fontSize: '12px', color: '#64748b' }}>
-                        {tempDateRangeStart && !tempDateRangeEnd && <p>Select end date</p>}
-                        {tempDateRangeStart && tempDateRangeEnd && <p>{tempDateRangeStart} to {tempDateRangeEnd}</p>}
-                      </div>
+                        <div style={{ marginBottom: '12px', fontSize: '12px', color: '#64748b' }}>
+                          {tempDateRangeStart && !tempDateRangeEnd && <p>Select end date</p>}
+                          {tempDateRangeStart && tempDateRangeEnd && <p>{tempDateRangeStart} to {tempDateRangeEnd}</p>}
+                        </div>
 
-                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                        <button
-                          onClick={() => {
-                            setIsSelectingDateRange(false);
-                            setTempDateRangeStart('');
-                            setTempDateRangeEnd('');
-                            setIsSelectingStart(true);
-                          }}
-                          style={{
-                            padding: '6px 12px',
-                            background: '#e2e8f0',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                          }}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (tempDateRangeStart && tempDateRangeEnd) {
-                              setRecapDateRangeStart(tempDateRangeStart);
-                              setRecapDateRangeEnd(tempDateRangeEnd);
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                          <button
+                            onClick={() => {
                               setIsSelectingDateRange(false);
+                              setTempDateRangeStart('');
+                              setTempDateRangeEnd('');
                               setIsSelectingStart(true);
-                            } else {
-                              showToast('Select start and end dates first', 'error');
-                            }
-                          }}
-                          style={{
-                            padding: '6px 12px',
-                            background: '#0a6599',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                          }}
-                        >
-                          Apply
-                        </button>
+                            }}
+                            style={{
+                              padding: '6px 12px',
+                              background: '#e2e8f0',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (tempDateRangeStart && tempDateRangeEnd) {
+                                setRecapDateRangeStart(tempDateRangeStart);
+                                setRecapDateRangeEnd(tempDateRangeEnd);
+                                setIsSelectingDateRange(false);
+                                setIsSelectingStart(true);
+                              } else {
+                                showToast('Select start and end dates first', 'error');
+                              }
+                            }}
+                            style={{
+                              padding: '6px 12px',
+                              background: '#0a6599',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                            }}
+                          >
+                            Apply
+                          </button>
+                        </div>
                       </div>
-                    </div>
                     </>
                   )}
                 </div>
@@ -1052,39 +1053,39 @@ const Dashboard: React.FC = () => {
           )}
         </div>
         {recapData.length === 0 ? (
-          <div style={{textAlign:'center',padding:40,color:'var(--gray-400)'}}>Belum ada data pekerjaan untuk periode ini. Mulai input pekerjaan Anda!</div>
+          <div style={{ textAlign: 'center', padding: 40, color: 'var(--gray-400)' }}>Belum ada data pekerjaan untuk periode ini. Mulai input pekerjaan Anda!</div>
         ) : (
-          <div style={{overflowX:'auto'}}>
-            <table className="activity-table" style={{width:'100%',borderCollapse:'collapse'}}>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="activity-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{background:'linear-gradient(135deg, #e6f4fa 0%, #f0fdf4 100%)',borderBottom:'2px solid #cbd5e1'}}>
-                  <th style={{padding:'12px',textAlign:'left',fontWeight:'600'}}>No</th>
-                  <th style={{padding:'12px',textAlign:'left',fontWeight:'600'}}>Job Desk</th>
-                  <th style={{padding:'12px',textAlign:'right',fontWeight:'600'}}>Berkas</th>
-                  <th style={{padding:'12px',textAlign:'right',fontWeight:'600'}}>Buku</th>
-                  <th style={{padding:'12px',textAlign:'right',fontWeight:'600'}}>Bundle</th>
-                  <th style={{padding:'12px',textAlign:'right',fontWeight:'600'}}>Total</th>
+                <tr style={{ background: 'linear-gradient(135deg, #e6f4fa 0%, #f0fdf4 100%)', borderBottom: '2px solid #cbd5e1' }}>
+                  <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>No</th>
+                  <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Job Desk</th>
+                  <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>Berkas</th>
+                  <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>Buku</th>
+                  <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>Bundle</th>
+                  <th style={{ padding: '12px', textAlign: 'right', fontWeight: '600' }}>Total</th>
                 </tr>
               </thead>
               <tbody>
                 {recapData.map((recap, index) => (
-                  <tr key={index} style={{borderBottom:'1px solid #e2e8f0',transition:'background 0.2s'}}>
-                    <td style={{padding:'12px',textAlign:'left'}}>{index + 1}</td>
-                    <td style={{padding:'12px',textAlign:'left'}}>{recap.jobDesk}</td>
-                    <td style={{padding:'12px',textAlign:'right',color:'#0a6599'}}>{recap.berkas}</td>
-                    <td style={{padding:'12px',textAlign:'right',color:'#0a6599'}}>{recap.buku}</td>
-                    <td style={{padding:'12px',textAlign:'right',color:'#0a6599'}}>{recap.bundle}</td>
-                    <td style={{padding:'12px',textAlign:'right',color:'#0a6599',fontWeight:'600',background:'#f0fdf4'}}>{recap.total}</td>
+                  <tr key={index} style={{ borderBottom: '1px solid #e2e8f0', transition: 'background 0.2s' }}>
+                    <td style={{ padding: '12px', textAlign: 'left' }}>{index + 1}</td>
+                    <td style={{ padding: '12px', textAlign: 'left' }}>{recap.jobDesk}</td>
+                    <td style={{ padding: '12px', textAlign: 'right', color: '#0a6599' }}>{recap.berkas}</td>
+                    <td style={{ padding: '12px', textAlign: 'right', color: '#0a6599' }}>{recap.buku}</td>
+                    <td style={{ padding: '12px', textAlign: 'right', color: '#0a6599' }}>{recap.bundle}</td>
+                    <td style={{ padding: '12px', textAlign: 'right', color: '#0a6599', fontWeight: '600', background: '#f0fdf4' }}>{recap.total}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr style={{background:'linear-gradient(135deg, #e6f4fa 0%, #f0fdf4 100%)',borderTop:'2px solid #cbd5e1',fontWeight:'700'}}>
-                  <td colSpan={2} style={{padding:'12px',textAlign:'left'}}>TOTAL</td>
-                  <td style={{padding:'12px',textAlign:'right',background:'#e6f4fa',color:'#0a6599'}}>{recapData.reduce((sum, r) => sum + r.berkas, 0)}</td>
-                  <td style={{padding:'12px',textAlign:'right',background:'#e6f4fa',color:'#0a6599'}}>{recapData.reduce((sum, r) => sum + r.buku, 0)}</td>
-                  <td style={{padding:'12px',textAlign:'right',background:'#e6f4fa',color:'#0a6599'}}>{recapData.reduce((sum, r) => sum + r.bundle, 0)}</td>
-                  <td style={{padding:'12px',textAlign:'right',background:'#e6f4fa',color:'#0a6599'}}>{recapData.reduce((sum, r) => sum + r.total, 0)}</td>
+                <tr style={{ background: 'linear-gradient(135deg, #e6f4fa 0%, #f0fdf4 100%)', borderTop: '2px solid #cbd5e1', fontWeight: '700' }}>
+                  <td colSpan={2} style={{ padding: '12px', textAlign: 'left' }}>TOTAL</td>
+                  <td style={{ padding: '12px', textAlign: 'right', background: '#e6f4fa', color: '#0a6599' }}>{recapData.reduce((sum, r) => sum + r.berkas, 0)}</td>
+                  <td style={{ padding: '12px', textAlign: 'right', background: '#e6f4fa', color: '#0a6599' }}>{recapData.reduce((sum, r) => sum + r.buku, 0)}</td>
+                  <td style={{ padding: '12px', textAlign: 'right', background: '#e6f4fa', color: '#0a6599' }}>{recapData.reduce((sum, r) => sum + r.bundle, 0)}</td>
+                  <td style={{ padding: '12px', textAlign: 'right', background: '#e6f4fa', color: '#0a6599' }}>{recapData.reduce((sum, r) => sum + r.total, 0)}</td>
                 </tr>
               </tfoot>
             </table>

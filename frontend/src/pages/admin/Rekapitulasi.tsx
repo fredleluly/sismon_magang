@@ -29,11 +29,11 @@ interface PivotRow {
 }
 
 const JENIS_LIST = [
-  'Sortir Dokumen',
-  'Menginput Data Arsip (Register)',
-  'Melepas Steples',
-  'Melakukan Scanning',
-  'Menyusun Arsip Kedalam Kardus',
+  'Sortir',
+  'Register',
+  'Pencopotan Steples',
+  'Scanning',
+  'Rekardus',
   'Stikering',
 ];
 

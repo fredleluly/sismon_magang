@@ -114,11 +114,11 @@ const InputPekerjaan: React.FC = () => {
             <label>Jenis Pekerjaan (Jobdesk)</label>
             <select value={jenis} onChange={(e) => setJenis(e.target.value)} required>
               <option value="">Pilih Pekerjaan (Jobdesk)</option>
-              <option value="Sortir Dokumen">Sortir Dokumen</option>
-              <option value="Menginput data arsipan (Registering)">Menginput data arsipan (Registering)</option>
-              <option value="Melepas Step">Melepas Step</option>
-              <option value="Melakukan Scanning">Melakukan Scanning</option>
-              <option value="Menyusun arsip kedalam kardus">Menyusun arsip kedalam kardus</option>
+              <option value="Sortir">Sortir</option>
+              <option value="Register">Register</option>
+              <option value="Pencopotan Steples">Pencopotan Steples</option>
+              <option value="Scanning">Scanning</option>
+              <option value="Rekardus">Rekardus</option>
               <option value="Stikering">Stikering</option>
             </select>
           </div>
