@@ -163,9 +163,21 @@ const QRCodeAdmin: React.FC = () => {
       const res = await AttendanceAPI.updateStatus(editingAtt._id, editStatus, editJamMasuk);
       if (res && res.success) {
         showToast('Data kehadiran berhasil diperbarui', 'success');
-        await loadAttendanceData();
-        await loadAttendance();
         closeEdit();
+        // Refresh all data
+        const [attRes] = await Promise.all([
+          AttendanceAPI.getAll(`from=${new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString().split('T')[0]}&to=${new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59).toISOString().split('T')[0]}&limit=1000`),
+          loadAttendance(),
+        ]);
+        if (attRes && attRes.success) {
+          const newData = attRes.data || [];
+          setAttendanceData(newData);
+          // Refresh selectedDayData if a day was selected
+          if (selectedDayData.length > 0) {
+            const selectedDate = selectedDayData[0]?.tanggal.toString().split('T')[0];
+            setSelectedDayData(newData.filter((a: any) => a.tanggal.toString().split('T')[0] === selectedDate));
+          }
+        }
       } else {
         showToast(res?.message || 'Gagal memperbarui data', 'error');
       }
@@ -619,7 +631,7 @@ const QRCodeAdmin: React.FC = () => {
       {editingAtt && (
         <>
           {console.log('MODAL RENDERING - editingAtt:', editingAtt)}
-          <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="modal-overlay active" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
             <div className="modal" style={{ background: 'white', borderRadius: 12, padding: 24, width: '100%', maxWidth: 400, boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
               <div style={{ marginBottom: 20 }}>
                 <h3 style={{ margin: 0, marginBottom: 4, fontSize: 18, fontWeight: 700, color: '#1e293b' }}>Edit Kehadiran</h3>
