@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const mongoose = require('mongoose');
 const WorkLog = require('../models/WorkLog');
 const { auth, adminOnly } = require('../middleware/auth');
 
@@ -22,6 +23,77 @@ router.get('/', auth, async (req, res) => {
       .limit(parseInt(req.query.limit) || 100);
 
     res.json({ success: true, data: logs });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/work-logs/recap — admin recap: pivot per user per jenis
+router.get('/recap', auth, adminOnly, async (req, res) => {
+  try {
+    const filter = { status: 'Selesai' };
+    if (req.query.from || req.query.to) {
+      filter.tanggal = {};
+      if (req.query.from) filter.tanggal.$gte = new Date(req.query.from);
+      if (req.query.to) {
+        const toDate = new Date(req.query.to);
+        toDate.setHours(23, 59, 59, 999);
+        filter.tanggal.$lte = toDate;
+      }
+    }
+    if (req.query.userIds) {
+      const ids = req.query.userIds.split(',').filter(Boolean).map(id => new mongoose.Types.ObjectId(id));
+      if (ids.length) filter.userId = { $in: ids };
+    }
+
+    const data = await WorkLog.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: { userId: '$userId', jenis: '$jenis' },
+          berkas: { $sum: '$berkas' },
+          buku: { $sum: '$buku' },
+          bundle: { $sum: '$bundle' },
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id.userId',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      { $unwind: '$user' },
+      {
+        $project: {
+          _id: 0,
+          userId: '$_id.userId',
+          userName: '$user.name',
+          jenis: '$_id.jenis',
+          berkas: 1,
+          buku: 1,
+          bundle: 1,
+        },
+      },
+      { $sort: { userName: 1, jenis: 1 } },
+    ]);
+
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/work-logs/stats/me — user's own totals
+router.get('/stats/me', auth, async (req, res) => {
+  try {
+    const stats = await WorkLog.aggregate([
+      { $match: { userId: req.userId, status: 'Selesai' } },
+      { $group: { _id: null, berkas: { $sum: '$berkas' }, buku: { $sum: '$buku' }, bundle: { $sum: '$bundle' }, total: { $sum: 1 } } }
+    ]);
+    const s = stats[0] || { berkas: 0, buku: 0, bundle: 0, total: 0 };
+    res.json({ success: true, data: s });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -107,20 +179,6 @@ router.delete('/:id', auth, async (req, res) => {
 
     await log.deleteOne();
     res.json({ success: true, message: 'Data berhasil dihapus.' });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// GET /api/work-logs/stats/me — user's own totals
-router.get('/stats/me', auth, async (req, res) => {
-  try {
-    const stats = await WorkLog.aggregate([
-      { $match: { userId: req.userId, status: 'Selesai' } },
-      { $group: { _id: null, berkas: { $sum: '$berkas' }, buku: { $sum: '$buku' }, bundle: { $sum: '$bundle' }, total: { $sum: 1 } } }
-    ]);
-    const s = stats[0] || { berkas: 0, buku: 0, bundle: 0, total: 0 };
-    res.json({ success: true, data: s });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

@@ -19,6 +19,7 @@ import DataPeserta from './pages/admin/DataPeserta';
 import LogAktivitas from './pages/admin/LogAktivitas';
 import KelolaKeluhan from './pages/admin/KelolaKeluhan';
 import AttendanceCalendar from './pages/admin/AttendanceCalendar';
+import Rekapitulasi from './pages/admin/Rekapitulasi';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -84,6 +85,7 @@ const AppRoutes: React.FC = () => {
         <Route path="log" element={<LogAktivitas />} />
         <Route path="keluhan" element={<KelolaKeluhan />} />
         <Route path="absensi" element={<AttendanceCalendar />} />
+        <Route path="rekapitulasi" element={<Rekapitulasi />} />
       </Route>
 
       {/* Default redirect */}

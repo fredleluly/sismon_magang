@@ -49,7 +49,7 @@ app.use((err, req, res, next) => {
 // ===== CONNECT DB & START =====
 const PORT = process.env.PORT || 5000;
 const HTTPS_PORT = process.env.HTTPS_PORT || 5443;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/pln_magang_monitoring';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://breaklimited12_db_user:00FMxh3cSnXf3CQ7@ac-9wljaxr-shard-00-00.ha9nmsu.mongodb.net:27017,ac-9wljaxr-shard-00-01.ha9nmsu.mongodb.net:27017,ac-9wljaxr-shard-00-02.ha9nmsu.mongodb.net:27017/pln_magang_monitoring?ssl=true&replicaSet=atlas-7ro3bk-shard-0&authSource=admin&retryWrites=true&w=majority&appName=cluster-magang';
 
 mongoose
   .connect(MONGODB_URI)
