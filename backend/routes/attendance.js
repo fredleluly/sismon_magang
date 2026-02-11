@@ -224,7 +224,7 @@ router.put('/:id/status', auth, adminOnly, async (req, res) => {
     const { status, jamMasuk } = req.body;
     if (!status) return res.status(400).json({ success: false, message: 'Status wajib diisi.' });
 
-    const allowed = ['Hadir', 'Telat', 'Izin', 'Sakit', 'Alpha'];
+    const allowed = ['Hadir', 'Telat', 'Izin', 'Sakit', 'Alpha', 'Hari Libur'];
     if (!allowed.includes(status)) return res.status(400).json({ success: false, message: 'Status tidak valid.' });
 
     const att = await Attendance.findById(req.params.id);

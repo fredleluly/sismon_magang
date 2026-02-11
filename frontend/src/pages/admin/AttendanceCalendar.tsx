@@ -699,6 +699,7 @@ const AttendanceCalendar: React.FC = () => {
                 <option value="Telat">Telat</option>
                 <option value="Izin">Izin</option>
                 <option value="Alpha">Alpa</option>
+                <option value="Hari Libur">Hari Libur</option>
               </select>
             </div>
 
