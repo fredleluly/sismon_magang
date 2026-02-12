@@ -182,7 +182,7 @@ export const QRCodeAPI = {
 
 // ===== DASHBOARD API =====
 export const DashboardAPI = {
-  getAdmin: () => API.get<AdminDashboard>('/dashboard/admin'),
+  getAdmin: (query = '') => API.get<AdminDashboard>(`/dashboard/admin${query}`),
   getUser: () => API.get<UserDashboard>('/dashboard/user'),
 };
 

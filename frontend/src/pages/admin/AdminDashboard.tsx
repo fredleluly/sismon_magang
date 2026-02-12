@@ -50,12 +50,46 @@ const AdminDashboard: React.FC = () => {
   const donutRef = useRef<HTMLCanvasElement>(null);
   const charts = useRef<Chart[]>([]);
 
-  useEffect(() => {
-    DashboardAPI.getAdmin().then((res) => {
+  // Filter States
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [filterType, setFilterType] = useState<'bulanan' | 'custom'>('bulanan');
+  const [dateRangeStart, setDateRangeStart] = useState<string>('');
+  const [dateRangeEnd, setDateRangeEnd] = useState<string>('');
+  const [isSelectingDateRange, setIsSelectingDateRange] = useState(false);
+  const [datePickerMonth, setDatePickerMonth] = useState(new Date());
+  const [isSelectingStart, setIsSelectingStart] = useState(true);
+
+  // Helper to get date string YYYY-MM-DD
+  const toDateString = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const loadDashboardData = async () => {
+    let q = '';
+    if (filterType === 'bulanan') {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const start = new Date(year, month, 1);
+      const end = new Date(year, month + 1, 0);
+      q = `?startDate=${toDateString(start)}&endDate=${toDateString(end)}`;
+    } else if (filterType === 'custom' && dateRangeStart && dateRangeEnd) {
+      q = `?startDate=${dateRangeStart}&endDate=${dateRangeEnd}`;
+    }
+
+    DashboardAPI.getAdmin(q).then((res) => {
       if (res && res.success) setData(res.data);
       else showToast("Gagal memuat dashboard", "error");
     });
+  };
 
+  useEffect(() => {
+    loadDashboardData();
+  }, [filterType, currentDate, dateRangeStart, dateRangeEnd]);
+
+  useEffect(() => {
     // Load total complaints
     loadComplaints();
     loadRankings();
@@ -67,6 +101,14 @@ const AdminDashboard: React.FC = () => {
       charts.current.forEach((c) => c.destroy());
     };
   }, []);
+
+  const handleFilterChange = (type: 'bulanan' | 'custom') => {
+    setFilterType(type);
+    if(type === 'bulanan') setCurrentDate(new Date());
+  };
+
+  const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+  const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
 
   const loadComplaints = async () => {
     try {
@@ -288,37 +330,32 @@ const AdminDashboard: React.FC = () => {
     charts.current.forEach((c) => c.destroy());
     charts.current = [];
 
-    // Weekly chart
+    // Weekly chart (Rekardus Area Chart)
     if (weeklyRef.current) {
       const wp = data.weeklyProgress || [];
       const labels = wp.map((w) =>
-        new Date(w._id).toLocaleDateString("id-ID", { weekday: "short" }),
+        new Date(w._id).toLocaleDateString("id-ID", { weekday: "short", day: 'numeric', month: 'short' }),
       );
+      // Backend now sends 'total' in weeklyProgress for Rekardus
+      const datasetData = wp.map((w) => (w as any).total || (w.berkas + w.buku + w.bundle));
+
       const c = new Chart(weeklyRef.current, {
-        type: "bar",
+        type: "line",
         data: {
           labels: labels.length ? labels : ["No data"],
           datasets: [
             {
-              label: "Berkas",
-              data: wp.map((w) => w.berkas),
-              backgroundColor: "rgba(77,184,232,0.85)",
-              borderRadius: 5,
-              barPercentage: 0.5,
-            },
-            {
-              label: "Buku",
-              data: wp.map((w) => w.buku),
-              backgroundColor: "rgba(139,92,246,0.85)",
-              borderRadius: 5,
-              barPercentage: 0.5,
-            },
-            {
-              label: "Bundle",
-              data: wp.map((w) => w.bundle),
-              backgroundColor: "rgba(34,197,94,0.85)",
-              borderRadius: 5,
-              barPercentage: 0.5,
+              label: "Rekardus",
+              data: datasetData,
+              backgroundColor: "rgba(59, 130, 246, 0.2)", // Area fill color
+              borderColor: "#3b82f6", // Line color
+              borderWidth: 2,
+              pointBackgroundColor: "#fff",
+              pointBorderColor: "#3b82f6",
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              fill: true,
+              tension: 0.3, // Smooth curve
             },
           ],
         },
@@ -327,15 +364,7 @@ const AdminDashboard: React.FC = () => {
           maintainAspectRatio: false,
           plugins: {
             legend: {
-              display: true,
-              position: "bottom",
-              labels: {
-                color: "#64748b",
-                font: { size: 12 },
-                usePointStyle: true,
-                pointStyle: "circle",
-                boxWidth: 8,
-              },
+              display: false,
             },
             tooltip: {
               backgroundColor: "#fff",
@@ -345,6 +374,7 @@ const AdminDashboard: React.FC = () => {
               borderWidth: 1,
               cornerRadius: 10,
               padding: 12,
+              displayColors: false,
             },
           },
           scales: {
@@ -360,11 +390,12 @@ const AdminDashboard: React.FC = () => {
       charts.current.push(c);
     }
 
-    // Donut chart — berkas, buku, bundle totals
+    // Donut chart — Register totals (berkas, buku, bundle)
     if (donutRef.current) {
-      const totalBerkas = data.totalBerkas || 0;
-      const totalBuku = data.totalBuku || 0;
-      const totalBundle = data.totalBundle || 0;
+      const regStats = (data as any).registerStats || { berkas: 0, buku: 0, bundle: 0 };
+      const totalBerkas = regStats.berkas || 0;
+      const totalBuku = regStats.buku || 0;
+      const totalBundle = regStats.bundle || 0;
       const grandTotal = totalBerkas + totalBuku + totalBundle;
       const donutColors = ["#4db8e8", "#8b5cf6", "#22c55e"];
       const c = new Chart(donutRef.current, {
@@ -443,87 +474,203 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <>
-      <div className="page-header-row">
-        <div className="page-header">
+      <div className="page-header-row" style={{ alignItems: 'center' }}>
+        <div className="page-header" style={{ marginBottom: 0 }}>
           <h1>Dashboard Monitoring</h1>
           <p>Overview produktivitas dan kehadiran peserta magang</p>
         </div>
-        <button
-          className="btn-export"
-          onClick={exportToExcel}
-          title="Ekspor ke Excel"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
+        
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          {/* Filter UI */}
+          <div className="dashboard-filter" style={{ display: 'flex', background: 'white', padding: 4, borderRadius: 'var(--radius-md)', border: '1px solid var(--gray-200)' }}>
+            <button 
+              onClick={() => handleFilterChange('bulanan')}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: 13,
+                fontWeight: 600,
+                background: filterType === 'bulanan' ? 'var(--primary-50)' : 'transparent',
+                color: filterType === 'bulanan' ? 'var(--primary-600)' : 'var(--gray-500)',
+                transition: 'all 0.2s'
+              }}
+            >
+              Bulanan
+            </button>
+            <button 
+              onClick={() => {
+                handleFilterChange('custom');
+                if(!isSelectingDateRange) setIsSelectingStart(true);
+              }}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: 13,
+                fontWeight: 600,
+                background: filterType === 'custom' ? 'var(--primary-50)' : 'transparent',
+                color: filterType === 'custom' ? 'var(--primary-600)' : 'var(--gray-500)',
+                transition: 'all 0.2s'
+              }}
+            >
+              Custom
+            </button>
+          </div>
+
+          {filterType === 'bulanan' ? (
+             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', background: 'white', border: '1px solid var(--gray-200)', borderRadius: 'var(--radius-md)', padding: '0 12px', height: 40 }}>
+               <button onClick={handlePrevMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
+                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+               </button>
+               <span style={{ margin: '0 12px', fontSize: 14, fontWeight: 600, minWidth: 100, textAlign: 'center' }}>
+                 {currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+               </span>
+               <button onClick={handleNextMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
+                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+               </button>
+             </div>
+          ) : (
+            <div style={{ position: 'relative' }}>
+              <button 
+                onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  background: 'white', border: '1px solid var(--gray-200)',
+                  borderRadius: 'var(--radius-md)', padding: '0 12px', height: 40,
+                  fontSize: 13, fontWeight: 500, color: 'var(--gray-700)', minWidth: 200, justifyContent: 'space-between'
+                }}
+              >
+                {dateRangeStart && dateRangeEnd ? `${dateRangeStart} - ${dateRangeEnd}` : 'Pilih Tanggal'}
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+              
+              {isSelectingDateRange && (
+                <div style={{
+                  position: 'absolute', top: '100%', right: 0, marginTop: 8,
+                  background: 'white', border: '1px solid var(--gray-200)',
+                  borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)',
+                  padding: 16, zIndex: 50, width: 320
+                }}>
+                  <div style={{ marginBottom: 12 }}>
+                    <p style={{ fontSize: 12, color: 'var(--gray-500)', marginBottom: 4 }}>
+                      {isSelectingStart ? 'Pilih Tanggal Awal' : 'Pilih Tanggal Akhir'}
+                    </p>
+                    <div style={{ fontSize: 14, fontWeight: 600 }}>
+                      {dateRangeStart || '-'} s/d {dateRangeEnd || '-'}
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <button onClick={() => setDatePickerMonth(new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth()-1))} style={{ padding: 4 }}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                    <span style={{ fontSize: 14, fontWeight: 600 }}>{datePickerMonth.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</span>
+                    <button onClick={() => setDatePickerMonth(new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth()+1))} style={{ padding: 4 }}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 8 }}>
+                    {['M','S','S','R','K','J','S'].map(d => <div key={d} style={{ fontSize: 11, textAlign: 'center', color: 'var(--gray-400)', padding: 4 }}>{d}</div>)}
+                    {Array.from({ length: new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth(), 1).getDay() }).map((_, i) => <div key={`e-${i}`} />)}
+                    {Array.from({ length: new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth()+1, 0).getDate() }).map((_, i) => {
+                      const d = i + 1;
+                      const dateStr = `${datePickerMonth.getFullYear()}-${String(datePickerMonth.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                      const isSelected = dateStr === dateRangeStart || dateStr === dateRangeEnd;
+                      const inRange = dateRangeStart && dateRangeEnd && dateStr > dateRangeStart && dateStr < dateRangeEnd;
+                      
+                      return (
+                        <div 
+                          key={d} 
+                          onClick={() => {
+                            if (isSelectingStart) {
+                              setDateRangeStart(dateStr);
+                              setDateRangeEnd('');
+                              setIsSelectingStart(false);
+                            } else {
+                              if (dateStr >= dateRangeStart) {
+                                setDateRangeEnd(dateStr);
+                                setIsSelectingDateRange(false);
+                                setIsSelectingStart(true);
+                              } else {
+                                showToast('Tanggal akhir harus lebih besar', 'error');
+                              }
+                            }
+                          }}
+                          style={{
+                            padding: 6, textAlign: 'center', fontSize: 13, cursor: 'pointer', borderRadius: 4,
+                            background: isSelected ? 'var(--primary-500)' : inRange ? 'var(--primary-50)' : 'transparent',
+                            color: isSelected ? 'white' : 'inherit'
+                          }}
+                        >
+                          {d}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <button
+            className="btn-export"
+            onClick={exportToExcel}
+            title="Ekspor ke Excel"
           >
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-          Ekspor Excel
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Ekspor Excel
+          </button>
+        </div>
       </div>
-      <div className="admin-stats-grid">
+      <div className="admin-stats-grid" style={{ display: "grid", overflowX: "auto" }}>
         <div className="admin-stat-card">
           <div className="stat-info">
-            <div className="stat-label">Total Kendala</div>
-            <div className="stat-value stat-value-cyan">{totalComplaints}</div>
-            <div className="stat-change">
-              <span>Laporan keluhan masuk</span>
-            </div>
+            <div className="stat-label">Total Sortir</div>
+            <div className="stat-value" ref={el => el && data && animateCounter(el, data.totalSortir || 0)}>0</div>
+            <div className="stat-change">Item selesai</div>
           </div>
         </div>
         <div className="admin-stat-card">
           <div className="stat-info">
-            <div className="stat-label">Total Peserta Magang</div>
-            <div
-              className="stat-value"
-              ref={(el) => {
-                if (el && data) animateCounter(el, data.totalPeserta || 0);
-              }}
-            ></div>
-            <div className="stat-change">
-              <span>Semua aktif</span>
-            </div>
+            <div className="stat-label">Total Pencopotan Steples</div>
+            <div className="stat-value" ref={el => el && data && animateCounter(el, data.totalSteples || 0)}>0</div>
+            <div className="stat-change">Item selesai</div>
           </div>
         </div>
         <div className="admin-stat-card">
           <div className="stat-info">
-            <div className="stat-label">Rata-rata Produktivitas</div>
-            <div
-              className="stat-value stat-value-yellow"
-              ref={(el) => {
-                if (el && data) animateCounter(el, data.avgProductivity || 0);
-              }}
-            ></div>
-            <div className="stat-change">
-              <span>Item/hari per orang</span>
-            </div>
+            <div className="stat-label">Total Scanning</div>
+            <div className="stat-value" ref={el => el && data && animateCounter(el, data.totalScanning || 0)}>0</div>
+            <div className="stat-change">Item selesai</div>
           </div>
         </div>
         <div className="admin-stat-card">
           <div className="stat-info">
-            <div className="stat-label">Kehadiran Hari Ini</div>
-            <div className="stat-value stat-value-red">
-              {data.attendanceRate}%
-            </div>
-            <div className="stat-change">
-              <span>
-                {data.todayAttendance}/{data.totalPeserta} Hadir
-              </span>
-            </div>
+            <div className="stat-label">Total Register</div>
+            <div className="stat-value" ref={el => el && data && animateCounter(el, data.totalRegister || 0)}>0</div>
+            <div className="stat-change">Item selesai</div>
+          </div>
+        </div>
+        <div className="admin-stat-card">
+          <div className="stat-info">
+            <div className="stat-label">Total Stikering</div>
+            <div className="stat-value" ref={el => el && data && animateCounter(el, data.totalStikering || 0)}>0</div>
+            <div className="stat-change">Item selesai</div>
           </div>
         </div>
       </div>
+
       <div className="charts-row">
         <div className="chart-card">
           <div className="chart-header">
-            <h3>Progres Pekerjaan Mingguan</h3>
-            <p>Tren penyelesaian tugas per kategori</p>
+            <h3>Grafik Rekardus</h3>
+            <p>Total Rekardus: <strong>{(data.totalRekardus || 0).toLocaleString()}</strong> item</p>
           </div>
           <div className="chart-canvas-wrapper">
             <canvas ref={weeklyRef} />
@@ -532,7 +679,7 @@ const AdminDashboard: React.FC = () => {
         <div className="chart-card">
           <div className="chart-header">
             <h3>Kategori Arsip</h3>
-            <p>Total keseluruhan berkas, buku, dan bundle</p>
+            <p>Total tiap kategori berkas, buku, dan bundle</p>
           </div>
           <div className="chart-canvas-wrapper" style={{ height: 220 }}>
             <canvas ref={donutRef} />

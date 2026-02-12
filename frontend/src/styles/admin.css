@@ -511,8 +511,7 @@ img {
 
 /* ===== ADMIN STAT CARDS (4-column) ===== */
 .admin-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 20px;
   margin-bottom: 28px;
 }
@@ -565,6 +564,9 @@ img {
 }
 .admin-stat-card:nth-child(4)::before {
   background: linear-gradient(90deg, var(--accent-red), #e74c3c);
+}
+.admin-stat-card:nth-child(5)::before {
+  background: linear-gradient(90deg, #043b61, #e74c3c);
 }
 .admin-stat-card:hover {
   transform: translateY(-4px);
@@ -2507,7 +2509,14 @@ img {
   font-size: 15px;
 }
 
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* Laptop / Desktop Kecil (769px - 1024px) */
 @media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 240px;
+  }
+  
   .charts-row {
     grid-template-columns: 1fr;
   }
@@ -2517,7 +2526,18 @@ img {
   .qr-layout {
     grid-template-columns: 1fr;
   }
+  
+  .admin-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  /* Make sure the last card (if 5 cards) spans all columns or flex behaves nicely */
+  .admin-stat-card:nth-child(5) {
+    grid-column: span 1;
+  }
 }
+
+/* Tablet / Mobile Besar (481px - 768px) */
 @media (max-width: 768px) {
   /* Sidebar as popup/drawer */
   .sidebar {
@@ -2544,24 +2564,31 @@ img {
     gap: 8px;
   }
   .topbar-title {
-    font-size: 14px;
+    font-size: 16px;
   }
   .topbar-search {
     display: none;
   }
 
+  /* Stats become 2 columns */
   .admin-stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
   .keluhan-stats-grid {
     grid-template-columns: 1fr;
   }
+  
   .page-content {
-    padding: 16px;
+    padding: 20px;
   }
   .page-header-row {
     flex-direction: column;
     gap: 16px;
+  }
+  .page-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
   .filter-row {
     flex-direction: column;
@@ -2573,21 +2600,33 @@ img {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
   }
   .rekap-filters {
     flex-wrap: wrap;
   }
   .rekap-table-wrapper {
-    max-width: calc(100vw - 32px);
+    max-width: 100%;
+  }
+  
+  /* Fix chart hieght on tablet */
+  .chart-canvas-wrapper {
+    height: 240px;
   }
 }
+
+/* Mobile Kecil - Menengah (320px - 480px) */
 @media (max-width: 480px) {
   .sidebar {
-    width: 260px;
+    width: 85%; /* Slightly smaller than full width */
+    max-width: 320px;
   }
+  
   .page-content {
-    padding: 12px;
+    padding: 16px;
   }
+  
   .topbar-right {
     gap: 8px;
   }
@@ -2595,5 +2634,69 @@ img {
     width: 36px;
     height: 36px;
     font-size: 12px;
+  }
+  .topbar-notif {
+    width: 36px;
+    height: 36px;
+  }
+  .topbar-title {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+  }
+  
+  .page-header h1 {
+    font-size: 20px;
+  }
+  
+  /* Stats become 1 column */
+  .admin-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Buttons full width on mobile */
+  .page-header-actions .btn {
+    width: 100%;
+  }
+  
+  .chart-card {
+    padding: 16px;
+  }
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .donut-legend {
+    gap: 8px;
+  }
+  .donut-legend .legend-item {
+    font-size: 11px;
+  }
+  
+  /* Filter stack */
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filter-group {
+    width: 100%;
+  }
+  .filter-group select, 
+  .filter-group input {
+    width: 100%;
+  }
+}
+
+/* Extra Small Screens (iPhone SE etc) */
+@media (max-width: 360px) {
+  .topbar {
+    padding: 10px 12px;
+  }
+  .page-content {
+    padding: 12px;
   }
 }

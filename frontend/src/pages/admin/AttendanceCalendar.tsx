@@ -40,6 +40,13 @@ const AttendanceCalendar: React.FC = () => {
   const [isEditingThreshold, setIsEditingThreshold] = useState(false);
   const [isThresholdLoaded, setIsThresholdLoaded] = useState(false);
 
+  // Custom Date Picker State (from Rekapitulasi)
+  const [datePickerMonth, setDatePickerMonth] = useState(new Date());
+  const [isSelectingDateRange, setIsSelectingDateRange] = useState(false);
+  const [tempDateRangeStart, setTempDateRangeStart] = useState<string>('');
+  const [tempDateRangeEnd, setTempDateRangeEnd] = useState<string>('');
+  const [isSelectingStart, setIsSelectingStart] = useState(true);
+
 
   const isLate = (jamMasuk: string | null | undefined): boolean => {
     if (!jamMasuk) return false;
@@ -223,6 +230,13 @@ const AttendanceCalendar: React.FC = () => {
     loadAttendanceData();
   }, [currentDate]);
 
+  useEffect(() => {
+    if (filterMode === 'bulanan') {
+      setFilterData(attendanceData);
+      setFilterLabel(`${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`);
+    }
+  }, [attendanceData, filterMode, currentDate]);
+
 
   const getAttendanceForDay = (day: number): Attendance[] => {
     const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
@@ -285,6 +299,83 @@ const AttendanceCalendar: React.FC = () => {
   const getAttendanceCount = (day: number) => {
     return getAttendanceForDay(day).length;
   };
+
+  // --- Date Picker Logic (Adapted from Rekapitulasi) ---
+  const handleDatePickerPrevMonth = () => setDatePickerMonth(new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() - 1));
+  const handleDatePickerNextMonth = () => setDatePickerMonth(new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() + 1));
+
+  const handleCalendarDateClick = (year: number, month: number, day: number) => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    if (isSelectingStart) {
+      setTempDateRangeStart(dateStr);
+      setTempDateRangeEnd('');
+      setIsSelectingStart(false);
+    } else {
+      if (new Date(dateStr) >= new Date(tempDateRangeStart)) {
+        setTempDateRangeEnd(dateStr);
+      } else {
+        showToast('Pilih tanggal akhir yang lebih besar dari tanggal awal', 'error');
+      }
+    }
+  };
+
+  const isDateInRange = (year: number, month: number, day: number): boolean => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    if (!tempDateRangeStart) return false;
+    if (!tempDateRangeEnd) return dateStr >= tempDateRangeStart;
+    return dateStr >= tempDateRangeStart && dateStr <= tempDateRangeEnd;
+  };
+
+  const isDateStartEnd = (year: number, month: number, day: number): 'start' | 'end' | null => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    if (dateStr === tempDateRangeStart) return 'start';
+    if (dateStr === tempDateRangeEnd) return 'end';
+    return null;
+  };
+
+  const renderCalendarMonth = (offset: number) => {
+    const month = new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() + offset);
+    const year = month.getFullYear();
+    const monthIndex = month.getMonth();
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+    const firstDay = new Date(year, monthIndex, 1).getDay();
+    const monthName = monthNames[monthIndex];
+
+    const days = [];
+    for (let i = 0; i < firstDay; i++) {
+        days.push(<div key={`empty-${i}`} className="calendar-cell empty"></div>);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const inRange = isDateInRange(year, monthIndex, day);
+        const startEnd = isDateStartEnd(year, monthIndex, day);
+        const isStart = startEnd === 'start';
+        const isEnd = startEnd === 'end';
+
+        days.push(
+            <div
+                key={day}
+                className={`calendar-cell ${inRange ? 'in-range' : ''} ${isStart ? 'start-date' : ''} ${isEnd ? 'end-date' : ''}`}
+                onClick={() => handleCalendarDateClick(year, monthIndex, day)}
+            >
+                {day}
+            </div>
+        );
+    }
+
+    return (
+        <div className="calendar-month-picker">
+            <div className="calendar-month-header">
+                <h3>{monthName} {year}</h3>
+            </div>
+            <div className="calendar-weekdays">
+                {['S','M','T','W','T','F','S'].map(d => <div key={d} className="calendar-weekday">{d}</div>)}
+            </div>
+            <div className="calendar-days">{days}</div>
+        </div>
+    );
+  };
+  // -----------------------------------------------------
 
   // Filter helpers
   const applyFilterOnData = (data: Attendance[]) => {
@@ -394,9 +485,18 @@ const AttendanceCalendar: React.FC = () => {
       ws['!cols'] = [{ wch: 5 }, { wch: 22 }, { wch: 22 }, { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
 
       let filename = 'Kehadiran';
-      if (filterMode === 'mingguan') filename = 'Kehadiran_Mingguan';
+      if (filterMode === 'mingguan') {
+          // Calculate start and end of week for filename
+            const now = new Date();
+            const dayOfWeek = now.getDay();
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - dayOfWeek);
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            filename = `Kehadiran_Mingguan_${toDateStr(startOfWeek)}_sd_${toDateStr(endOfWeek)}`;
+      }
       else if (filterMode === 'bulanan') filename = `Kehadiran_${monthNames[currentDate.getMonth()]}_${currentDate.getFullYear()}`;
-      else if (filterMode === 'custom') filename = `Kehadiran_${customFrom}_sd_${customTo}`;
+      else if (filterMode === 'custom' && customFrom && customTo) filename = `Kehadiran_${customFrom}_sd_${customTo}`;
       else if (filterMode === 'harian' && selectedDayData.length > 0) {
         filename = `Kehadiran_${selectedDayData[0]?.tanggal.toString().split('T')[0]}`;
       }
@@ -591,165 +691,233 @@ const AttendanceCalendar: React.FC = () => {
           </div>
 
           {/* Filter Controls */}
-          <div style={{ background: '#f8fafc', borderRadius: 10, padding: 16, marginBottom: 16, border: '1px solid #e2e8f0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#475569' }}>Filter:</span>
-              {(['harian', 'mingguan', 'bulanan', 'custom'] as FilterMode[]).map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => {
-                    setFilterMode(mode);
-                    if (mode === 'harian') {
-                      setFilterData([]);
-                      setFilterLabel('');
-                    }
-                  }}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 6,
-                    border: filterMode === mode ? '2px solid #0a6599' : '1px solid #cbd5e1',
-                    background: filterMode === mode ? '#e6f4fa' : 'white',
-                    color: filterMode === mode ? '#0a6599' : '#64748b',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    textTransform: 'capitalize',
-                  }}
-                >
-                  {mode}
-                </button>
-              ))}
+          {/* Filter Controls (Rekapitulasi Style) */}
+          <div className="work-filter-bar" style={{ marginBottom: 16, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', flex: 1 }}>
+              <div className="filter-buttons">
+                {(['harian', 'mingguan', 'bulanan', 'custom'] as FilterMode[]).map((mode) => (
+                    <button
+                        key={mode}
+                        className={`filter-btn ${filterMode === mode ? 'active' : ''}`}
+                        onClick={() => {
+                            setFilterMode(mode);
+                            if (mode === 'harian') {
+                                setFilterData([]);
+                                setFilterLabel('');
+                                // Optionally do nothing else, user clicks calendar
+                            } else if (mode === 'custom') {
+                                if (!isSelectingDateRange) setIsSelectingStart(true);
+                            } else if (mode === 'mingguan') {
+                                // Manual trigger via button
+                            } else if (mode === 'bulanan') {
+                                // Trigger monthly filter directly
+                                setTimeout(() => handleApplyFilter(), 0);
+                            }
+                        }}
+                    >
+                        {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                    </button>
+                ))}
+              </div>
+
+               {/* Dynamic Filter Input */}
+               {filterMode === 'bulanan' && (
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', background: 'white', border: '1px solid var(--gray-200)', borderRadius: 'var(--radius-md)', padding: '0 12px', height: 40 }}>
+                        <button onClick={handlePreviousMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </button>
+                        <span style={{ margin: '0 12px', fontSize: 14, fontWeight: 600, minWidth: 120, textAlign: 'center' }}>
+                            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+                        </span>
+                        <button onClick={handleNextMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
+                    </div>
+                )}
+
+                {filterMode === 'custom' && (
+                    <div className="custom-date-range-container">
+                        <button
+                        className="custom-date-range-toggle"
+                        onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
+                        style={{ minWidth: 240 }}
+                        >
+                        {customFrom && customTo
+                            ? `${customFrom} - ${customTo}`
+                            : 'Pilih Rentang Tanggal'}
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            style={{
+                            width: '16px',
+                            height: '16px',
+                            transform: isSelectingDateRange ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.2s',
+                            }}
+                        >
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                        </button>
+
+                        {isSelectingDateRange && (
+                        <div className="custom-date-picker-dropdown">
+                            <div className="custom-date-picker-header">
+                            <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>←</button>
+                            <span>Pilih Rentang Tanggal</span>
+                            <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>→</button>
+                            </div>
+
+                            <div className="custom-calendars-container">
+                            {renderCalendarMonth(0)}
+                            {renderCalendarMonth(1)}
+                            </div>
+
+                            <div className="custom-date-range-info">
+                            {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
+                            {tempDateRangeStart && tempDateRangeEnd && (
+                                <p>{tempDateRangeStart} sampai {tempDateRangeEnd}</p>
+                            )}
+                            </div>
+
+                            <div className="custom-date-picker-footer">
+                                <button
+                                    className="custom-date-apply-btn"
+                                    onClick={() => {
+                                        if (tempDateRangeStart && tempDateRangeEnd) {
+                                            setCustomFrom(tempDateRangeStart);
+                                            setCustomTo(tempDateRangeEnd);
+                                            setIsSelectingDateRange(false);
+                                            setIsSelectingStart(true);
+                                            // Apply filter logic
+                                            setTimeout(() => handleApplyFilter(), 0);
+                                        } else {
+                                            showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
+                                        }
+                                    }}
+                                >
+                                    Terapkan
+                                </button>
+                                <button
+                                    className="custom-date-cancel-btn"
+                                    onClick={() => {
+                                        setIsSelectingDateRange(false);
+                                        setTempDateRangeStart('');
+                                        setTempDateRangeEnd('');
+                                        setIsSelectingStart(true);
+                                    }}
+                                >
+                                    Batal
+                                </button>
+                            </div>
+                        </div>
+                        )}
+                    </div>
+                )}
             </div>
 
-            {filterMode === 'custom' && (
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>Dari:</label>
-                  <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: 13, fontFamily: 'inherit' }} />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>Sampai:</label>
-                  <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: 13, fontFamily: 'inherit' }} />
-                </div>
-              </div>
-            )}
-
-            {filterMode !== 'harian' && (
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <button
-                  onClick={handleApplyFilter}
-                  disabled={filterLoading}
-                  style={{
-                    padding: '7px 18px',
-                    background: '#0a6599',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: 6,
-                    cursor: filterLoading ? 'not-allowed' : 'pointer',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    opacity: filterLoading ? 0.7 : 1,
-                  }}
+            {filterMode === 'mingguan' && (
+                 <button
+                    onClick={handleApplyFilter}
+                    disabled={filterLoading}
+                    style={{
+                        padding: '7px 18px',
+                        background: '#0a6599',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 6,
+                        cursor: filterLoading ? 'not-allowed' : 'pointer',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        opacity: filterLoading ? 0.7 : 1,
+                        height: 40,
+                        marginLeft: 8 // Add some spacing from the filter buttons
+                    }}
                 >
-                  {filterLoading ? 'Memuat...' : 'Terapkan Filter'}
+                    {filterLoading ? 'Memuat...' : 'Terapkan Filter'}
                 </button>
-                {filterLabel && <span style={{ fontSize: 12, color: '#64748b', fontStyle: 'italic' }}>{filterLabel}</span>}
-              </div>
             )}
 
-            {filterMode === 'harian' && (
-              <p style={{ fontSize: 12, color: '#94a3b8', margin: 0 }}>Klik tanggal pada kalender untuk melihat data harian</p>
-            )}
+            {/* Action Buttons (Right Aligned) */}
+            <div className="rekap-filter-actions" style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                 {/* Holiday Buttons */}
+                 {filterMode === 'harian' && selectedDate && (
+                    <>
+                        {selectedDayData.some(a => a.status === 'Hari Libur') ? (
+                            <button
+                                onClick={handleCancelHoliday}
+                                disabled={holidayLoading}
+                                style={{
+                                    padding: '8px 16px',
+                                    background: '#ef4444',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: 8,
+                                    cursor: holidayLoading ? 'not-allowed' : 'pointer',
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    opacity: holidayLoading ? 0.7 : 1,
+                                }}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M3 6h18"></path>
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                </svg>
+                                {holidayLoading ? '...' : 'Batal Libur'}
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleBulkHoliday}
+                                disabled={holidayLoading}
+                                style={{
+                                    padding: '8px 16px',
+                                    background: '#f59e0b',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: 8,
+                                    cursor: holidayLoading ? 'not-allowed' : 'pointer',
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    opacity: holidayLoading ? 0.7 : 1,
+                                }}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                {holidayLoading ? '...' : 'Set Libur'}
+                            </button>
+                        )}
+                    </>
+                )}
+
+                <button
+                    className="btn-export"
+                    onClick={handleExportExcel}
+                    disabled={displayData.length === 0}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Export Excel
+                </button>
+            </div>
           </div>
 
-          {/* Action Buttons */}
-          {displayData.length > 0 && (
-            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-              {/* Hari Libur Button - only for harian mode */}
-              {filterMode === 'harian' && selectedDate && (
-                <>
-                  {selectedDayData.some(a => a.status === 'Hari Libur') ? (
-                    <button
-                      onClick={handleCancelHoliday}
-                      disabled={holidayLoading}
-                      style={{
-                        padding: '8px 16px',
-                        background: '#ef4444',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: 8,
-                        cursor: holidayLoading ? 'not-allowed' : 'pointer',
-                        fontSize: 13,
-                        fontWeight: 600,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        opacity: holidayLoading ? 0.7 : 1,
-                      }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 6h18"></path>
-                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                      </svg>
-                      {holidayLoading ? 'Memproses...' : 'Batalkan Hari Libur'}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleBulkHoliday}
-                      disabled={holidayLoading}
-                      style={{
-                        padding: '8px 16px',
-                        background: '#f59e0b',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: 8,
-                        cursor: holidayLoading ? 'not-allowed' : 'pointer',
-                        fontSize: 13,
-                        fontWeight: 600,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        opacity: holidayLoading ? 0.7 : 1,
-                      }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                      </svg>
-                      {holidayLoading ? 'Memproses...' : 'Tandai Hari Libur'}
-                    </button>
-                  )}
-                </>
-              )}
-              {filterMode !== 'harian' && <div />}
-              <button
-                onClick={handleExportExcel}
-                style={{
-                  padding: '8px 16px',
-                  background: '#22c55e',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                }}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}>
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                Export Excel ({displayData.length} data)
-              </button>
-            </div>
-          )}
+
 
           {displayData.length === 0 ? (
             <div className="no-selection">

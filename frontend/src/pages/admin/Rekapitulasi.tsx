@@ -44,8 +44,18 @@ const Rekapitulasi: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   // Filters
+  const [filterType, setFilterType] = useState<'bulanan' | 'custom'>('bulanan');
+  const [currentDate, setCurrentDate] = useState(new Date()); // For monthly view
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  
+  // Custom Date Picker State
+  const [isSelectingDateRange, setIsSelectingDateRange] = useState(false);
+  const [datePickerMonth, setDatePickerMonth] = useState(new Date());
+  const [tempDateRangeStart, setTempDateRangeStart] = useState<string>('');
+  const [tempDateRangeEnd, setTempDateRangeEnd] = useState<string>('');
+  const [isSelectingStart, setIsSelectingStart] = useState(true);
+
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [showUserFilter, setShowUserFilter] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -71,6 +81,104 @@ const Rekapitulasi: React.FC = () => {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  // Update dates when filter type changes or current month changes
+  useEffect(() => {
+    if (filterType === 'bulanan') {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const start = new Date(year, month, 1);
+        const end = new Date(year, month + 1, 0);
+        
+        // Format to YYYY-MM-DD
+        const startStr = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
+        const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
+        
+        setDateFrom(startStr);
+        setDateTo(endStr);
+    }
+  }, [filterType, currentDate]);
+
+  const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+  const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+
+  // Date Picker Logic
+  const handleDatePickerPrevMonth = () => setDatePickerMonth(new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() - 1));
+  const handleDatePickerNextMonth = () => setDatePickerMonth(new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() + 1));
+
+  const handleCalendarDateClick = (year: number, month: number, day: number) => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+    if (isSelectingStart) {
+      setTempDateRangeStart(dateStr);
+      setTempDateRangeEnd('');
+      setIsSelectingStart(false);
+    } else {
+      if (new Date(dateStr) >= new Date(tempDateRangeStart)) {
+        setTempDateRangeEnd(dateStr);
+      } else {
+        showToast('Pilih tanggal akhir yang lebih besar dari tanggal awal', 'error');
+      }
+    }
+  };
+
+  const isDateInRange = (year: number, month: number, day: number): boolean => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    if (!tempDateRangeStart) return false;
+    if (!tempDateRangeEnd) return dateStr >= tempDateRangeStart;
+    return dateStr >= tempDateRangeStart && dateStr <= tempDateRangeEnd;
+  };
+
+  const isDateStartEnd = (year: number, month: number, day: number): 'start' | 'end' | null => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    if (dateStr === tempDateRangeStart) return 'start';
+    if (dateStr === tempDateRangeEnd) return 'end';
+    return null;
+  };
+
+  const renderCalendarMonth = (offset: number) => {
+    const month = new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() + offset);
+    const year = month.getFullYear();
+    const monthIndex = month.getMonth();
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+    const firstDay = new Date(year, monthIndex, 1).getDay();
+
+    const monthName = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][monthIndex];
+
+    const days = [];
+    for (let i = 0; i < firstDay; i++) {
+        days.push(<div key={`empty-${i}`} className="calendar-cell empty"></div>);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const inRange = isDateInRange(year, monthIndex, day);
+        const startEnd = isDateStartEnd(year, monthIndex, day);
+        const isStart = startEnd === 'start';
+        const isEnd = startEnd === 'end';
+
+        days.push(
+            <div
+                key={day}
+                className={`calendar-cell ${inRange ? 'in-range' : ''} ${isStart ? 'start-date' : ''} ${isEnd ? 'end-date' : ''}`}
+                onClick={() => handleCalendarDateClick(year, monthIndex, day)}
+            >
+                {day}
+            </div>
+        );
+    }
+
+    return (
+        <div className="calendar-month-picker">
+            <div className="calendar-month-header">
+                <h3>{monthName} {year}</h3>
+            </div>
+            <div className="calendar-weekdays">
+                {['S','M','T','W','T','F','S'].map(d => <div key={d} className="calendar-weekday">{d}</div>)}
+            </div>
+            <div className="calendar-days">{days}</div>
+        </div>
+    );
+  };
 
   const fetchRecap = useCallback(async () => {
     setLoading(true);
@@ -228,8 +336,18 @@ const Rekapitulasi: React.FC = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Rekapitulasi');
 
-    const dateStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
-    XLSX.writeFile(wb, `Rekapitulasi_Pekerjaan_${dateStr}.xlsx`);
+    let filename = '';
+    if (filterType === 'bulanan') {
+        const monthName = currentDate.toLocaleDateString('id-ID', { month: 'long' });
+        const year = currentDate.getFullYear();
+        filename = `Rekapitulasi_Pekerjaan_${monthName}_${year}.xlsx`;
+    } else if (filterType === 'custom' && dateFrom && dateTo) {
+        filename = `Rekapitulasi_Pekerjaan_${dateFrom}_sd_${dateTo}.xlsx`;
+    } else {
+        const dateStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
+        filename = `Rekapitulasi_Pekerjaan_${dateStr}.xlsx`;
+    }
+    XLSX.writeFile(wb, filename);
     showToast('Berhasil mengekspor data ke Excel', 'success');
   };
 
@@ -245,7 +363,7 @@ const Rekapitulasi: React.FC = () => {
   };
 
   return (
-    <>
+    <div>
       <div className="page-header-row">
         <div className="page-header">
           <h1>Rekapitulasi Pekerjaan</h1>
@@ -254,50 +372,155 @@ const Rekapitulasi: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="rekap-filters">
-        <div className="rekap-filter-group">
-          <label>Dari Tanggal</label>
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="rekap-input" />
-        </div>
-        <div className="rekap-filter-group">
-          <label>Sampai Tanggal</label>
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="rekap-input" />
-        </div>
-        <div className="rekap-filter-group rekap-user-filter" ref={filterRef}>
-          <label>Peserta</label>
-          <button
-            className="rekap-user-btn"
-            onClick={() => setShowUserFilter(!showUserFilter)}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-            </svg>
-            {selectedUsers.length === 0
-              ? 'Semua Peserta'
-              : selectedUsers.length === users.length
-                ? 'Semua Peserta'
-                : `${selectedUsers.length} Peserta`}
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto' }}>
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
-          {showUserFilter && (
-            <div className="rekap-user-dropdown">
-              <div className="rekap-user-option" onClick={selectAllUsers}>
-                <input type="checkbox" checked={selectedUsers.length === users.length && users.length > 0} readOnly />
-                <span style={{ fontWeight: 600 }}>Pilih Semua</span>
-              </div>
-              <div className="rekap-user-dropdown-divider" />
-              {users.map((u) => (
-                <div key={u._id} className="rekap-user-option" onClick={() => toggleUser(u._id)}>
-                  <input type="checkbox" checked={selectedUsers.includes(u._id)} readOnly />
-                  <span>{u.name}</span>
-                </div>
-              ))}
+      {/* Filters */}
+      <div className="work-filter-bar" style={{ marginBottom: 16, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', flex: 1 }}>
+            <div className="filter-buttons">  
+                <button 
+                    className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`} 
+                    onClick={() => setFilterType('bulanan')}
+                >
+                    Bulanan
+                </button>
+                <button 
+                    className={`filter-btn ${filterType === 'custom' ? 'active' : ''}`} 
+                    onClick={() => {
+                        setFilterType('custom');
+                        if(!isSelectingDateRange) setIsSelectingStart(true);
+                    }}
+                >
+                    Custom
+                </button>
             </div>
-          )}
+
+            {filterType === 'bulanan' ? (
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', background: 'white', border: '1px solid var(--gray-200)', borderRadius: 'var(--radius-md)', padding: '0 12px', height: 40 }}>
+                <button onClick={handlePrevMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <span style={{ margin: '0 12px', fontSize: 14, fontWeight: 600, minWidth: 100, textAlign: 'center' }}>
+                    {currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                </span>
+                <button onClick={handleNextMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+                </div>
+            ) : (
+                <div className="custom-date-range-container">
+                    <button
+                    className="custom-date-range-toggle"
+                    onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
+                    style={{ minWidth: 240 }}
+                    >
+                    {dateFrom && dateTo
+                        ? `${dateFrom} - ${dateTo}`
+                        : 'Pilih Rentang Tanggal'}
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        style={{
+                        width: '16px',
+                        height: '16px',
+                        transform: isSelectingDateRange ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s',
+                        }}
+                    >
+                        <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                    </button>
+
+                    {isSelectingDateRange && (
+                    <div className="custom-date-picker-dropdown">
+                        <div className="custom-date-picker-header">
+                        <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>←</button>
+                        <span>Pilih Rentang Tanggal</span>
+                        <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>→</button>
+                        </div>
+
+                        <div className="custom-calendars-container">
+                        {renderCalendarMonth(0)}
+                        {renderCalendarMonth(1)}
+                        </div>
+
+                        <div className="custom-date-range-info">
+                        {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
+                        {tempDateRangeStart && tempDateRangeEnd && (
+                            <p>{tempDateRangeStart} sampai {tempDateRangeEnd}</p>
+                        )}
+                        </div>
+
+                        <div className="custom-date-picker-footer">
+                            <button
+                                className="custom-date-apply-btn"
+                                onClick={() => {
+                                    if (tempDateRangeStart && tempDateRangeEnd) {
+                                        setDateFrom(tempDateRangeStart);
+                                        setDateTo(tempDateRangeEnd);
+                                        setIsSelectingDateRange(false);
+                                        setIsSelectingStart(true);
+                                    } else {
+                                        showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
+                                    }
+                                }}
+                            >
+                                Terapkan
+                            </button>
+                            <button
+                                className="custom-date-cancel-btn"
+                                onClick={() => {
+                                    setIsSelectingDateRange(false);
+                                    setTempDateRangeStart('');
+                                    setTempDateRangeEnd('');
+                                    setIsSelectingStart(true);
+                                }}
+                            >
+                                Batal
+                            </button>
+                        </div>
+                    </div>
+                    )}
+                </div>
+            )}
+
+            <div className="rekap-filter-group rekap-user-filter" ref={filterRef} style={{ margin: 0 }}>
+              <button
+                className="rekap-user-btn"
+                onClick={() => setShowUserFilter(!showUserFilter)}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                </svg>
+                {selectedUsers.length === 0
+                  ? 'Semua Peserta'
+                  : selectedUsers.length === users.length
+                    ? 'Semua Peserta'
+                    : `${selectedUsers.length} Peserta`}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto' }}>
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              {showUserFilter && (
+                <div className="rekap-user-dropdown">
+                  <div className="rekap-user-option" onClick={selectAllUsers}>
+                    <input type="checkbox" checked={selectedUsers.length === users.length && users.length > 0} readOnly />
+                    <span style={{ fontWeight: 600 }}>Pilih Semua</span>
+                  </div>
+                  <div className="rekap-user-dropdown-divider" />
+                  {users.map((u) => (
+                    <div key={u._id} className="rekap-user-option" onClick={() => toggleUser(u._id)}>
+                      <input type="checkbox" checked={selectedUsers.includes(u._id)} readOnly />
+                      <span>{u.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
         </div>
+
         <div className="rekap-filter-actions">
           <button className="btn-export" onClick={exportToExcel}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -400,7 +623,7 @@ const Rekapitulasi: React.FC = () => {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 };
 

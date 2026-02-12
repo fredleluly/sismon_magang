@@ -110,6 +110,14 @@ export interface AdminDashboard {
   totalBerkas: number;
   totalBuku: number;
   totalBundle: number;
+  
+  // New specific stats
+  totalSortir: number;
+  totalSteples: number;
+  totalScanning: number;
+  totalRegister: number;
+  totalStikering: number;
+  totalRekardus: number;
   avgProductivity: number;
   attendanceRate: number;
   todayAttendance: number;

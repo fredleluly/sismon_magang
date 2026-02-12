@@ -11,6 +11,10 @@ router.get('/', auth, async (req, res) => {
     // Optional query filters
     if (req.query.status) filter.status = req.query.status;
     if (req.query.userId && req.user.role === 'admin') filter.userId = req.query.userId;
+    if (req.query.userIds && req.user.role === 'admin') {
+        const ids = req.query.userIds.split(',').filter(Boolean);
+        if (ids.length) filter.userId = { $in: ids };
+    }
     if (req.query.from || req.query.to) {
       filter.tanggal = {};
       if (req.query.from) filter.tanggal.$gte = new Date(req.query.from);

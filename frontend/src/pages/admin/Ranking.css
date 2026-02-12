@@ -282,22 +282,104 @@
 }
 
 /* Responsive */
+/* Responsive */
 @media (max-width: 768px) {
   .podium-section {
     flex-direction: column;
     align-items: center;
+    gap: 1.5rem;
+    padding-bottom: 0;
   }
 
   .podium-card {
     order: unset !important;
-    min-width: 200px;
+    min-width: 100%; /* Full width cards */
+    max-width: 320px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    padding: 1rem;
   }
 
   .podium-1 {
     transform: none;
+    order: -1 !important; /* Force 1st place to top */
+    background: #fffbeb;
+    border-color: #fbbf24;
   }
 
   .podium-1:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px);
+  }
+  
+  .podium-medal {
+    font-size: 1.5rem;
+    margin-bottom: 0;
+    margin-right: 1rem;
+  }
+  
+  .podium-info {
+    flex: 1;
+  }
+  
+  .podium-score-wrap {
+    text-align: right;
+  }
+  
+  .podium-score {
+    font-size: 1.5rem;
+  }
+
+  /* Adjust filters */
+  .filter-bar-rank {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .filter-group-rank {
+    width: 100%;
+  }
+  
+  .filter-group-rank select {
+    width: 100%;
+  }
+  
+  /* Rank Table */
+  .rank-table th, .rank-table td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .th-rank, .td-rank {
+    width: 40px;
+  }
+  
+  .grade-badge {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header-rank {
+    padding: 1.5rem;
+  }
+  
+  .page-icon-rank {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .rank-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .rank-table {
+    display: block;
+    overflow-x: auto;
   }
 }

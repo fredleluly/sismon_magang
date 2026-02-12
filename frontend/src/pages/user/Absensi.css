@@ -760,6 +760,38 @@
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+  .absen-status-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .absensi-history {
+    padding: 1rem;
+  }
+  
+  .history-table {
+    min-width: 600px; /* Force horizontal scroll if needed */
+  }
+  
+  /* Wrap table in scrollable container if not already */
+  .absensi-history {
+    overflow-x: auto;
+  }
+
+  .status-card {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    gap: 0.5rem;
+  }
+  
+  .status-card-icon {
+    margin-bottom: 4px;
+  }
+}
+
 @media (max-width: 640px) {
   .absensi-date-bar {
     flex-direction: column;
@@ -770,10 +802,11 @@
   .last-absensi-group {
     width: 100%;
     justify-content: space-between;
+    flex-wrap: wrap;
   }
 
   .last-absensi {
-    text-align: center;
+    text-align: left;
   }
 
   .absen-mode-toggle {
@@ -782,6 +815,11 @@
 
   .absen-status-cards {
     grid-template-columns: 1fr;
+  }
+  
+  .status-card {
+    flex-direction: row; /* Back to row for mobile to save vertical space */
+    align-items: center;
   }
 
   .face-detection-status {
@@ -796,8 +834,20 @@
   .face-validation-checklist {
     gap: 0.5rem;
     font-size: 0.7rem;
+    flex-wrap: wrap;
+    justify-content: center;
   }
-
+  
+  .absensi-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tab-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
   .geo-status {
     font-size: 0.7rem;
   }

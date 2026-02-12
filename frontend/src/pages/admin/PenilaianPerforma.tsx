@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { UsersAPI, PerformanceAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { User, PerformanceEvaluation, PerformanceCalculation } from '../../types';
@@ -49,6 +50,33 @@ const PenilaianPerforma: React.FC = () => {
   };
 
   const closeConfirm = () => setConfirmModal(prev => ({ ...prev, show: false }));
+
+  // Add pause/blur effect on modal open
+  useEffect(() => {
+    const app = document.querySelector('.app-wrapper');
+    const escHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        closeConfirm();
+      }
+    };
+
+    if (confirmModal.show) {
+      document.body.style.overflow = 'hidden';
+      if (app) app.classList.add('paused');
+      window.addEventListener('keydown', escHandler, true);
+    } else {
+      document.body.style.overflow = 'unset';
+      if (app) app.classList.remove('paused');
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+      if (app) app.classList.remove('paused');
+      window.removeEventListener('keydown', escHandler, true);
+    };
+  }, [confirmModal.show]);
 
   // Load users
   useEffect(() => {
@@ -477,33 +505,59 @@ const PenilaianPerforma: React.FC = () => {
       </div>
 
       {/* Confirm Modal */}
-      {confirmModal.show && (
-        <div className="confirm-overlay" onClick={closeConfirm}>
-          <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
-            <div className={`confirm-icon-wrap ${confirmModal.type}`}>
-              {confirmModal.type === 'danger' ? (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="15" y1="9" x2="9" y2="15" />
-                  <line x1="9" y1="9" x2="15" y2="15" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
-              )}
-            </div>
-            <h3 className="confirm-title">{confirmModal.title}</h3>
-            <p className="confirm-message">{confirmModal.message}</p>
-            <div className="confirm-actions">
-              <button className="btn-confirm-cancel" onClick={closeConfirm}>Batal</button>
-              <button className={`btn-confirm-ok ${confirmModal.type}`} onClick={confirmModal.onConfirm}>
-                {confirmModal.confirmText}
-              </button>
+      {/* Confirm Modal (Portal) */}
+      {confirmModal.show && ReactDOM.createPortal(
+        <div className="modal-overlay active" style={{ zIndex: 9999 }}>
+          <div className="modal-card" style={{ maxWidth: '400px', textAlign: 'center' }}>
+            {/* No Header for simple confirm, or maybe just close button */}
+            <div className="modal-body" style={{ padding: '32px 24px 24px' }}>
+              <div className={`confirm-icon-wrap ${confirmModal.type}`} style={{ 
+                margin: '0 auto 16px', 
+                width: 64, height: 64, 
+                borderRadius: '50%', 
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: confirmModal.type === 'danger' ? '#fee2e2' : '#dcfce7',
+                color: confirmModal.type === 'danger' ? '#ef4444' : '#22c55e'
+              }}>
+                {confirmModal.type === 'danger' ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                )}
+              </div>
+              
+              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: '#1e293b' }}>
+                {confirmModal.title}
+              </h3>
+              <p style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.5 }}>
+                {confirmModal.message}
+              </p>
+
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button 
+                  className="btn-outline" 
+                  onClick={closeConfirm}
+                  style={{ flex: 1, justifyContent: 'center' }}
+                >
+                  Batal
+                </button>
+                <button 
+                  className={`btn ${confirmModal.type === 'danger' ? 'btn-danger' : 'btn-primary'}`} 
+                  onClick={confirmModal.onConfirm}
+                  style={{ flex: 1, justifyContent: 'center' }}
+                >
+                  {confirmModal.confirmText}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
