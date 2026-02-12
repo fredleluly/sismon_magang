@@ -34,6 +34,22 @@ const PenilaianPerforma: React.FC = () => {
   const [evaluations, setEvaluations] = useState<PerformanceEvaluation[]>([]);
   const [saving, setSaving] = useState(false);
 
+  // Confirm modal
+  const [confirmModal, setConfirmModal] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    confirmText: string;
+    type: 'danger' | 'success';
+    onConfirm: () => void;
+  }>({ show: false, title: '', message: '', confirmText: '', type: 'danger', onConfirm: () => {} });
+
+  const showConfirm = (title: string, message: string, confirmText: string, type: 'danger' | 'success', onConfirm: () => void) => {
+    setConfirmModal({ show: true, title, message, confirmText, type, onConfirm });
+  };
+
+  const closeConfirm = () => setConfirmModal(prev => ({ ...prev, show: false }));
+
   // Load users
   useEffect(() => {
     const load = async () => {
@@ -96,11 +112,8 @@ const PenilaianPerforma: React.FC = () => {
     return parseFloat((calculation.absen + kuantitas + kualitas + laporanVal).toFixed(2));
   };
 
-  const handleSave = async (status: 'Draft' | 'Final') => {
+  const doSave = async (status: 'Draft' | 'Final') => {
     if (!selectedUser || !calculation) return;
-
-    if (status === 'Final' && !confirm('Yakin ingin memfinalisasi penilaian ini? Penilaian yang sudah final tidak bisa diubah.')) return;
-
     setSaving(true);
     const res = await PerformanceAPI.save({
       userId: selectedUser._id,
@@ -128,15 +141,38 @@ const PenilaianPerforma: React.FC = () => {
     setSaving(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Hapus draft penilaian ini?')) return;
-    const res = await PerformanceAPI.delete(id);
-    if (res && res.success) {
-      showToast('Draft berhasil dihapus', 'success');
-      loadEvaluations();
+  const handleSave = (status: 'Draft' | 'Final') => {
+    if (!selectedUser || !calculation) return;
+    if (status === 'Final') {
+      showConfirm(
+        'Finalisasi Penilaian',
+        'Yakin ingin memfinalisasi penilaian ini? Penilaian yang sudah final tidak bisa diubah.',
+        'Ya, Finalisasi',
+        'success',
+        () => { closeConfirm(); doSave('Final'); }
+      );
     } else {
-      showToast(res?.message || 'Gagal menghapus', 'error');
+      doSave('Draft');
     }
+  };
+
+  const handleDelete = (id: string) => {
+    showConfirm(
+      'Hapus Draft',
+      'Yakin ingin menghapus draft penilaian ini?',
+      'Ya, Hapus',
+      'danger',
+      async () => {
+        closeConfirm();
+        const res = await PerformanceAPI.delete(id);
+        if (res && res.success) {
+          showToast('Draft berhasil dihapus', 'success');
+          loadEvaluations();
+        } else {
+          showToast(res?.message || 'Gagal menghapus', 'error');
+        }
+      }
+    );
   };
 
   const handleEditExisting = (ev: PerformanceEvaluation) => {
@@ -196,15 +232,23 @@ const PenilaianPerforma: React.FC = () => {
           <label>&nbsp;</label>
           <button 
             className="btn btn-danger-outline" 
-            onClick={async () => {
-              if (!confirm(`Hapus SEMUA penilaian final di ${MONTHS[bulan - 1]} ${tahun}? Tindakan ini tidak bisa dibatalkan!`)) return;
-              const res = await PerformanceAPI.deleteAllFinals(bulan, tahun);
-              if (res && res.success) {
-                showToast(res.message || 'Semua penilaian final berhasil dihapus', 'success');
-                loadEvaluations();
-              } else {
-                showToast(res?.message || 'Gagal menghapus', 'error');
-              }
+            onClick={() => {
+              showConfirm(
+                'Hapus Semua Final',
+                `Hapus SEMUA penilaian final di ${MONTHS[bulan - 1]} ${tahun}? Tindakan ini tidak bisa dibatalkan!`,
+                'Ya, Hapus Semua',
+                'danger',
+                async () => {
+                  closeConfirm();
+                  const res = await PerformanceAPI.deleteAllFinals(bulan, tahun);
+                  if (res && res.success) {
+                    showToast(res.message || 'Semua penilaian final berhasil dihapus', 'success');
+                    loadEvaluations();
+                  } else {
+                    showToast(res?.message || 'Gagal menghapus', 'error');
+                  }
+                }
+              );
             }}
           >
             🗑️ Hapus Semua Final
@@ -431,6 +475,36 @@ const PenilaianPerforma: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Confirm Modal */}
+      {confirmModal.show && (
+        <div className="confirm-overlay" onClick={closeConfirm}>
+          <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className={`confirm-icon-wrap ${confirmModal.type}`}>
+              {confirmModal.type === 'danger' ? (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="15" y1="9" x2="9" y2="15" />
+                  <line x1="9" y1="9" x2="15" y2="15" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+              )}
+            </div>
+            <h3 className="confirm-title">{confirmModal.title}</h3>
+            <p className="confirm-message">{confirmModal.message}</p>
+            <div className="confirm-actions">
+              <button className="btn-confirm-cancel" onClick={closeConfirm}>Batal</button>
+              <button className={`btn-confirm-ok ${confirmModal.type}`} onClick={confirmModal.onConfirm}>
+                {confirmModal.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

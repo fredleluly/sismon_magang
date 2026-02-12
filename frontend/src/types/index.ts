@@ -94,6 +94,9 @@ export interface UserDashboard {
 export interface AdminDashboard {
   totalPekerjaanSelesai: number;
   totalPeserta: number;
+  totalBerkas: number;
+  totalBuku: number;
+  totalBundle: number;
   avgProductivity: number;
   attendanceRate: number;
   todayAttendance: number;

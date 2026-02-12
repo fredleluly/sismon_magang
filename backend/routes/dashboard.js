@@ -45,10 +45,12 @@ router.get('/admin', auth, adminOnly, async (req, res) => {
     twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
     const weeklyProgress = await WorkLog.aggregate([
       { $match: { status: 'Selesai', tanggal: { $gte: twoWeeksAgo } } },
-      { $group: {
-        _id: { $dateToString: { format: '%Y-%m-%d', date: '$tanggal' } },
-        berkas: { $sum: '$berkas' }, buku: { $sum: '$buku' }, bundle: { $sum: '$bundle' }
-      }},
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$tanggal' } },
+          berkas: { $sum: '$berkas' }, buku: { $sum: '$buku' }, bundle: { $sum: '$bundle' }
+        }
+      },
       { $sort: { _id: 1 } }
     ]);
 
@@ -104,10 +106,12 @@ router.get('/user', auth, async (req, res) => {
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
     const weeklyProgress = await WorkLog.aggregate([
       { $match: { userId: req.userId, status: 'Selesai', tanggal: { $gte: oneWeekAgo } } },
-      { $group: {
-        _id: { $dateToString: { format: '%Y-%m-%d', date: '$tanggal' } },
-        berkas: { $sum: '$berkas' }, buku: { $sum: '$buku' }, bundle: { $sum: '$bundle' }
-      }},
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$tanggal' } },
+          berkas: { $sum: '$berkas' }, buku: { $sum: '$buku' }, bundle: { $sum: '$bundle' }
+        }
+      },
       { $sort: { _id: 1 } }
     ]);
 
