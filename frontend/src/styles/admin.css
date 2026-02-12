@@ -2187,6 +2187,8 @@ img {
   border: 1px solid rgba(226, 232, 240, 0.6);
   box-shadow: var(--shadow-card);
   animation: slideUp 0.4s ease 0.1s both;
+  position: relative;
+  z-index: 20;
 }
 .rekap-filter-group {
   display: flex;
@@ -2245,36 +2247,79 @@ img {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
-  min-width: 240px;
-  max-height: 280px;
+  width: 260px;
+  max-height: 200px;
   overflow-y: auto;
+  overscroll-behavior: contain;
   background: #fff;
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
-  z-index: 100;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  z-index: 999;
   padding: 6px 0;
   animation: fadeInUp 0.2s ease;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-300) transparent;
+}
+.rekap-user-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+.rekap-user-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 6px 0;
+}
+.rekap-user-dropdown::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: 3px;
+}
+.rekap-user-dropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-400);
 }
 .rekap-user-option {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 16px;
+  gap: 12px;
+  padding: 10px 16px;
   cursor: pointer;
   font-size: 13px;
   color: var(--gray-700);
   transition: var(--transition-fast);
+  user-select: none;
 }
 .rekap-user-option:hover {
   background: var(--primary-50);
   color: var(--primary-700);
 }
 .rekap-user-option input[type="checkbox"] {
-  accent-color: var(--primary-500);
-  width: 16px;
-  height: 16px;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  border: 2px solid var(--gray-300);
+  border-radius: 4px;
   cursor: pointer;
+  position: relative;
+  transition: var(--transition-fast);
+  background: #fff;
+}
+.rekap-user-option input[type="checkbox"]:checked {
+  background: var(--primary-500);
+  border-color: var(--primary-500);
+}
+.rekap-user-option input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.rekap-user-option input[type="checkbox"]:hover {
+  border-color: var(--primary-400);
 }
 .rekap-user-dropdown-divider {
   height: 1px;

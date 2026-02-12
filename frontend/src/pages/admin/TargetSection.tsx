@@ -5,11 +5,11 @@ import type { TargetSection as TargetSectionType } from "../../types";
 import "./TargetSection.css";
 
 const DEFAULT_JOB_TYPES = [
-  "Sortir Dokumen",
-  "Menginput data arsipan (Registering)",
-  "Melepas Step",
-  "Melakukan Scanning",
-  "Menyusun arsip kedalam kardus",
+  "Sortir",
+  "Register",
+  "Pencopotan Steples",
+  "Scanning",
+  "Rekardus",
   "Stikering",
 ];
 
