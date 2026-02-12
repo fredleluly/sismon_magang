@@ -28,6 +28,14 @@ async function apiRequest<T = unknown>(endpoint: string, options: RequestInit = 
       headers: { ...headers, ...(options.headers as Record<string, string>) },
     });
 
+    // Handle non-JSON responses
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await res.text();
+      console.error('Non-JSON response:', text);
+      return { success: false, message: `Server error (${res.status}): ${text.substring(0, 100)}`, data: {} as T };
+    }
+
     const data = await res.json();
 
     if (res.status === 401) {
@@ -129,9 +137,12 @@ export const WorkLogAPI = {
 export const AttendanceAPI = {
   getAll: (params = '') => API.get<Attendance[]>(`/attendance${params ? '?' + params : ''}`),
   scan: (token: string) => API.post<Attendance>('/attendance/scan', { token }),
-  photoCheckin: (foto: string, timestamp: string, timezone: string) =>
-    API.post<Attendance>('/attendance/photo-checkin', { foto, timestamp, timezone }),
+  photoCheckin: (foto: string, timestamp: string, timezone: string, location?: { latitude: number; longitude: number; address: string; accuracy: number }) =>
+    API.post<Attendance>('/attendance/photo-checkin', { foto, timestamp, timezone, ...location }),
+  photoCheckout: (foto: string, timestamp: string, timezone: string, location?: { latitude: number; longitude: number; address: string; accuracy: number }) =>
+    API.post<Attendance>('/attendance/photo-checkout', { foto, timestamp, timezone, ...location }),
   getPhoto: (id: string) => API.get<{ foto: string; fotoTimestamp: string }>(`/attendance/${id}/photo`),
+  getPhotoPulang: (id: string) => API.get<{ foto: string; fotoTimestamp: string }>(`/attendance/${id}/photo-pulang`),
   checkout: (id: string) => API.put<Attendance>(`/attendance/${id}/checkout`),
   update: (id: string, data: Partial<Attendance>) => API.put<Attendance>(`/attendance/${id}`, data),
   getToday: () => API.get<Attendance[]>('/attendance/today'),
