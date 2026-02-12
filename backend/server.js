@@ -13,8 +13,10 @@ const app = express();
 
 // ===== MIDDLEWARE =====
 app.use(cors({
-  origin: '*', // Izinkan semua domain (untuk development/testing)
-  optionsSuccessStatus: 200
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
