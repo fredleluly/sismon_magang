@@ -27,6 +27,14 @@ export interface WorkLog {
   createdAt: string;
 }
 
+// ===== GEOLOCATION =====
+export interface GeoLocation {
+  latitude: number | null;
+  longitude: number | null;
+  address: string;
+  accuracy: number | null;
+}
+
 // ===== ATTENDANCE =====
 export interface Attendance {
   _id: string;
@@ -38,6 +46,11 @@ export interface Attendance {
   fotoAbsensi?: string;
   fotoUrl?: string;
   fotoTimestamp?: string;
+  fotoPulang?: string;
+  fotoPulangUrl?: string;
+  fotoPulangTimestamp?: string;
+  locationMasuk?: GeoLocation;
+  locationPulang?: GeoLocation;
   createdAt?: string;
 }
 

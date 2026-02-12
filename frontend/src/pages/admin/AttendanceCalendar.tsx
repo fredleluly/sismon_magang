@@ -124,12 +124,27 @@ const AttendanceCalendar: React.FC = () => {
       const res = await AttendanceAPI.getPhoto(attendanceId);
       if (res && res.success && res.data.foto) {
         setViewingPhoto(res.data.foto);
-        setViewingPhotoName(userName);
+        setViewingPhotoName(userName + ' (Masuk)');
       } else {
         showToast('Foto tidak tersedia', 'error');
       }
     } catch (error) {
       showToast('Gagal memuat foto', 'error');
+    }
+  };
+
+  const handleViewPhotoPulang = async (attendanceId: string, userName: string) => {
+    try {
+      showToast('Memuat foto pulang...', 'info');
+      const res = await AttendanceAPI.getPhotoPulang(attendanceId);
+      if (res && res.success && res.data.foto) {
+        setViewingPhoto(res.data.foto);
+        setViewingPhotoName(userName + ' (Pulang)');
+      } else {
+        showToast('Foto pulang tidak tersedia', 'error');
+      }
+    } catch (error) {
+      showToast('Gagal memuat foto pulang', 'error');
     }
   };
 
@@ -721,7 +736,7 @@ const AttendanceCalendar: React.FC = () => {
                           {att.fotoAbsensi ? (
                             <button
                               onClick={() => handleViewPhoto(att._id, typeof att.userId === 'string' ? 'User' : att.userId?.name || 'User')}
-                              title="Lihat Foto"
+                              title="Lihat Foto Masuk"
                               style={{ background: 'none', border: '1px solid var(--gray-300)', borderRadius: 4, padding: 4, cursor: 'pointer', color: 'var(--primary-600)' }}
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -732,6 +747,19 @@ const AttendanceCalendar: React.FC = () => {
                           ) : (
                             <span style={{ width: 26 }}></span>
                           )}
+                          {att.fotoPulang ? (
+                            <button
+                              onClick={() => handleViewPhotoPulang(att._id, typeof att.userId === 'string' ? 'User' : att.userId?.name || 'User')}
+                              title="Lihat Foto Pulang"
+                              style={{ background: 'none', border: '1px solid #fcd34d', borderRadius: 4, padding: 4, cursor: 'pointer', color: '#d97706' }}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                              </svg>
+                            </button>
+                          ) : null}
                           <button
                             onClick={() => openEditStatus(att)}
                             title="Edit Status"

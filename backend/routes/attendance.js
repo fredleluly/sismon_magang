@@ -129,11 +129,11 @@ router.post('/scan', auth, async (req, res) => {
   }
 });
 
-// POST /api/attendance/photo-checkin — user takes photo to record attendance
+// POST /api/attendance/photo-checkin — user takes photo to record attendance (masuk)
 // Supports both base64 (foto field) and file upload (foto file)
 router.post('/photo-checkin', auth, upload.single('foto'), async (req, res) => {
   try {
-    const { foto, timestamp, timezone } = req.body;
+    const { foto, timestamp, timezone, latitude, longitude, address, accuracy } = req.body;
     
     // Check if photo provided (either as file or base64)
     if (!req.file && !foto) {
@@ -147,7 +147,7 @@ router.post('/photo-checkin', auth, upload.single('foto'), async (req, res) => {
       tanggal: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59') },
     });
     if (existingAttendance) {
-      return res.status(400).json({ success: false, message: 'Anda sudah absen hari ini.' });
+      return res.status(400).json({ success: false, message: 'Anda sudah absen masuk hari ini.' });
     }
 
     // Use timestamp from user's device if provided, otherwise server time
@@ -176,6 +176,12 @@ router.post('/photo-checkin', auth, upload.single('foto'), async (req, res) => {
       jamKeluar: '',
       status,
       fotoTimestamp,
+      locationMasuk: {
+        latitude: latitude ? parseFloat(latitude) : null,
+        longitude: longitude ? parseFloat(longitude) : null,
+        address: address || '',
+        accuracy: accuracy ? parseFloat(accuracy) : null,
+      },
     };
 
     // If file uploaded, store URL; otherwise store base64
@@ -187,11 +193,72 @@ router.post('/photo-checkin', auth, upload.single('foto'), async (req, res) => {
 
     const attendance = await Attendance.create(attendanceData);
 
-    res.status(201).json({ success: true, message: 'Absensi dengan foto berhasil!', data: attendance });
+    res.status(201).json({ success: true, message: 'Absensi masuk dengan foto berhasil!', data: attendance });
   } catch (err) {
     if (err.code === 11000) {
-      return res.status(400).json({ success: false, message: 'Anda sudah absen hari ini.' });
+      return res.status(400).json({ success: false, message: 'Anda sudah absen masuk hari ini.' });
     }
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/attendance/photo-checkout — user takes photo to record checkout (pulang)
+router.post('/photo-checkout', auth, upload.single('foto'), async (req, res) => {
+  try {
+    const { foto, timestamp, timezone, latitude, longitude, address, accuracy } = req.body;
+    
+    if (!req.file && !foto) {
+      return res.status(400).json({ success: false, message: 'Foto wajib diambil untuk absensi pulang.' });
+    }
+
+    // Find today's attendance record
+    const today = new Date().toISOString().split('T')[0];
+    const attendance = await Attendance.findOne({
+      userId: req.userId,
+      tanggal: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59') },
+    });
+
+    if (!attendance) {
+      return res.status(400).json({ success: false, message: 'Anda belum absen masuk hari ini. Silakan absen masuk terlebih dahulu.' });
+    }
+
+    if (attendance.jamKeluar && attendance.jamKeluar !== '' && attendance.jamKeluar !== '-') {
+      return res.status(400).json({ success: false, message: 'Anda sudah absen pulang hari ini.' });
+    }
+
+    // Use timestamp from user's device if provided, otherwise server time
+    let jamKeluar;
+    if (timestamp) {
+      const userDate = new Date(timestamp);
+      jamKeluar = userDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    } else {
+      const now = new Date();
+      jamKeluar = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    const fotoPulangTimestamp = timestamp
+      ? new Date(timestamp).toLocaleString('id-ID', { timeZone: timezone || 'Asia/Jakarta' })
+      : new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+
+    attendance.jamKeluar = jamKeluar;
+    attendance.fotoPulangTimestamp = fotoPulangTimestamp;
+    attendance.locationPulang = {
+      latitude: latitude ? parseFloat(latitude) : null,
+      longitude: longitude ? parseFloat(longitude) : null,
+      address: address || '',
+      accuracy: accuracy ? parseFloat(accuracy) : null,
+    };
+
+    if (req.file) {
+      attendance.fotoPulangUrl = `/uploads/${req.file.filename}`;
+    } else if (foto) {
+      attendance.fotoPulang = foto;
+    }
+
+    await attendance.save();
+
+    res.json({ success: true, message: 'Absensi pulang berhasil!', data: attendance });
+  } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -377,7 +444,33 @@ router.get('/:id/photo', auth, async (req, res) => {
   }
 });
 
-// PUT /api/attendance/:id/checkout — clock out
+// GET /api/attendance/:id/photo-pulang — get checkout photo
+router.get('/:id/photo-pulang', auth, async (req, res) => {
+  try {
+    const att = await Attendance.findById(req.params.id);
+    if (!att) return res.status(404).json({ success: false, message: 'Data absensi tidak ditemukan.' });
+
+    if (att.userId.toString() !== req.userId.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Akses ditolak.' });
+    }
+
+    let fotoData;
+    if (att.fotoPulangUrl) {
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      fotoData = `${baseUrl}${att.fotoPulangUrl}`;
+    } else if (att.fotoPulang) {
+      fotoData = att.fotoPulang;
+    } else {
+      return res.status(404).json({ success: false, message: 'Foto pulang tidak tersedia.' });
+    }
+
+    res.json({ success: true, data: { foto: fotoData, fotoTimestamp: att.fotoPulangTimestamp } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// PUT /api/attendance/:id/checkout — clock out (legacy, simple)
 router.put('/:id/checkout', auth, async (req, res) => {
   try {
     const att = await Attendance.findById(req.params.id);
