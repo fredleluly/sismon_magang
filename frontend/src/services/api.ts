@@ -137,7 +137,7 @@ export const AttendanceAPI = {
   getToday: () => API.get<Attendance[]>('/attendance/today'),
   getLateThreshold: () => API.get<{ lateThreshold: string }>('/attendance/settings/late-threshold'),
   setLateThreshold: (threshold: string) => API.post<{ lateThreshold: string }>('/attendance/settings/late-threshold', { threshold }),
-  updateStatus: (id: string, status: string, jamMasuk?: string) => API.put<Attendance>(`/attendance/${id}/status`, { status, ...(jamMasuk && { jamMasuk }) }),
+  updateStatus: (id: string, status: string, jamMasuk?: string, jamKeluar?: string) => API.put<Attendance>(`/attendance/${id}/status`, { status, ...(jamMasuk && { jamMasuk }), ...(jamKeluar !== undefined && { jamKeluar }) }),
   bulkHoliday: (tanggal: string) => API.post<{ created: number; updated: number; total: number }>('/attendance/bulk-holiday', { tanggal }),
 };
 

@@ -221,7 +221,7 @@ router.post('/photo-upload', auth, upload.single('foto'), async (req, res) => {
 // PUT /api/attendance/:id/status — admin: update attendance status and jamMasuk
 router.put('/:id/status', auth, adminOnly, async (req, res) => {
   try {
-    const { status, jamMasuk } = req.body;
+    const { status, jamMasuk, jamKeluar } = req.body;
     if (!status) return res.status(400).json({ success: false, message: 'Status wajib diisi.' });
 
     const allowed = ['Hadir', 'Telat', 'Izin', 'Sakit', 'Alpha', 'Hari Libur', 'Belum Absen'];
@@ -239,6 +239,14 @@ router.put('/:id/status', auth, adminOnly, async (req, res) => {
         return res.status(400).json({ success: false, message: 'Format jam masuk harus HH:MM (contoh: 08:30)' });
       }
       att.jamMasuk = jamMasuk;
+    }
+
+    // Update jamKeluar if provided (format: HH:MM or empty string)
+    if (jamKeluar !== undefined) {
+      if (jamKeluar && !/^\d{2}:\d{2}$/.test(jamKeluar)) {
+        return res.status(400).json({ success: false, message: 'Format jam keluar harus HH:MM (contoh: 17:00)' });
+      }
+      att.jamKeluar = jamKeluar;
     }
 
     await att.save();

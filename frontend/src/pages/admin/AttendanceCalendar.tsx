@@ -22,6 +22,7 @@ const AttendanceCalendar: React.FC = () => {
   const [editingAtt, setEditingAtt] = useState<any | null>(null);
   const [editStatus, setEditStatus] = useState<string>('Hadir');
   const [editJamMasuk, setEditJamMasuk] = useState<string>('');
+  const [editJamKeluar, setEditJamKeluar] = useState<string>('');
 
   // Filter states
   const [filterMode, setFilterMode] = useState<FilterMode>('harian');
@@ -137,6 +138,8 @@ const AttendanceCalendar: React.FC = () => {
     setEditStatus(att.status || 'Hadir');
     const jam = att.jamMasuk ? att.jamMasuk.replace('.', ':') : '00:00';
     setEditJamMasuk(jam);
+    const jamKeluar = att.jamKeluar ? att.jamKeluar.replace('.', ':') : '';
+    setEditJamKeluar(jamKeluar);
     document.body.style.overflow = 'hidden';
   };
 
@@ -144,13 +147,14 @@ const AttendanceCalendar: React.FC = () => {
     setEditingAtt(null);
     setEditStatus('Hadir');
     setEditJamMasuk('');
+    setEditJamKeluar('');
     document.body.style.overflow = '';
   };
 
   const handleSaveStatus = async () => {
     if (!editingAtt) return;
     try {
-      const res = await AttendanceAPI.updateStatus(editingAtt._id, editStatus, editJamMasuk);
+      const res = await AttendanceAPI.updateStatus(editingAtt._id, editStatus, editJamMasuk, editJamKeluar);
       if (res && res.success) {
         showToast('Data kehadiran berhasil diperbarui', 'success');
         closeEdit();
@@ -839,6 +843,21 @@ const AttendanceCalendar: React.FC = () => {
                   type="time"
                   value={editJamMasuk}
                   onChange={(e) => setEditJamMasuk(e.target.value)}
+                  style={{ width: '100%', padding: '11px 14px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box', transition: 'border-color 0.2s', outline: 'none' }}
+                  onFocus={(e) => (e.target.style.borderColor = '#667eea')}
+                  onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+                />
+              </div>
+
+              <div style={{ marginBottom: 18 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 8 }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  Jam Keluar
+                </label>
+                <input
+                  type="time"
+                  value={editJamKeluar}
+                  onChange={(e) => setEditJamKeluar(e.target.value)}
                   style={{ width: '100%', padding: '11px 14px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box', transition: 'border-color 0.2s', outline: 'none' }}
                   onFocus={(e) => (e.target.style.borderColor = '#667eea')}
                   onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
