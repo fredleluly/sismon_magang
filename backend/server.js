@@ -12,12 +12,15 @@ const path = require('path');
 const app = express();
 
 // ===== MIDDLEWARE =====
-app.use(cors({
+const corsOptions = {
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: false
-}));
+  credentials: false,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Force handle preflight
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(morgan('dev'));
@@ -32,9 +35,17 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ===== ROUTES =====
 app.get('/', (req, res) => {
+  const dbStatus = mongoose.connection.readyState;
+  const statusMap = {
+    0: 'Disconnected 🔴',
+    1: 'Connected 🟢',
+    2: 'Connecting 🟡',
+    3: 'Disconnecting 🟠',
+  };
+
   res.json({ 
     message: "PLN Magang Monitoring API is running!", 
-    status: "success",
+    database_status: statusMap[dbStatus] || 'Unknown',
     timestamp: new Date().toISOString()
   });
 });
