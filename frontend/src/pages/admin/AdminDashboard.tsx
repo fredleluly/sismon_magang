@@ -97,7 +97,7 @@ const AdminDashboard: React.FC = () => {
       const res = await fetch('/api/attendance/today', { headers: { Authorization: 'Bearer ' + getToken() } });
       const d = await res.json();
       if (d.success) setAttendanceList(d.data || []);
-    } catch {}
+    } catch { }
   };
 
   const exportToExcel = () => {
