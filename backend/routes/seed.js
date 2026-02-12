@@ -21,6 +21,32 @@ const randomDate = (start, end) => {
 // Warning: Clears non-admin users and generates new dummy data
 router.get('/', async (req, res) => {
   try {
+    // 0. Ensure Admin & Super Admin Exist
+    const existingAdmin = await User.findOne({ email: 'admin@plniconplus.co.id' });
+    const existingSuperAdmin = await User.findOne({ email: 'superadmin@plniconplus.co.id' });
+
+    if (!existingAdmin) {
+      await User.create({
+        name: 'Administrator',
+        email: 'admin@plniconplus.co.id',
+        password: 'admin123',
+        role: 'admin',
+        instansi: 'PLN ICON+',
+        jabatan: 'Administrator',
+      });
+    }
+
+    if (!existingSuperAdmin) {
+      await User.create({
+        name: 'Super Admin',
+        email: 'superadmin@plniconplus.co.id',
+        password: 'super123',
+        role: 'admin',
+        instansi: 'PLN ICON+',
+        jabatan: 'Super Administrator',
+      });
+    }
+
     // 1. Clear existing non-admin data
     const nonAdminUsers = await User.find({ role: { $ne: 'admin' } }).select('_id');
     const nonAdminIds = nonAdminUsers.map(u => u._id);
