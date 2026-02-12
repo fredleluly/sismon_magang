@@ -22,6 +22,7 @@ const AttendanceCalendar: React.FC = () => {
   const [editingAtt, setEditingAtt] = useState<any | null>(null);
   const [editStatus, setEditStatus] = useState<string>('Hadir');
   const [editJamMasuk, setEditJamMasuk] = useState<string>('');
+  const [editJamKeluar, setEditJamKeluar] = useState<string>('');
 
   // Filter states
   const [filterMode, setFilterMode] = useState<FilterMode>('harian');
@@ -137,6 +138,8 @@ const AttendanceCalendar: React.FC = () => {
     setEditStatus(att.status || 'Hadir');
     const jam = att.jamMasuk ? att.jamMasuk.replace('.', ':') : '00:00';
     setEditJamMasuk(jam);
+    const jamKeluar = att.jamKeluar ? att.jamKeluar.replace('.', ':') : '';
+    setEditJamKeluar(jamKeluar);
     document.body.style.overflow = 'hidden';
   };
 
@@ -144,13 +147,14 @@ const AttendanceCalendar: React.FC = () => {
     setEditingAtt(null);
     setEditStatus('Hadir');
     setEditJamMasuk('');
+    setEditJamKeluar('');
     document.body.style.overflow = '';
   };
 
   const handleSaveStatus = async () => {
     if (!editingAtt) return;
     try {
-      const res = await AttendanceAPI.updateStatus(editingAtt._id, editStatus, editJamMasuk);
+      const res = await AttendanceAPI.updateStatus(editingAtt._id, editStatus, editJamMasuk, editJamKeluar);
       if (res && res.success) {
         showToast('Data kehadiran berhasil diperbarui', 'success');
         closeEdit();
@@ -358,20 +362,20 @@ const AttendanceCalendar: React.FC = () => {
         [`Filter: ${filterLabel || 'Semua'}`],
         [`Total Data: ${dataToExport.length}`],
         [],
-        ['No', 'Nama', 'Institusi', 'Tanggal', 'Jam Masuk', 'Status'],
+        ['No', 'Nama', 'Institusi', 'Tanggal', 'Jam Masuk', 'Jam Keluar', 'Status'],
       ];
 
       dataToExport.forEach((att, index) => {
         const name = typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown';
         const instansi = typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-';
         const tanggal = new Date(att.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-        wsData.push([index + 1, name, instansi, tanggal, att.jamMasuk || '-', att.status]);
+        wsData.push([index + 1, name, instansi, tanggal, att.jamMasuk || '-', att.jamKeluar || '-', att.status]);
       });
 
       const ws = XLSX.utils.aoa_to_sheet(wsData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Kehadiran');
-      ws['!cols'] = [{ wch: 5 }, { wch: 22 }, { wch: 22 }, { wch: 20 }, { wch: 12 }, { wch: 12 }];
+      ws['!cols'] = [{ wch: 5 }, { wch: 22 }, { wch: 22 }, { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
 
       let filename = 'Kehadiran';
       if (filterMode === 'mingguan') filename = 'Kehadiran_Mingguan';
@@ -693,6 +697,7 @@ const AttendanceCalendar: React.FC = () => {
                     <th>Institusi</th>
                     {filterMode !== 'harian' && <th>Tanggal</th>}
                     <th>Jam Masuk</th>
+                    <th>Jam Keluar</th>
                     <th>Status</th>
                     <th>Aksi</th>
                   </tr>
@@ -707,6 +712,7 @@ const AttendanceCalendar: React.FC = () => {
                         <td style={{ fontSize: 12 }}>{new Date(att.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                       )}
                       <td className="time-cell">{att.jamMasuk || '-'}</td>
+                      <td className="time-cell">{att.jamKeluar || '-'}</td>
                       <td>
                         <span className={`status-badge status-${(isThresholdLoaded ? getStatusWithLate(att) : att.status || '').toLowerCase().replace(/\s+/g, '-')}`}>{isThresholdLoaded ? getStatusWithLate(att) : att.status}</span>
                       </td>
@@ -837,6 +843,21 @@ const AttendanceCalendar: React.FC = () => {
                   type="time"
                   value={editJamMasuk}
                   onChange={(e) => setEditJamMasuk(e.target.value)}
+                  style={{ width: '100%', padding: '11px 14px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box', transition: 'border-color 0.2s', outline: 'none' }}
+                  onFocus={(e) => (e.target.style.borderColor = '#667eea')}
+                  onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+                />
+              </div>
+
+              <div style={{ marginBottom: 18 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 8 }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  Jam Keluar
+                </label>
+                <input
+                  type="time"
+                  value={editJamKeluar}
+                  onChange={(e) => setEditJamKeluar(e.target.value)}
                   style={{ width: '100%', padding: '11px 14px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box', transition: 'border-color 0.2s', outline: 'none' }}
                   onFocus={(e) => (e.target.style.borderColor = '#667eea')}
                   onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
