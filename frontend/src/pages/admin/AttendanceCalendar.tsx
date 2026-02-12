@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AttendanceAPI, UsersAPI, getToken } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { Attendance, User } from '../../types';
-import * as XLSX from 'xlsx';
+import { exportExcel } from '../../utils/excelExport';
 import './AttendanceCalendar.css';
 
 type FilterMode = 'harian' | 'mingguan' | 'bulanan' | 'custom';
@@ -456,7 +456,7 @@ const AttendanceCalendar: React.FC = () => {
     }
   };
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     const dataToExport = filterData.length > 0 ? filterData : selectedDayData;
     if (dataToExport.length === 0) {
       showToast('Tidak ada data untuk diexport', 'error');
@@ -464,25 +464,11 @@ const AttendanceCalendar: React.FC = () => {
     }
 
     try {
-      const wsData: any[] = [
-        ['DATA KEHADIRAN'],
-        [`Filter: ${filterLabel || 'Semua'}`],
-        [`Total Data: ${dataToExport.length}`],
-        [],
-        ['No', 'Nama', 'Institusi', 'Tanggal', 'Jam Masuk', 'Jam Keluar', 'Status'],
-      ];
-
-      dataToExport.forEach((att, index) => {
-        const name = typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown';
-        const instansi = typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-';
-        const tanggal = new Date(att.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-        wsData.push([index + 1, name, instansi, tanggal, att.jamMasuk || '-', att.jamKeluar || '-', att.status]);
-      });
-
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Kehadiran');
-      ws['!cols'] = [{ wch: 5 }, { wch: 22 }, { wch: 22 }, { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
+      // Count status
+      const hadir = dataToExport.filter(a => a.status === 'Hadir').length;
+      const izin = dataToExport.filter(a => a.status === 'Izin').length;
+      const sakit = dataToExport.filter(a => a.status === 'Sakit').length;
+      const alpha = dataToExport.filter(a => a.status === 'Alpha' || a.status === 'Belum Absen').length;
 
       let filename = 'Kehadiran';
       if (filterMode === 'mingguan') {
@@ -501,7 +487,38 @@ const AttendanceCalendar: React.FC = () => {
         filename = `Kehadiran_${selectedDayData[0]?.tanggal.toString().split('T')[0]}`;
       }
 
-      XLSX.writeFile(wb, `${filename}.xlsx`);
+      await exportExcel({
+        fileName: filename,
+        companyName: 'SISMON Magang',
+        sheets: [{
+          sheetName: 'Kehadiran',
+          title: 'DATA KEHADIRAN',
+          subtitle: 'Laporan Kehadiran Peserta Magang',
+          infoLines: [
+            `Filter: ${filterLabel || 'Semua'}`,
+            `Total Data: ${dataToExport.length} peserta`,
+            `Hadir: ${hadir} | Izin: ${izin} | Sakit: ${sakit} | Alpha: ${alpha}`,
+          ],
+          columns: [
+            { header: 'No', key: 'no', width: 6, type: 'number' },
+            { header: 'Nama', key: 'nama', width: 24 },
+            { header: 'Institusi', key: 'instansi', width: 24 },
+            { header: 'Tanggal', key: 'tanggal', width: 22, type: 'date' },
+            { header: 'Jam Masuk', key: 'jamMasuk', width: 14 },
+            { header: 'Jam Keluar', key: 'jamKeluar', width: 14 },
+            { header: 'Status', key: 'status', width: 14 },
+          ],
+          data: dataToExport.map((att, index) => ({
+            no: index + 1,
+            nama: typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown',
+            instansi: typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-',
+            tanggal: new Date(att.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+            jamMasuk: att.jamMasuk || '-',
+            jamKeluar: att.jamKeluar || '-',
+            status: att.status,
+          })),
+        }],
+      });
       showToast('Excel berhasil diunduh!', 'success');
     } catch (error) {
       showToast('Gagal mengunduh Excel', 'error');

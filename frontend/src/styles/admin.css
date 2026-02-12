@@ -2544,12 +2544,21 @@ img {
     transform: translateX(-100%);
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
     width: 280px;
+    max-width: 85vw; /* Prevent overriding full screen on very small phones */
+    height: 100vh;
+    z-index: 9999; /* Ensure on top of everything */
+    padding-bottom: 80px; /* Space for scroll */
   }
   .sidebar.open {
     transform: translateX(0);
   }
   .sidebar-close-btn {
     display: flex;
+    top: 20px;
+    right: 20px;
+    width: 36px;
+    height: 36px;
+    background: rgba(255,255,255,0.15);
   }
 
   .main-content {

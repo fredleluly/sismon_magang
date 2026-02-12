@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import * as XLSX from 'xlsx';
-import { WorkLogAPI, UsersAPI } from '../../services/api';
+import { WorkLogAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { WorkLog, User } from '../../types';
 
@@ -185,7 +185,7 @@ const LogAktivitas: React.FC = () => {
 
   const avColors = ['av-a','av-b','av-c','av-d','av-e'];
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     if (filtered.length === 0) {
       showToast('Tidak ada data untuk diekspor', 'error');
       return;
@@ -208,18 +208,8 @@ const LogAktivitas: React.FC = () => {
     ws['!cols'] = colWidths;
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Log Aktivitas');
-    let filename = '';
-    if (filterType === 'bulanan') {
-        const monthName = monthNames[currentDate.getMonth()];
-        const year = currentDate.getFullYear();
-        filename = `Log_Aktivitas_${monthName}_${year}.xlsx`;
-    } else if (filterType === 'custom' && dateFrom && dateTo) {
-        filename = `Log_Aktivitas_${dateFrom}_sd_${dateTo}.xlsx`;
-    } else {
-        const today = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
-        filename = `Log_Aktivitas_${today}.xlsx`;
-    }
-    XLSX.writeFile(wb, filename);
+    const today = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
+    XLSX.writeFile(wb, `Log_Aktivitas_${today}.xlsx`);
     showToast('Berhasil mengekspor data ke Excel', 'success');
   };
 
