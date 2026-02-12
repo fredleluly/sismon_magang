@@ -12,7 +12,10 @@ const path = require('path');
 const app = express();
 
 // ===== MIDDLEWARE =====
-app.use(cors());
+app.use(cors({
+  origin: '*', // Izinkan semua domain (untuk development/testing)
+  optionsSuccessStatus: 200
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(morgan('dev'));
