@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { WorkLogAPI } from '../../services/api';
+import { WorkLogAPI, UsersAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { WorkLog, User } from '../../types';
 
@@ -33,7 +33,7 @@ const LogAktivitas: React.FC = () => {
     const loadUsers = async () => {
         const res = await UsersAPI.getAll();
         if (res && res.success) {
-            setUsers(res.data.filter(u => u.role !== 'admin'));
+            setUsers(res.data.filter((u: User) => u.role !== 'admin'));
         }
     };
     loadUsers();
