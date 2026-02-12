@@ -1222,6 +1222,8 @@ img {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 .peserta-table-header .pth-left {
   display: flex;
@@ -1240,9 +1242,12 @@ img {
 }
 .peserta-search {
   position: relative;
+  flex: 1;
+  min-width: 200px;
+  max-width: 400px;
 }
 .peserta-search input {
-  width: 260px;
+  width: 100%;
   padding: 10px 16px 10px 40px;
   background: var(--gray-50);
   border: 1px solid var(--gray-200);
@@ -1252,7 +1257,6 @@ img {
   transition: var(--transition-base);
 }
 .peserta-search input:focus {
-  width: 320px;
   border-color: var(--primary-400);
   box-shadow: 0 0 0 3px rgba(26, 143, 201, 0.1);
 }
@@ -1268,9 +1272,36 @@ img {
   height: 16px;
 }
 
+.peserta-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-md);
+}
+
+.peserta-table-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+
+.peserta-table-wrapper::-webkit-scrollbar-track {
+  background: var(--gray-100);
+  border-radius: 3px;
+}
+
+.peserta-table-wrapper::-webkit-scrollbar-thumb {
+  background: var(--primary-300);
+  border-radius: 3px;
+}
+
+.peserta-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-400);
+}
+
 .peserta-table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 800px;
 }
 .peserta-table thead th {
   text-align: left;
@@ -1281,6 +1312,9 @@ img {
   color: var(--gray-500);
   padding: 14px 16px;
   border-bottom: 2px solid var(--gray-100);
+  background: var(--gray-50);
+  position: sticky;
+  top: 0;
 }
 .peserta-table tbody td {
   padding: 16px;
@@ -1288,17 +1322,32 @@ img {
   color: var(--gray-700);
   border-bottom: 1px solid var(--gray-100);
   transition: var(--transition-fast);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+.peserta-table tbody td:last-child {
+  white-space: normal;
+}
+
 .peserta-table tbody tr {
   animation: fadeInUp 0.3s ease both;
+  transition: background-color var(--transition-fast);
 }
 .peserta-table tbody tr:hover {
-  background: var(--gray-50);
+  background: var(--primary-50);
 }
+
+.peserta-table tbody tr:hover td {
+  color: var(--gray-800);
+}
+
 .peserta-table .user-cell {
   display: flex;
   align-items: center;
   gap: 12px;
+  white-space: normal;
 }
 .peserta-table .user-avatar {
   width: 36px;
@@ -1331,10 +1380,12 @@ img {
   font-size: 14px;
   font-weight: 600;
   color: var(--gray-800);
+  white-space: normal;
 }
 .peserta-table .user-email {
   font-size: 12px;
   color: var(--gray-400);
+  white-space: normal;
 }
 
 .status-badge {
@@ -1418,6 +1469,7 @@ img {
 .log-table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 900px;
 }
 .log-table thead th {
   text-align: left;
@@ -1428,6 +1480,10 @@ img {
   color: var(--gray-500);
   padding: 14px 16px;
   border-bottom: 2px solid var(--gray-100);
+  background: var(--gray-50);
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 .log-table tbody td {
   padding: 16px;
@@ -1435,12 +1491,53 @@ img {
   color: var(--gray-700);
   border-bottom: 1px solid var(--gray-100);
   transition: var(--transition-fast);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+.log-table tbody td:nth-child(4) {
+  white-space: normal;
+  max-width: 300px;
+}
+
 .log-table tbody tr {
   animation: fadeInUp 0.3s ease both;
+  transition: background-color var(--transition-fast);
 }
 .log-table tbody tr:hover {
-  background: var(--gray-50);
+  background: var(--primary-50);
+}
+
+.log-table tbody tr:hover td {
+  color: var(--gray-800);
+}
+
+.table-container {
+  overflow-x: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-md);
+  max-height: calc(100vh - 380px);
+}
+
+.table-container::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: var(--gray-100);
+  border-radius: 3px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: var(--primary-300);
+  border-radius: 3px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-400);
 }
 
 .job-badge {
@@ -2335,9 +2432,11 @@ img {
 }
 .rekap-filter-actions {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 10px;
   margin-left: auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 /* Info bar */
@@ -2625,6 +2724,94 @@ img {
   .rekap-table-wrapper {
     max-width: 100%;
   }
+
+  /* Peserta Table Responsive */
+  .peserta-table-card {
+    padding: 20px;
+  }
+
+  .peserta-table-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .peserta-search {
+    width: 100%;
+    min-width: unset;
+    max-width: unset;
+  }
+
+  .peserta-search input {
+    width: 100%;
+  }
+
+  .peserta-table {
+    min-width: 700px;
+  }
+
+  .peserta-table tbody td,
+  .peserta-table thead th {
+    padding: 12px 14px;
+    font-size: 12px;
+  }
+
+  .peserta-table .user-cell {
+    gap: 8px;
+  }
+
+  .peserta-table .user-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 11px;
+  }
+
+  .peserta-table .user-name {
+    font-size: 13px;
+  }
+
+  .peserta-table .user-email {
+    font-size: 11px;
+  }
+
+  .action-btns {
+    gap: 4px;
+  }
+
+  .action-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .action-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Log Table Responsive */
+  .log-table-card {
+    padding: 20px;
+  }
+
+  .log-table {
+    min-width: 750px;
+    font-size: 11px;
+  }
+
+  .log-table th,
+  .log-table td {
+    padding: 10px 10px;
+    font-size: 11px;
+  }
+
+  .log-table th {
+    font-size: 10px;
+  }
+
+  .table-container {
+    max-height: calc(100vh - 320px);
+  }
   
   /* Fix chart hieght on tablet */
   .chart-canvas-wrapper {
@@ -2704,6 +2891,114 @@ img {
   .filter-group select, 
   .filter-group input {
     width: 100%;
+  }
+
+  /* Peserta Table Mobile Responsive */
+  .peserta-table-card {
+    padding: 16px;
+    border-radius: var(--radius-md);
+  }
+
+  .peserta-table-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .peserta-search {
+    width: 100%;
+  }
+
+  .peserta-search input {
+    width: 100%;
+    padding: 10px 16px 10px 36px;
+    font-size: 12px;
+  }
+
+  .peserta-search input:focus {
+    width: 100%;
+  }
+
+  .peserta-table {
+    min-width: 600px;
+    font-size: 11px;
+  }
+
+  .peserta-table thead th {
+    padding: 10px 12px;
+    font-size: 10px;
+  }
+
+  .peserta-table tbody td {
+    padding: 10px 12px;
+    font-size: 11px;
+  }
+
+  .peserta-table .user-cell {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .peserta-table .user-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 10px;
+  }
+
+  .peserta-table .user-name {
+    font-size: 12px;
+  }
+
+  .peserta-table .user-email {
+    font-size: 10px;
+    max-width: 150px;
+  }
+
+  .action-btns {
+    gap: 3px;
+  }
+
+  .action-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+  }
+
+  .action-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* Log Table Mobile Responsive */
+  .log-table-card {
+    padding: 16px;
+    border-radius: var(--radius-md);
+  }
+
+  .log-table {
+    font-size: 10px;
+    min-width: 650px;
+  }
+
+  .log-table th,
+  .log-table td {
+    padding: 8px 8px;
+    font-size: 9px;
+  }
+
+  .log-table th {
+    font-size: 8px;
+  }
+
+  .table-container {
+    max-height: calc(100vh - 320px);
+    border-radius: 6px;
+  }
+
+  .job-badge {
+    padding: 2px 8px;
+    font-size: 8px;
   }
 }
 
@@ -3002,6 +3297,18 @@ img {
     width: 100%;
     justify-content: center;
   }
+
+  .rekap-filter-actions {
+    width: 100%;
+    flex-direction: column;
+    gap: 10px;
+    margin-left: 0;
+    justify-content: stretch;
+  }
+
+  .rekap-filter-actions button {
+    width: 100%;
+  }
 }
 
 @media (max-width: 480px) {
@@ -3012,5 +3319,203 @@ img {
   .dashboard-date-popup {
       width: 280px; 
       right: -20px; /* shift slightly if needed or center */
+  }
+
+  .rekap-filter-actions {
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .rekap-filter-actions button {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .btn-export {
+    width: 100% !important;
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* ============================================
+   FILTER BUTTONS STYLING
+   ============================================ */
+
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.filter-btn {
+  padding: 10px 20px;
+  background: white;
+  border: 2px solid var(--gray-200);
+  color: var(--gray-700);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 100px;
+}
+
+.filter-btn:hover {
+  border-color: var(--primary-400);
+  background: var(--primary-50);
+  color: var(--primary-600);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(26, 143, 201, 0.2);
+}
+
+.filter-btn.active {
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+  border-color: var(--primary-600);
+  color: white;
+  box-shadow: 0 4px 16px rgba(26, 143, 201, 0.3);
+}
+
+.filter-btn.active:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(26, 143, 201, 0.4);
+}
+
+/* ============================================
+   APPLY FILTER BUTTON STYLING
+   ============================================ */
+
+.btn-apply-filter {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(26, 143, 201, 0.3);
+  white-space: nowrap;
+}
+
+.btn-apply-filter:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(26, 143, 201, 0.4);
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-800));
+}
+
+.btn-apply-filter:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-apply-filter:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive Filter Bar Improvements */
+@media (max-width: 1200px) {
+  .work-filter-bar {
+    gap: 12px;
+  }
+
+  .filter-btn {
+    min-width: 90px;
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .btn-apply-filter {
+    padding: 8px 20px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 768px) {
+  .work-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .work-filter-left {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  
+  .filter-buttons {
+    width: 100%;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .filter-btn {
+    width: 100%;
+    flex: none;
+    min-width: 0;
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+
+  .month-picker-container {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .custom-date-range-toggle {
+    width: 100%;
+    min-width: 0 !important;
+    justify-content: space-between;
+  }
+  
+  .rekap-filter-actions {
+    width: 100%;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .rekap-filter-actions button {
+    width: 100%;
+  }
+
+  .btn-apply-filter {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-btn {
+    padding: 10px 14px;
+    font-size: 12px;
+    min-width: 0;
+  }
+
+  .btn-apply-filter {
+    padding: 10px 14px;
+    font-size: 12px;
+  }
+
+  .work-filter-bar {
+    gap: 10px;
+  }
+
+  .filter-buttons {
+    gap: 8px;
   }
 }

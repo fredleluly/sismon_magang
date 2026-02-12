@@ -371,23 +371,21 @@ const Rekapitulasi: React.FC = () => {
       {/* Filters */}
       <div className="work-filter-bar">
         <div className="work-filter-left">
-            <div className="filter-buttons">  
-                <button 
-                    className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`} 
-                    onClick={() => setFilterType('bulanan')}
-                >
-                    Bulanan
-                </button>
-                <button 
-                    className={`filter-btn ${filterType === 'custom' ? 'active' : ''}`} 
-                    onClick={() => {
-                        setFilterType('custom');
-                        if(!isSelectingDateRange) setIsSelectingStart(true);
-                    }}
-                >
-                    Custom
-                </button>
-            </div>
+            <button 
+                className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`} 
+                onClick={() => setFilterType('bulanan')}
+            >
+                Bulanan
+            </button>
+            <button 
+                className={`filter-btn ${filterType === 'custom' ? 'active' : ''}`} 
+                onClick={() => {
+                    setFilterType('custom');
+                    if(!isSelectingDateRange) setIsSelectingStart(true);
+                }}
+            >
+                Custom
+            </button>
 
             {filterType === 'bulanan' ? (
                 <div className="month-picker-container">

@@ -218,30 +218,31 @@ const LogAktivitas: React.FC = () => {
       <div className="page-header-row"><div className="page-header"><h1>Log Aktivitas</h1><p>Pantau aktivitas pekerjaan seluruh peserta magang</p></div></div>
       
       {/* Filters (Rekapitulasi Style) */}
-      <div className="work-filter-bar" style={{ marginBottom: 16, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', flex: 1 }}>
-            <div className="filter-buttons">  
-                <button 
-                    className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`} 
-                    onClick={() => setFilterType('bulanan')}
-                >
-                    Bulanan
-                </button>
-                <button 
-                    className={`filter-btn ${filterType === 'custom' ? 'active' : ''}`} 
-                    onClick={() => setFilterType('custom')}
-                >
-                    Custom
-                </button>
-            </div>
+      <div className="work-filter-bar">
+        <div className="work-filter-left">
+            <button 
+                className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`} 
+                onClick={() => setFilterType('bulanan')}
+            >
+                Bulanan
+            </button>
+            <button 
+                className={`filter-btn ${filterType === 'custom' ? 'active' : ''}`} 
+                onClick={() => {
+                  setFilterType('custom');
+                  if (!isSelectingDateRange) setIsSelectingStart(true);
+                }}
+            >
+                Custom
+            </button>
 
             {filterType === 'bulanan' ? (
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', background: 'white', border: '1px solid var(--gray-200)', borderRadius: 'var(--radius-md)', padding: '0 12px', height: 40 }}>
+                <div className="month-picker-container">
                     <button onClick={handlePrevMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                     </button>
-                    <span style={{ margin: '0 12px', fontSize: 14, fontWeight: 600, minWidth: 120, textAlign: 'center' }}>
-                        {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+                    <span className="month-display">
+                        {currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
                     </span>
                     <button onClick={handleNextMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
@@ -328,7 +329,7 @@ const LogAktivitas: React.FC = () => {
             )}
 
             {/* User Filter Dropdown */}
-            <div className="rekap-filter-group rekap-user-filter" ref={filterRef} style={{ margin: 0 }}>
+            <div className="rekap-filter-group rekap-user-filter rekap-user-filter-container" ref={filterRef}>
               <button
                 className="rekap-user-btn"
                 onClick={() => setShowUserFilter(!showUserFilter)}
@@ -342,7 +343,7 @@ const LogAktivitas: React.FC = () => {
                   : selectedUsers.length === users.length
                     ? 'Semua Peserta'
                     : `${selectedUsers.length} Peserta`}
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rekap-user-btn-icon-right">
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               </button>
@@ -372,18 +373,15 @@ const LogAktivitas: React.FC = () => {
         </div>
       </div>
      
-      {/* Search Bar - Optional, keep below filters if user wants additional client-side search */}
+      {/* Search Bar */}
       <div className="log-table-card">
         <div className="peserta-table-header">
           <div className="pth-left"><h3>Aktivitas Terbaru</h3></div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {/* Moved Export Up, kept Search here */}
-            <div className="peserta-search"><input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari aktivitas..." /></div>
-          </div>
+          <div className="peserta-search"><input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari aktivitas..." /></div>
         </div>
-        <div className="table-container" style={{ maxHeight: 'calc(100vh - 280px)', overflowY: 'auto' }}>
+        <div className="table-container">
           <table className="log-table">
-            <thead style={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: 'white' }}>
+            <thead>
               <tr>
                 <th>Nama Peserta</th>
                 <th>Tanggal</th>

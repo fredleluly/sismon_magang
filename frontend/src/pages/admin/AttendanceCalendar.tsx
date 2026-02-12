@@ -757,6 +757,7 @@ const AttendanceCalendar: React.FC = () => {
                         <button
                         className="custom-date-range-toggle"
                         onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
+                        style={{ minWidth: 240 }}
                         >
                         {customFrom && customTo
                             ? `${customFrom} - ${customTo}`
@@ -832,17 +833,17 @@ const AttendanceCalendar: React.FC = () => {
                         )}
                     </div>
                 )}
-            </div>
 
-            {filterMode === 'mingguan' && (
-                 <button
-                    className="btn-apply-filter"
-                    onClick={handleApplyFilter}
-                    disabled={filterLoading}
-                >
-                    {filterLoading ? 'Memuat...' : 'Terapkan Filter'}
-                </button>
-            )}
+                {filterMode === 'mingguan' && (
+                     <button
+                        className="btn-apply-filter"
+                        onClick={handleApplyFilter}
+                        disabled={filterLoading}
+                    >
+                        {filterLoading ? 'Memuat...' : 'Terapkan Filter'}
+                    </button>
+                )}
+            </div>
 
             {/* Action Buttons (Right Aligned) */}
             <div className="rekap-filter-actions">
@@ -934,7 +935,7 @@ const AttendanceCalendar: React.FC = () => {
                 <p>{displayData.length} data kehadiran</p>
               </div>
 
-              <div className="attendance-table-wrapper" style={{ maxHeight: displayData.length > 6 ? '360px' : 'none', overflowY: displayData.length > 6 ? 'auto' : 'visible', overflowX: 'auto', borderRadius: 8, border: displayData.length > 6 ? '1px solid #e2e8f0' : 'none' }}>
+              <div className="attendance-table-wrapper">
               <table className="attendance-table">
                 <thead>
                   <tr>

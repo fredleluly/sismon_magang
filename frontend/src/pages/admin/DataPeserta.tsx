@@ -146,7 +146,8 @@ const DataPeserta: React.FC = () => {
             <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari nama atau instansi..." />
           </div>
         </div>
-        <table className="peserta-table">
+        <div className="peserta-table-wrapper">
+          <table className="peserta-table">
           <thead>
             <tr>
               <th>Nama</th>
@@ -266,6 +267,7 @@ const DataPeserta: React.FC = () => {
                 document.body
               )}
         </table>
+        </div>
       </div>
       {modal &&
         ReactDOM.createPortal(
