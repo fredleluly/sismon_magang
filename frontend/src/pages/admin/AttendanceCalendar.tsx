@@ -709,8 +709,8 @@ const AttendanceCalendar: React.FC = () => {
 
           {/* Filter Controls */}
           {/* Filter Controls (Rekapitulasi Style) */}
-          <div className="work-filter-bar" style={{ marginBottom: 16, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', flex: 1 }}>
+          <div className="work-filter-bar">
+            <div className="work-filter-left">
               <div className="filter-buttons">
                 {(['harian', 'mingguan', 'bulanan', 'custom'] as FilterMode[]).map((mode) => (
                     <button
@@ -739,14 +739,14 @@ const AttendanceCalendar: React.FC = () => {
 
                {/* Dynamic Filter Input */}
                {filterMode === 'bulanan' && (
-                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', background: 'white', border: '1px solid var(--gray-200)', borderRadius: 'var(--radius-md)', padding: '0 12px', height: 40 }}>
-                        <button onClick={handlePreviousMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
+                    <div className="month-picker-container">
+                        <button onClick={handlePreviousMonth} className="month-nav-btn">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                         </button>
-                        <span style={{ margin: '0 12px', fontSize: 14, fontWeight: 600, minWidth: 120, textAlign: 'center' }}>
+                        <span className="month-display">
                             {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
                         </span>
-                        <button onClick={handleNextMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
+                        <button onClick={handleNextMonth} className="month-nav-btn">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                         </button>
                     </div>
@@ -757,7 +757,6 @@ const AttendanceCalendar: React.FC = () => {
                         <button
                         className="custom-date-range-toggle"
                         onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
-                        style={{ minWidth: 240 }}
                         >
                         {customFrom && customTo
                             ? `${customFrom} - ${customTo}`
@@ -837,28 +836,16 @@ const AttendanceCalendar: React.FC = () => {
 
             {filterMode === 'mingguan' && (
                  <button
+                    className="btn-apply-filter"
                     onClick={handleApplyFilter}
                     disabled={filterLoading}
-                    style={{
-                        padding: '7px 18px',
-                        background: '#0a6599',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: 6,
-                        cursor: filterLoading ? 'not-allowed' : 'pointer',
-                        fontSize: 12,
-                        fontWeight: 600,
-                        opacity: filterLoading ? 0.7 : 1,
-                        height: 40,
-                        marginLeft: 8 // Add some spacing from the filter buttons
-                    }}
                 >
                     {filterLoading ? 'Memuat...' : 'Terapkan Filter'}
                 </button>
             )}
 
             {/* Action Buttons (Right Aligned) */}
-            <div className="rekap-filter-actions" style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+            <div className="rekap-filter-actions">
                  {/* Holiday Buttons */}
                  {filterMode === 'harian' && selectedDate && (
                     <>
@@ -947,7 +934,7 @@ const AttendanceCalendar: React.FC = () => {
                 <p>{displayData.length} data kehadiran</p>
               </div>
 
-              <div style={{ maxHeight: displayData.length > 6 ? '360px' : 'none', overflowY: displayData.length > 6 ? 'auto' : 'visible', borderRadius: 8, border: displayData.length > 6 ? '1px solid #e2e8f0' : 'none' }}>
+              <div className="attendance-table-wrapper" style={{ maxHeight: displayData.length > 6 ? '360px' : 'none', overflowY: displayData.length > 6 ? 'auto' : 'visible', overflowX: 'auto', borderRadius: 8, border: displayData.length > 6 ? '1px solid #e2e8f0' : 'none' }}>
               <table className="attendance-table">
                 <thead>
                   <tr>
@@ -1024,7 +1011,7 @@ const AttendanceCalendar: React.FC = () => {
             </div>
           )}
 
-          <div className="summary-stats" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+          <div className="summary-stats">
             <div className="stat-box">
               <div className="stat-label">Total Hadir</div>
               <div className="stat-value">

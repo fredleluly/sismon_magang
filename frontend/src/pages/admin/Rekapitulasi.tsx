@@ -369,8 +369,8 @@ const Rekapitulasi: React.FC = () => {
 
       {/* Filters */}
       {/* Filters */}
-      <div className="work-filter-bar" style={{ marginBottom: 16, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', flex: 1 }}>
+      <div className="work-filter-bar">
+        <div className="work-filter-left">
             <div className="filter-buttons">  
                 <button 
                     className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`} 
@@ -390,11 +390,11 @@ const Rekapitulasi: React.FC = () => {
             </div>
 
             {filterType === 'bulanan' ? (
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', background: 'white', border: '1px solid var(--gray-200)', borderRadius: 'var(--radius-md)', padding: '0 12px', height: 40 }}>
+                <div className="month-picker-container">
                 <button onClick={handlePrevMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </button>
-                <span style={{ margin: '0 12px', fontSize: 14, fontWeight: 600, minWidth: 100, textAlign: 'center' }}>
+                <span className="month-display">
                     {currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
                 </span>
                 <button onClick={handleNextMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
@@ -406,7 +406,6 @@ const Rekapitulasi: React.FC = () => {
                     <button
                     className="custom-date-range-toggle"
                     onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
-                    style={{ minWidth: 240 }}
                     >
                     {dateFrom && dateTo
                         ? `${dateFrom} - ${dateTo}`
@@ -481,7 +480,7 @@ const Rekapitulasi: React.FC = () => {
                 </div>
             )}
 
-            <div className="rekap-filter-group rekap-user-filter" ref={filterRef} style={{ margin: 0 }}>
+            <div className="rekap-filter-group rekap-user-filter rekap-user-filter-container" ref={filterRef}>
               <button
                 className="rekap-user-btn"
                 onClick={() => setShowUserFilter(!showUserFilter)}
@@ -495,7 +494,7 @@ const Rekapitulasi: React.FC = () => {
                   : selectedUsers.length === users.length
                     ? 'Semua Peserta'
                     : `${selectedUsers.length} Peserta`}
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rekap-user-btn-icon-right">
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               </button>

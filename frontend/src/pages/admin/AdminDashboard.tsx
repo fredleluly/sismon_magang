@@ -517,25 +517,17 @@ const AdminDashboard: React.FC = () => {
   return (
     <>
       <div className="page-header-row" style={{ alignItems: 'center' }}>
-        <div className="page-header" style={{ marginBottom: 0 }}>
+        <div className="page-header">
           <h1>Dashboard Monitoring</h1>
           <p>Overview produktivitas dan kehadiran peserta magang</p>
         </div>
         
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div className="dashboard-filter-bar">
           {/* Filter UI */}
-          <div className="dashboard-filter" style={{ display: 'flex', background: 'white', padding: 4, borderRadius: 'var(--radius-md)', border: '1px solid var(--gray-200)' }}>
+          <div className="dashboard-filter-group">
             <button 
               onClick={() => handleFilterChange('bulanan')}
-              style={{
-                padding: '6px 12px',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: 13,
-                fontWeight: 600,
-                background: filterType === 'bulanan' ? 'var(--primary-50)' : 'transparent',
-                color: filterType === 'bulanan' ? 'var(--primary-600)' : 'var(--gray-500)',
-                transition: 'all 0.2s'
-              }}
+              className={`dashboard-filter-btn ${filterType === 'bulanan' ? 'active' : ''}`}
             >
               Bulanan
             </button>
@@ -544,54 +536,36 @@ const AdminDashboard: React.FC = () => {
                 handleFilterChange('custom');
                 if(!isSelectingDateRange) setIsSelectingStart(true);
               }}
-              style={{
-                padding: '6px 12px',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: 13,
-                fontWeight: 600,
-                background: filterType === 'custom' ? 'var(--primary-50)' : 'transparent',
-                color: filterType === 'custom' ? 'var(--primary-600)' : 'var(--gray-500)',
-                transition: 'all 0.2s'
-              }}
+              className={`dashboard-filter-btn ${filterType === 'custom' ? 'active' : ''}`}
             >
               Custom
             </button>
           </div>
 
           {filterType === 'bulanan' ? (
-             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', background: 'white', border: '1px solid var(--gray-200)', borderRadius: 'var(--radius-md)', padding: '0 12px', height: 40 }}>
-               <button onClick={handlePrevMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
+             <div className="month-picker-container">
+               <button onClick={handlePrevMonth} className="month-nav-btn">
                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                </button>
-               <span style={{ margin: '0 12px', fontSize: 14, fontWeight: 600, minWidth: 100, textAlign: 'center' }}>
+               <span className="month-display">
                  {currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
                </span>
-               <button onClick={handleNextMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
+               <button onClick={handleNextMonth} className="month-nav-btn">
                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                </button>
              </div>
           ) : (
-            <div style={{ position: 'relative' }}>
+            <div className="dashboard-custom-date">
               <button 
                 onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  background: 'white', border: '1px solid var(--gray-200)',
-                  borderRadius: 'var(--radius-md)', padding: '0 12px', height: 40,
-                  fontSize: 13, fontWeight: 500, color: 'var(--gray-700)', minWidth: 200, justifyContent: 'space-between'
-                }}
+                className="dashboard-custom-trigger"
               >
                 {dateRangeStart && dateRangeEnd ? `${dateRangeStart} - ${dateRangeEnd}` : 'Pilih Tanggal'}
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
               </button>
               
               {isSelectingDateRange && (
-                <div style={{
-                  position: 'absolute', top: '100%', right: 0, marginTop: 8,
-                  background: 'white', border: '1px solid var(--gray-200)',
-                  borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)',
-                  padding: 16, zIndex: 50, width: 320
-                }}>
+                <div className="dashboard-date-popup">
                   <div style={{ marginBottom: 12 }}>
                     <p style={{ fontSize: 12, color: 'var(--gray-500)', marginBottom: 4 }}>
                       {isSelectingStart ? 'Pilih Tanggal Awal' : 'Pilih Tanggal Akhir'}
@@ -670,7 +644,7 @@ const AdminDashboard: React.FC = () => {
           </button>
         </div>
       </div>
-      <div className="admin-stats-grid" style={{ display: "grid", overflowX: "auto" }}>
+      <div className="admin-stats-grid">
         <div className="admin-stat-card">
           <div className="stat-info">
             <div className="stat-label">Total Sortir</div>

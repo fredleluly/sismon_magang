@@ -271,16 +271,6 @@ img {
   height: 20px;
 }
 
-/* ===== MAIN ===== */
-.main-content {
-  flex: 1;
-  margin-left: var(--sidebar-width);
-  position: relative;
-  z-index: 1;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
 /* ===== TOPBAR ===== */
 .topbar {
   display: flex;
@@ -290,10 +280,25 @@ img {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(226, 232, 240, 0.5);
-  position: sticky;
+  position: fixed; /* Changed from sticky to fixed */
   top: 0;
+  right: 0;
+  left: var(--sidebar-width);
   z-index: 50;
+  transition: var(--transition-base); /* Smooth transition for width/left changes */
 }
+
+/* Adjust main content padding to prevent overlap with fixed topbar */
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding-top: 74px; /* Height of topbar + border */
+}
+
 .topbar-title {
   font-size: 18px;
   font-weight: 700;
@@ -2563,6 +2568,7 @@ img {
 
   .main-content {
     margin-left: 0;
+    padding-top: 65px; /* Adjust for smaller mobile topbar */
   }
   .mobile-menu-btn {
     display: flex;
@@ -2571,6 +2577,7 @@ img {
   .topbar {
     padding: 12px 16px;
     gap: 8px;
+    left: 0; /* Full width on mobile */
   }
   .topbar-title {
     font-size: 16px;
@@ -2707,5 +2714,303 @@ img {
   }
   .page-content {
     padding: 12px;
+  }
+}
+
+/* ============================================
+   REKAPITULASI RESPONSIVE UPDATES
+   ============================================ */
+
+/* Replaces inline styles in Rekapitulasi.tsx */
+.work-filter-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.work-filter-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.month-picker-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 0 12px;
+  height: 40px;
+}
+
+.month-nav-btn {
+  background: none;
+  color: var(--gray-500);
+  padding: 4px;
+}
+
+.month-display {
+  margin: 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 100px;
+  text-align: center;
+}
+
+.custom-date-range-toggle {
+  min-width: 240px;
+}
+
+.rekap-user-filter-container {
+  margin: 0;
+}
+
+.rekap-user-btn-icon-right {
+  margin-left: auto;
+}
+
+/* Base styles for table wrapper */
+.rekap-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  max-width: 100%;
+  box-shadow: inset -10px 0 10px -10px rgba(0,0,0,0.1); /* Hint scroll */
+}
+
+/* Mobile Responsive Overrides */
+@media (max-width: 768px) {
+  .work-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .work-filter-left {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  
+  .filter-buttons {
+    display: flex;
+    width: 100%;
+  }
+  
+  .filter-buttons .filter-btn {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .month-picker-container {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .custom-date-range-toggle {
+    width: 100%;
+    min-width: 0 !important; /* Override inline/base style */
+    justify-content: space-between;
+  }
+  
+  .rekap-user-filter-container {
+    width: 100%;
+  }
+  
+  .rekap-user-btn {
+    width: 100%;
+    justify-content: space-between;
+    min-width: 0;
+  }
+  
+  .rekap-filter-actions {
+    width: 100%;
+  }
+  
+  .rekap-filter-actions .btn-export {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Adjust Sticky Column on Mobile */
+  .rekap-td-name, 
+  .rekap-th-sticky {
+    position: sticky;
+    left: 0;
+    z-index: 20;
+    /* Reduce width slightly on mobile if needed, or keep it */
+    min-width: 120px; 
+    max-width: 140px;
+    font-size: 12px;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+  }
+  
+  .rekap-table tbody td {
+    padding: 8px 6px;
+    font-size: 12px;
+  }
+
+  /* Info bar spacing */
+  .rekap-info-bar {
+    gap: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .rekap-info-badge {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header h1 {
+    font-size: 20px;
+  }
+  
+  .rekap-td-name,
+  .rekap-th-sticky {
+    min-width: 100px;
+    max-width: 120px;
+    font-size: 11px;
+  }
+}
+
+/* ============================================
+   ADMIN DASHBOARD & ATTENDANCE RESPONSIVE
+   ============================================ */
+
+.dashboard-filter-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.dashboard-filter-group {
+  display: flex;
+  background: white;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-200);
+}
+
+.dashboard-filter-btn {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  background: transparent;
+  color: var(--gray-500);
+  transition: all 0.2s;
+}
+
+.dashboard-filter-btn.active {
+  background: var(--primary-50);
+  color: var(--primary-600);
+}
+
+.dashboard-custom-date {
+  position: relative;
+}
+
+.dashboard-custom-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 0 12px;
+  height: 40px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-700);
+  min-width: 200px;
+  justify-content: space-between;
+}
+
+.dashboard-date-popup {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 16px;
+  z-index: 50;
+  width: 320px;
+}
+
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+  margin-bottom: 28px;
+  overflow-x: auto;
+  padding-bottom: 4px; /* Space for scrollbar if needed */
+}
+
+/* Mobile adjustments */
+@media (max-width: 1024px) {
+  .admin-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .dashboard-filter-group {
+    width: 100%;
+  }
+  
+  .dashboard-filter-btn {
+    flex: 1;
+    text-align: center;
+  }
+  
+  .dashboard-custom-trigger {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Reuse month-picker-container styles from Rekapitulasi or define similar override */
+  .month-picker-container {
+      width: 100%;
+      justify-content: space-between;
+  }
+
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  
+  .btn-export {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-stats-grid {
+    grid-template-columns: 1fr; 
+  }
+  
+  .dashboard-date-popup {
+      width: 280px; 
+      right: -20px; /* shift slightly if needed or center */
   }
 }
