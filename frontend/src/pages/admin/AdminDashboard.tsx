@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Chart, registerables } from 'chart.js';
 import * as XLSX from 'xlsx';
-import { DashboardAPI, getToken, ComplaintAPI } from '../../services/api';
+import { DashboardAPI, getToken, ComplaintAPI, PerformanceAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
-import type { AdminDashboard as AdminDashData } from '../../types';
+import type { AdminDashboard as AdminDashData, PerformanceEvaluation, User } from '../../types';
+import './Ranking.css';
 
 Chart.register(...registerables);
 
@@ -35,9 +36,9 @@ const AdminDashboard: React.FC = () => {
   const [data, setData] = useState<AdminDashData | null>(null);
   const [attendanceList, setAttendanceList] = useState<any[]>([]);
   const [totalComplaints, setTotalComplaints] = useState(0);
+  const [rankings, setRankings] = useState<PerformanceEvaluation[]>([]);
   const weeklyRef = useRef<HTMLCanvasElement>(null);
   const donutRef = useRef<HTMLCanvasElement>(null);
-  const attChartRef = useRef<HTMLCanvasElement>(null);
   const charts = useRef<Chart[]>([]);
 
   useEffect(() => {
@@ -48,6 +49,7 @@ const AdminDashboard: React.FC = () => {
 
     // Load total complaints
     loadComplaints();
+    loadRankings();
 
     loadAttendance();
     const iv = setInterval(loadAttendance, 15000);
@@ -66,6 +68,28 @@ const AdminDashboard: React.FC = () => {
     } catch {
       console.error('Failed to load complaints');
     }
+  };
+
+  const loadRankings = async () => {
+    const now = new Date();
+    const res = await PerformanceAPI.getRanking(now.getMonth() + 1, now.getFullYear());
+    if (res && res.success) setRankings((res.data || []).slice(0, 3));
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return '#10b981';
+    if (score >= 60) return '#f59e0b';
+    if (score >= 40) return '#f97316';
+    return '#ef4444';
+  };
+
+  const getGrade = (score: number) => {
+    if (score >= 90) return 'A+';
+    if (score >= 80) return 'A';
+    if (score >= 70) return 'B';
+    if (score >= 60) return 'C';
+    if (score >= 50) return 'D';
+    return 'E';
   };
 
   const loadAttendance = async () => {
@@ -192,68 +216,64 @@ const AdminDashboard: React.FC = () => {
       charts.current.push(c);
     }
 
-    // Donut chart
+    // Donut chart — berkas, buku, bundle totals
     if (donutRef.current) {
-      const wd = data.workDistribution || [];
-      const colors = ['#4db8e8', '#0a6599', '#8b5cf6', '#22c55e', '#fb923c', '#ffd600', '#ef4444', '#ec4899'];
+      const totalBerkas = data.totalBerkas || 0;
+      const totalBuku = data.totalBuku || 0;
+      const totalBundle = data.totalBundle || 0;
+      const grandTotal = totalBerkas + totalBuku + totalBundle;
+      const donutColors = ['#4db8e8', '#8b5cf6', '#22c55e'];
       const c = new Chart(donutRef.current, {
         type: 'doughnut',
-        data: { labels: wd.map((w) => w._id || 'Lainnya'), datasets: [{ data: wd.map((w) => w.count), backgroundColor: colors.slice(0, wd.length), borderWidth: 3, borderColor: '#fff', hoverOffset: 8 }] },
+        data: {
+          labels: ['Berkas', 'Buku', 'Bundle'],
+          datasets: [{
+            data: [totalBerkas, totalBuku, totalBundle],
+            backgroundColor: donutColors,
+            borderWidth: 3,
+            borderColor: '#fff',
+            hoverOffset: 8
+          }]
+        },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           cutout: '68%',
-          plugins: { legend: { display: false }, tooltip: { backgroundColor: '#fff', titleColor: '#1e293b', bodyColor: '#64748b', borderColor: '#e2e8f0', borderWidth: 1, cornerRadius: 10, padding: 12 } },
+          plugins: {
+            legend: { display: false },
+            tooltip: { backgroundColor: '#fff', titleColor: '#1e293b', bodyColor: '#64748b', borderColor: '#e2e8f0', borderWidth: 1, cornerRadius: 10, padding: 12 },
+          },
         },
+        plugins: [{
+          id: 'centerText',
+          beforeDraw(chart) {
+            const { ctx, width, height } = chart;
+            ctx.save();
+            ctx.font = 'bold 28px sans-serif';
+            ctx.fillStyle = '#1a1a2e';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(grandTotal.toLocaleString(), width / 2, height / 2 - 8);
+            ctx.font = '12px sans-serif';
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText('Total Item', width / 2, height / 2 + 16);
+            ctx.restore();
+          }
+        }]
       });
       charts.current.push(c);
     }
 
-    // Attendance line chart
-    if (attChartRef.current) {
-      const total = data.totalPeserta || 1;
-      const today = data.todayAttendance || 0;
-      const labels = ['07:00', '07:30', '08:00', '08:30', '09:00'];
-      const step = today / labels.length;
-      const vals = labels.map((_, i) => Math.min(Math.round(step * (i + 1)), today));
-      const c = new Chart(attChartRef.current, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: 'Kehadiran',
-              data: vals,
-              fill: true,
-              backgroundColor: 'rgba(46,213,115,0.15)',
-              borderColor: '#2ed573',
-              borderWidth: 3,
-              tension: 0.4,
-              pointRadius: 4,
-              pointBackgroundColor: '#2ed573',
-              pointBorderColor: '#fff',
-              pointBorderWidth: 2,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: { x: { grid: { color: 'rgba(226,232,240,0.3)' }, ticks: { color: '#94a3b8' } }, y: { grid: { color: 'rgba(226,232,240,0.3)' }, ticks: { color: '#94a3b8' }, beginAtZero: true, max: Math.max(total + 2, 5) } },
-        },
-      });
-      charts.current.push(c);
-    }
   }, [data]);
 
   if (!data) return <div style={{ textAlign: 'center', padding: 60, color: 'var(--gray-400)' }}>Memuat dashboard...</div>;
 
-  const tp = data.topPerformers || [];
-  const maxItems = tp.length > 0 ? tp[0].totalItems || 1 : 1;
   const ra = data.recentActivity || [];
-  const wd = data.workDistribution || [];
-  const colors = ['#4db8e8', '#0a6599', '#8b5cf6', '#22c55e', '#fb923c', '#ffd600', '#ef4444', '#ec4899'];
+  const donutLegendItems = [
+    { label: 'Berkas', color: '#4db8e8' },
+    { label: 'Buku', color: '#8b5cf6' },
+    { label: 'Bundle', color: '#22c55e' },
+  ];
 
   return (
     <>
@@ -333,59 +353,68 @@ const AdminDashboard: React.FC = () => {
         </div>
         <div className="chart-card">
           <div className="chart-header">
-            <h3>Distribusi Jenis Tugas</h3>
-            <p>Proporsi beban kerja minggu ini</p>
+            <h3>Kategori Arsip</h3>
+            <p>Total keseluruhan berkas, buku, dan bundle</p>
           </div>
           <div className="chart-canvas-wrapper" style={{ height: 220 }}>
             <canvas ref={donutRef} />
           </div>
           <div className="donut-legend">
-            {wd.map((w, i) => (
-              <div key={w._id} className="legend-item">
-                <span className="legend-dot" style={{ background: colors[i % colors.length] }} />
-                {w._id || 'Lainnya'}
+            {donutLegendItems.map((item) => (
+              <div key={item.label} className="legend-item">
+                <span className="legend-dot" style={{ background: item.color }} />
+                {item.label}
               </div>
             ))}
           </div>
         </div>
       </div>
-      <div className="charts-row-2">
+      <div style={{ marginBottom: 28 }}>
         <div className="chart-card">
           <div className="chart-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-              <span style={{ fontSize: 20 }}>🏅</span>
-              <h3>Top 5 Peserta Terrajin</h3>
+              <span style={{ fontSize: 20 }}>🏆</span>
+              <h3>Top 3 Peserta Terbaik</h3>
             </div>
-            <p>Berdasarkan jumlah tugas</p>
+            <p>Berdasarkan penilaian performa bulan ini</p>
           </div>
-          <div className="top-performer-list">
-            {tp.length === 0 ? (
-              <p style={{ textAlign: 'center', color: 'var(--gray-400)', padding: 20 }}>Belum ada data</p>
-            ) : (
-              tp.map((p, i) => {
-                const pct = Math.round((p.totalItems / maxItems) * 100);
-                return (
-                  <div key={i} className="top-performer-item">
-                    <span className="tp-name">
-                      {p.name} <small style={{ color: 'var(--gray-400)' }}>({p.totalItems} item)</small>
-                    </span>
-                    <div className="tp-bar-wrap">
-                      <div className="tp-bar" style={{ width: `${pct}%` }} />
-                    </div>
+          {rankings.length === 0 ? (
+            <p style={{ textAlign: 'center', color: 'var(--gray-400)', padding: 30 }}>Belum ada data ranking</p>
+          ) : (
+            <div className="podium-section" style={{ marginBottom: 0 }}>
+              {rankings.length >= 2 && (
+                <div className="podium-card podium-2">
+                  <div className="podium-medal">🥈</div>
+                  <div className="podium-name">{(rankings[1].userId as User)?.name || '-'}</div>
+                  <div className="podium-instansi">{(rankings[1].userId as User)?.instansi || '-'}</div>
+                  <div className="podium-score" style={{ color: getScoreColor(rankings[1].hasil) }}>
+                    {rankings[1].hasil}%
                   </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3>Distribusi Kehadiran Hari Ini</h3>
-            <p>Grafik akumulasi kedatangan</p>
-          </div>
-          <div className="attendance-chart-wrapper">
-            <canvas ref={attChartRef} />
-          </div>
+                  <div className="podium-grade">{getGrade(rankings[1].hasil)}</div>
+                </div>
+              )}
+              <div className="podium-card podium-1">
+                <div className="podium-medal">🥇</div>
+                <div className="podium-name">{(rankings[0].userId as User)?.name || '-'}</div>
+                <div className="podium-instansi">{(rankings[0].userId as User)?.instansi || '-'}</div>
+                <div className="podium-score" style={{ color: getScoreColor(rankings[0].hasil) }}>
+                  {rankings[0].hasil}%
+                </div>
+                <div className="podium-grade">{getGrade(rankings[0].hasil)}</div>
+              </div>
+              {rankings.length >= 3 && (
+                <div className="podium-card podium-3">
+                  <div className="podium-medal">🥉</div>
+                  <div className="podium-name">{(rankings[2].userId as User)?.name || '-'}</div>
+                  <div className="podium-instansi">{(rankings[2].userId as User)?.instansi || '-'}</div>
+                  <div className="podium-score" style={{ color: getScoreColor(rankings[2].hasil) }}>
+                    {rankings[2].hasil}%
+                  </div>
+                  <div className="podium-grade">{getGrade(rankings[2].hasil)}</div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <div className="activity-card">
