@@ -150,6 +150,7 @@ export const AttendanceAPI = {
   setLateThreshold: (threshold: string) => API.post<{ lateThreshold: string }>('/attendance/settings/late-threshold', { threshold }),
   updateStatus: (id: string, status: string, jamMasuk?: string, jamKeluar?: string) => API.put<Attendance>(`/attendance/${id}/status`, { status, ...(jamMasuk && { jamMasuk }), ...(jamKeluar !== undefined && { jamKeluar }) }),
   bulkHoliday: (tanggal: string) => API.post<{ created: number; updated: number; total: number }>('/attendance/bulk-holiday', { tanggal }),
+  cancelHoliday: (tanggal: string) => API.post<{ deleted: number }>('/attendance/cancel-holiday', { tanggal }),
 };
 
 // ===== COMPLAINTS API =====

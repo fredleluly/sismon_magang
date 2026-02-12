@@ -23,6 +23,7 @@ const AttendanceCalendar: React.FC = () => {
   const [editStatus, setEditStatus] = useState<string>('Hadir');
   const [editJamMasuk, setEditJamMasuk] = useState<string>('');
   const [editJamKeluar, setEditJamKeluar] = useState<string>('');
+  const [showCancelHolidayConfirm, setShowCancelHolidayConfirm] = useState(false);
 
   // Filter states
   const [filterMode, setFilterMode] = useState<FilterMode>('harian');
@@ -440,6 +441,34 @@ const AttendanceCalendar: React.FC = () => {
     }
   };
 
+  const handleCancelHoliday = () => {
+    if (!selectedDate) return;
+    setShowCancelHolidayConfirm(true);
+  };
+
+  const confirmCancelHoliday = async () => {
+    setShowCancelHolidayConfirm(false);
+    setHolidayLoading(true);
+    try {
+      const res = await AttendanceAPI.cancelHoliday(selectedDate);
+      if (res && res.success) {
+        showToast(res.message || 'Hari libur berhasil dibatalkan!', 'success');
+        // Refresh data
+        await loadAttendanceData();
+        loadTodayStats();
+        // Re-click day to refresh merged view
+        const day = parseInt(selectedDate.split('-')[2]);
+        setTimeout(() => handleDayClick(day), 300);
+      } else {
+        showToast(res?.message || 'Gagal membatalkan hari libur', 'error');
+      }
+    } catch {
+      showToast('Error membatalkan hari libur', 'error');
+    } finally {
+      setHolidayLoading(false);
+    }
+  };
+
   // Data to display in detail table - use filterData when filter is non-harian, selectedDayData for harian
   const displayData = filterMode === 'harian' ? selectedDayData : filterData;
 
@@ -638,32 +667,62 @@ const AttendanceCalendar: React.FC = () => {
             <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
               {/* Hari Libur Button - only for harian mode */}
               {filterMode === 'harian' && selectedDate && (
-                <button
-                  onClick={handleBulkHoliday}
-                  disabled={holidayLoading}
-                  style={{
-                    padding: '8px 16px',
-                    background: '#f59e0b',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: 8,
-                    cursor: holidayLoading ? 'not-allowed' : 'pointer',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    opacity: holidayLoading ? 0.7 : 1,
-                  }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  {holidayLoading ? 'Memproses...' : 'Tandai Hari Libur'}
-                </button>
+                <>
+                  {selectedDayData.some(a => a.status === 'Hari Libur') ? (
+                    <button
+                      onClick={handleCancelHoliday}
+                      disabled={holidayLoading}
+                      style={{
+                        padding: '8px 16px',
+                        background: '#ef4444',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: holidayLoading ? 'not-allowed' : 'pointer',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        opacity: holidayLoading ? 0.7 : 1,
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                      </svg>
+                      {holidayLoading ? 'Memproses...' : 'Batalkan Hari Libur'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleBulkHoliday}
+                      disabled={holidayLoading}
+                      style={{
+                        padding: '8px 16px',
+                        background: '#f59e0b',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: holidayLoading ? 'not-allowed' : 'pointer',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        opacity: holidayLoading ? 0.7 : 1,
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                      </svg>
+                      {holidayLoading ? 'Memproses...' : 'Tandai Hari Libur'}
+                    </button>
+                  )}
+                </>
               )}
               {filterMode !== 'harian' && <div />}
               <button
@@ -1003,6 +1062,49 @@ const AttendanceCalendar: React.FC = () => {
                 style={{ flex: 1, padding: '10px 14px', background: '#f59e0b', color: 'white', border: 'none', borderRadius: 8, cursor: holidayLoading ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 600, opacity: holidayLoading ? 0.7 : 1 }}
               >
                 {holidayLoading ? 'Memproses...' : 'Ya, Tandai'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Holiday Confirmation Modal */}
+      {showCancelHolidayConfirm && (
+        <div
+          className="modal-overlay active"
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+          onClick={() => setShowCancelHolidayConfirm(false)}
+        >
+          <div
+            style={{ background: 'white', borderRadius: 12, padding: 24, maxWidth: 420, width: '90%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)', textAlign: 'center' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 6h18"></path>
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+              </svg>
+            </div>
+            <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 700, color: '#1e293b' }}>Batalkan Hari Libur?</h3>
+            <p style={{ margin: '0 0 20px', fontSize: 14, color: '#64748b', lineHeight: 1.5 }}>
+              Status <strong style={{ color: '#ef4444' }}>Hari Libur</strong> akan dihapus pada tanggal:<br />
+              <strong style={{ color: '#1e293b' }}>{selectedDate ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''}</strong><br />
+              Peserta akan kembali menjadi "Belum Absen".
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setShowCancelHolidayConfirm(false)}
+                style={{ flex: 1, padding: '10px 14px', background: '#e2e8f0', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#475569' }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmCancelHoliday}
+                disabled={holidayLoading}
+                style={{ flex: 1, padding: '10px 14px', background: '#ef4444', color: 'white', border: 'none', borderRadius: 8, cursor: holidayLoading ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 600, opacity: holidayLoading ? 0.7 : 1 }}
+              >
+                {holidayLoading ? 'Memproses...' : 'Ya, Batalkan'}
               </button>
             </div>
           </div>

@@ -375,6 +375,30 @@ router.post('/bulk-holiday', auth, adminOnly, async (req, res) => {
   }
 });
 
+// POST /api/attendance/cancel-holiday — admin: cancel holiday, delete all attendance records for that date
+router.post('/cancel-holiday', auth, adminOnly, async (req, res) => {
+  try {
+    const { tanggal } = req.body;
+    if (!tanggal) return res.status(400).json({ success: false, message: 'Tanggal wajib diisi.' });
+
+    const dateStr = new Date(tanggal).toISOString().split('T')[0];
+
+    // Delete all attendance records for this date (they were created by bulk-holiday)
+    const result = await Attendance.deleteMany({
+      tanggal: { $gte: new Date(dateStr), $lt: new Date(dateStr + 'T23:59:59') },
+      status: 'Hari Libur',
+    });
+
+    res.json({
+      success: true,
+      message: `Hari libur berhasil dibatalkan. ${result.deletedCount} data dihapus. Peserta dapat absen ulang.`,
+      data: { deleted: result.deletedCount },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // GET /api/attendance/today — admin: who attended today
 // NOTE: Static routes MUST be defined before parameterized routes (/:id)
 router.get('/today', auth, adminOnly, async (req, res) => {
