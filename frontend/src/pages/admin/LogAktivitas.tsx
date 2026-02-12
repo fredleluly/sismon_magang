@@ -66,16 +66,58 @@ const LogAktivitas: React.FC = () => {
             <div className="peserta-search"><input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari aktivitas..." /></div>
           </div>
         </div>
-        <table className="log-table">
-          <thead><tr><th>Nama Peserta</th><th>Tanggal</th><th>Jenis Pekerjaan</th><th>Keterangan</th><th>Berkas</th><th>Buku</th><th>Bundle</th></tr></thead>
-          <tbody>{filtered.length===0?<tr><td colSpan={7} style={{textAlign:'center',padding:40,color:'var(--gray-400)'}}>Belum ada data</td></tr>:
-          filtered.map((l,i)=>{
-            const name = (l.userId as any)?.name||'Unknown';
-            const initials = name.split(' ').map((n:string)=>n[0]).join('').substring(0,2).toUpperCase();
-            const dateStr = l.tanggal ? new Date(l.tanggal).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : '-';
-            return <tr key={l._id}><td><div className="user-cell"><span className="user-name">{name}</span></div></td><td>{dateStr}</td><td><span className="job-badge">{l.jenis||'-'}</span></td><td>{l.keterangan||'-'}</td><td><span className="data-highlight">{l.berkas||0}</span></td><td><span className="data-highlight">{l.buku||0}</span></td><td><span className="data-highlight">{l.bundle||0}</span></td></tr>;
-          })}</tbody>
-        </table>
+        <div className="table-container" style={{ maxHeight: 'calc(100vh - 280px)', overflowY: 'auto' }}>
+          <table className="log-table">
+            <thead style={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: 'white' }}>
+              <tr>
+                <th>Nama Peserta</th>
+                <th>Tanggal</th>
+                <th>Jenis Pekerjaan</th>
+                <th>Keterangan</th>
+                <th>Berkas</th>
+                <th>Buku</th>
+                <th>Bundle</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--gray-400)' }}>
+                    Belum ada data
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((l, i) => {
+                  const name = (l.userId as any)?.name || 'Unknown';
+                  const dateStr = l.tanggal ? new Date(l.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+                  return (
+                    <tr key={l._id}>
+                      <td>
+                        <div className="user-cell">
+                          <span className="user-name">{name}</span>
+                        </div>
+                      </td>
+                      <td>{dateStr}</td>
+                      <td>
+                        <span className="job-badge">{l.jenis || '-'}</span>
+                      </td>
+                      <td style={{ maxWidth: 300, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={l.keterangan || '-'}>{l.keterangan || '-'}</td>
+                      <td>
+                        <span className="data-highlight">{l.berkas || 0}</span>
+                      </td>
+                      <td>
+                        <span className="data-highlight">{l.buku || 0}</span>
+                      </td>
+                      <td>
+                        <span className="data-highlight">{l.bundle || 0}</span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </>
   );

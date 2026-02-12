@@ -415,12 +415,12 @@ const PenilaianPerforma: React.FC = () => {
           <h2>Daftar Penilaian — {MONTHS[bulan - 1]} {tahun}</h2>
           <p>{evaluations.length} penilaian</p>
         </div>
-        <div className="eval-table-wrap">
+        <div className="eval-table-wrap" style={{ maxHeight: '500px', overflowY: 'auto' }}>
           {evaluations.length === 0 ? (
             <div className="eval-empty">Belum ada penilaian untuk periode ini.</div>
           ) : (
             <table className="eval-table">
-              <thead>
+              <thead style={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: 'white' }}>
                 <tr>
                   <th>Nama</th>
                   <th>Absen</th>

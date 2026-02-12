@@ -51,27 +51,45 @@ const KelolaKeluhan: React.FC = () => {
       </div></div>
       <div className="keluhan-list-card" style={{marginTop:20}}>
         <h3>Daftar Keluhan</h3><p style={{fontSize:13,color:'var(--gray-500)',marginBottom:16}}>Menampilkan {filtered.length} dari {all.length} laporan</p>
-        {filtered.length===0?<div style={{textAlign:'center',padding:40,color:'var(--gray-400)'}}>Tidak ada laporan ditemukan</div>:
-        filtered.map((k,i) => {
-          const date = k.createdAt ? new Date(k.createdAt).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : '-';
-          const userName = (k.userId as any)?.name || 'Unknown';
-          const prioClass = k.prioritas==='High'?'high':k.prioritas==='Medium'?'medium':'low';
-          const statusStyle = k.status==='Menunggu'?{background:'#fef3c7',color:'#d97706'}:k.status==='Diproses'?{background:'var(--primary-50)',color:'var(--primary-600)'}:{background:'#e6f9f0',color:'#059669'};
-          return <div key={k._id} style={{padding:20,border:'1px solid var(--gray-200)',borderRadius:'var(--radius-md)',marginBottom:12}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}><span style={{fontSize:15,fontWeight:600,color:'var(--gray-800)'}}>{k.judul||'Tanpa Judul'}</span><span style={{fontSize:12,color:'var(--gray-400)'}}>{date}</span></div>
-            <div style={{fontSize:13,color:'var(--gray-500)',marginBottom:4}}><strong>{userName}</strong></div>
-            <div style={{fontSize:13,color:'var(--gray-500)',marginBottom:12}}>{(k.deskripsi||'').substring(0,120)}</div>
-            <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
-              <span style={{display:'inline-flex',padding:'3px 12px',borderRadius:'var(--radius-full)',fontSize:11,fontWeight:600,...statusStyle}}>{k.status}</span>
-              <span className={`priority-badge ${prioClass}`}>{k.prioritas}</span>
-              <span className="category-badge">{k.kategori}</span>
-              {k.status!=='Selesai' && <div style={{marginLeft:'auto',display:'flex',gap:6}}>
-                <button className="btn-outline" style={{padding:'5px 14px',fontSize:11}} onClick={()=>updateStatus(k._id,'Diproses')}>Proses</button>
-                <button className="btn btn-primary" style={{padding:'5px 14px',fontSize:11}} onClick={()=>updateStatus(k._id,'Selesai')}>Selesai</button>
-              </div>}
-            </div>
-          </div>;
-        })}
+        <div className="keluhan-scroll-container" style={{ maxHeight: '500px', overflowY: 'auto', paddingRight: '5px' }}>
+          {filtered.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 40, color: 'var(--gray-400)' }}>Tidak ada laporan ditemukan</div>
+          ) : (
+            filtered.map((k, i) => {
+              const date = k.createdAt ? new Date(k.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+              const userName = (k.userId as any)?.name || 'Unknown';
+              const prioClass = k.prioritas === 'High' ? 'high' : k.prioritas === 'Medium' ? 'medium' : 'low';
+              const statusStyle = k.status === 'Menunggu' ? { background: '#fef3c7', color: '#d97706' } : k.status === 'Diproses' ? { background: 'var(--primary-50)', color: 'var(--primary-600)' } : { background: '#e6f9f0', color: '#059669' };
+              return (
+                <div key={k._id} style={{ padding: 20, border: '1px solid var(--gray-200)', borderRadius: 'var(--radius-md)', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--gray-800)' }}>{k.judul || 'Tanpa Judul'}</span>
+                    <span style={{ fontSize: 12, color: 'var(--gray-400)' }}>{date}</span>
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 4 }}>
+                    <strong>{userName}</strong>
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 12 }}>{(k.deskripsi || '').substring(0, 120)}</div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{ display: 'inline-flex', padding: '3px 12px', borderRadius: 'var(--radius-full)', fontSize: 11, fontWeight: 600, ...statusStyle }}>{k.status}</span>
+                    <span className={`priority-badge ${prioClass}`}>{k.prioritas}</span>
+                    <span className="category-badge">{k.kategori}</span>
+                    {k.status !== 'Selesai' && (
+                      <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                        <button className="btn-outline" style={{ padding: '5px 14px', fontSize: 11 }} onClick={() => updateStatus(k._id, 'Diproses')}>
+                          Proses
+                        </button>
+                        <button className="btn btn-primary" style={{ padding: '5px 14px', fontSize: 11 }} onClick={() => updateStatus(k._id, 'Selesai')}>
+                          Selesai
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
     </>
   );
