@@ -323,9 +323,9 @@ const PenilaianPerforma: React.FC = () => {
                 <div className="score-card">
                   <div className="score-label">Absen</div>
                   <div className="score-value" style={{ color: getScoreColor((calculation.absen / 35) * 100) }}>
-                    {calculation.absen}%
+                    {calculation.absen}
                   </div>
-                  <div className="score-max">maks 35%</div>
+                  <div className="score-max">maks 35</div>
                   <div className="score-detail">
                     {calculation.detail.attendedDays}/{calculation.detail.totalWorkingDays} hari • Avg: {calculation.detail.avgPoints} pts
                   </div>
@@ -339,13 +339,13 @@ const PenilaianPerforma: React.FC = () => {
                       type="number"
                       min="0"
                       max="30"
+                      step="0.01"
                       value={kuantitas}
                       onChange={(e) => setKuantitas(Math.min(30, Math.max(0, parseFloat(e.target.value) || 0)))}
                       className="score-input"
                     />
-                    <span className="score-input-suffix">%</span>
                   </div>
-                  <div className="score-max">maks 30%</div>
+                  <div className="score-max">maks 30</div>
                 </div>
 
                 {/* Kualitas */}
@@ -356,13 +356,13 @@ const PenilaianPerforma: React.FC = () => {
                       type="number"
                       min="0"
                       max="30"
+                      step="0.01"
                       value={kualitas}
                       onChange={(e) => setKualitas(Math.min(30, Math.max(0, parseFloat(e.target.value) || 0)))}
                       className="score-input"
                     />
-                    <span className="score-input-suffix">%</span>
                   </div>
-                  <div className="score-max">maks 30%</div>
+                  <div className="score-max">maks 30</div>
                 </div>
 
                 {/* Laporan */}
@@ -377,10 +377,10 @@ const PenilaianPerforma: React.FC = () => {
                         className="checkbox-input"
                       />
                       <span className="checkbox-custom" />
-                      <span>{laporan ? '5%' : '0%'}</span>
+                      <span>{laporan ? '5' : '0'}</span>
                     </label>
                   </div>
-                  <div className="score-max">maks 5%</div>
+                  <div className="score-max">maks 5</div>
                 </div>
               </div>
 
@@ -388,10 +388,10 @@ const PenilaianPerforma: React.FC = () => {
               <div className="total-score-bar">
                 <div className="total-label">Hasil Akhir</div>
                 <div className="total-value" style={{ color: getScoreColor(getHasil()) }}>
-                  {getHasil()}%
+                  {getHasil()}
                 </div>
                 <div className="total-breakdown">
-                  {calculation.absen} + {kuantitas} + {kualitas} + {laporan ? 5 : 0} = {getHasil()}%
+                  {calculation.absen} + {kuantitas} + {kualitas} + {laporan ? 5 : 0} = {getHasil()}
                 </div>
               </div>
 
@@ -438,13 +438,13 @@ const PenilaianPerforma: React.FC = () => {
                   return (
                     <tr key={ev._id}>
                       <td className="td-name">{user?.name || '-'}</td>
-                      <td>{ev.absen}%</td>
-                      <td>{ev.kuantitas}%</td>
-                      <td>{ev.kualitas}%</td>
-                      <td>{ev.laporan ? '5%' : '0%'}</td>
+                      <td>{ev.absen}</td>
+                      <td>{ev.kuantitas}</td>
+                      <td>{ev.kualitas}</td>
+                      <td>{ev.laporan ? '5' : '0'}</td>
                       <td>
                         <span className="hasil-value" style={{ color: getScoreColor(ev.hasil) }}>
-                          {ev.hasil}%
+                          {ev.hasil}
                         </span>
                       </td>
                       <td>{getStatusBadge(ev.status)}</td>
