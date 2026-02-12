@@ -1,6 +1,18 @@
 import type { ApiResponse, User, WorkLog, Attendance, Complaint, QRCode, UserDashboard, AdminDashboard, WorkStats, TargetSection, PerformanceEvaluation, PerformanceCalculation } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+// Ambil URL dari env, hapus slash di akhir jika ada
+let envUrl = import.meta.env.VITE_API_URL || '';
+if (envUrl.endsWith('/')) {
+  envUrl = envUrl.slice(0, -1);
+}
+
+// Pastikan URL mengarah ke /api (karena router backend ada di /api)
+// Jika user hanya memasukkan domain utama (misal: ...vercel.app), kita tambahkan /api otomatis
+if (envUrl && !envUrl.endsWith('/api')) {
+  envUrl = `${envUrl}/api`;
+}
+
+const API_BASE = envUrl || '/api';
 
 // ===== TOKEN MANAGEMENT =====
 export function getToken(): string | null {

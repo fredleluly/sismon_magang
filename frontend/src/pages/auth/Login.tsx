@@ -28,7 +28,17 @@ const Login: React.FC = () => {
       showToast(res.message || 'Login berhasil!', 'success');
       setTimeout(() => navigate(res.user!.role === 'admin' ? '/admin' : '/dashboard'), 800);
     } else {
-      showToast(res.message || 'Gagal login', 'error');
+      const errorMsg = res.message || 'Gagal login';
+      
+      // Tampilkan alert khusus untuk password salah
+      if (errorMsg.toLowerCase().includes('password') || errorMsg.toLowerCase().includes('kata sandi')) {
+        showToast('❌ Password yang Anda masukkan salah!', 'error');
+      } else if (errorMsg.toLowerCase().includes('email') || errorMsg.toLowerCase().includes('tidak ditemukan')) {
+        showToast('❌ Email tidak terdaftar!', 'error');
+      } else {
+        showToast(errorMsg, 'error');
+      }
+      
       setShake(true);
       setTimeout(() => setShake(false), 500);
     }
