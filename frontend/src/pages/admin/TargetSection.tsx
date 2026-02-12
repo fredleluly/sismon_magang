@@ -1,21 +1,23 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { TargetSectionAPI } from '../../services/api';
-import { useToast } from '../../context/ToastContext';
-import type { TargetSection as TargetSectionType } from '../../types';
-import './TargetSection.css';
+import React, { useState, useEffect, useCallback } from "react";
+import { TargetSectionAPI } from "../../services/api";
+import { useToast } from "../../context/ToastContext";
+import type { TargetSection as TargetSectionType } from "../../types";
+import "./TargetSection.css";
 
 const DEFAULT_JOB_TYPES = [
-  'Sortir Dokumen',
-  'Menginput data arsipan (Registering)',
-  'Melepas Step',
-  'Melakukan Scanning',
-  'Menyusun arsip kedalam kardus',
-  'Stikering',
+  "Sortir Dokumen",
+  "Menginput data arsipan (Registering)",
+  "Melepas Step",
+  "Melakukan Scanning",
+  "Menyusun arsip kedalam kardus",
+  "Stikering",
 ];
 
 const TargetSection: React.FC = () => {
   const { showToast } = useToast();
-  const [targets, setTargets] = useState<{ jenis: string; targetPerDay: number }[]>([]);
+  const [targets, setTargets] = useState<
+    { jenis: string; targetPerDay: number }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -25,30 +27,38 @@ const TargetSection: React.FC = () => {
     if (res && res.success) {
       const existing = res.data || [];
       // Merge with defaults
-      const merged = DEFAULT_JOB_TYPES.map(jenis => {
-        const found = existing.find((t: TargetSectionType) => t.jenis === jenis);
+      const merged = DEFAULT_JOB_TYPES.map((jenis) => {
+        const found = existing.find(
+          (t: TargetSectionType) => t.jenis === jenis,
+        );
         return { jenis, targetPerDay: found ? found.targetPerDay : 0 };
       });
       setTargets(merged);
     } else {
-      setTargets(DEFAULT_JOB_TYPES.map(jenis => ({ jenis, targetPerDay: 0 })));
+      setTargets(
+        DEFAULT_JOB_TYPES.map((jenis) => ({ jenis, targetPerDay: 0 })),
+      );
     }
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadTargets(); }, [loadTargets]);
+  useEffect(() => {
+    loadTargets();
+  }, [loadTargets]);
 
   const handleChange = (index: number, value: number) => {
-    setTargets(prev => prev.map((t, i) => i === index ? { ...t, targetPerDay: value } : t));
+    setTargets((prev) =>
+      prev.map((t, i) => (i === index ? { ...t, targetPerDay: value } : t)),
+    );
   };
 
   const handleSave = async () => {
     setSaving(true);
     const res = await TargetSectionAPI.bulkUpdate(targets);
     if (res && res.success) {
-      showToast('Target berhasil disimpan!', 'success');
+      showToast("Target berhasil disimpan!", "success");
     } else {
-      showToast(res?.message || 'Gagal menyimpan target', 'error');
+      showToast(res?.message || "Gagal menyimpan target", "error");
     }
     setSaving(false);
   };
@@ -63,10 +73,16 @@ const TargetSection: React.FC = () => {
 
   return (
     <div className="target-section-page">
-      <div className="page-header">
+      <div className="page-header-target">
         <div className="page-header-content">
           <div className="page-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <circle cx="12" cy="12" r="10" />
               <circle cx="12" cy="12" r="6" />
               <circle cx="12" cy="12" r="2" />
@@ -74,7 +90,10 @@ const TargetSection: React.FC = () => {
           </div>
           <div>
             <h1>Target Section</h1>
-            <p>Atur target harian per jenis pekerjaan (global untuk semua peserta)</p>
+            <p>
+              Atur target harian per jenis pekerjaan (global untuk semua
+              peserta)
+            </p>
           </div>
         </div>
       </div>
@@ -82,7 +101,10 @@ const TargetSection: React.FC = () => {
       <div className="target-card">
         <div className="target-card-header">
           <h2>Target Harian Per Jobdesk</h2>
-          <p>Target berupa jumlah total (berkas + buku + bundle) yang harus diselesaikan per hari.</p>
+          <p>
+            Target berupa jumlah total (berkas + buku + bundle) yang harus
+            diselesaikan per hari.
+          </p>
         </div>
         <div className="target-table-wrap">
           <table className="target-table">
@@ -103,7 +125,12 @@ const TargetSection: React.FC = () => {
                       type="number"
                       min="0"
                       value={t.targetPerDay}
-                      onChange={(e) => handleChange(i, Math.max(0, parseInt(e.target.value) || 0))}
+                      onChange={(e) =>
+                        handleChange(
+                          i,
+                          Math.max(0, parseInt(e.target.value) || 0),
+                        )
+                      }
                       className="target-input"
                     />
                   </td>
@@ -113,8 +140,12 @@ const TargetSection: React.FC = () => {
           </table>
         </div>
         <div className="target-card-footer">
-          <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-            {saving ? 'Menyimpan...' : 'Simpan Target'}
+          <button
+            className="btn btn-primary"
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? "Menyimpan..." : "Simpan Target"}
           </button>
         </div>
       </div>
