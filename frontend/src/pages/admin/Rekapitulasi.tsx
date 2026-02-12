@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { useToast } from '../../context/ToastContext';
-import { UsersAPI } from '../../services/api';
-import { getToken } from '../../services/api';
+import { UsersAPI, WorkLogAPI } from '../../services/api';
 import type { User } from '../../types';
 
 interface RecapRow {
@@ -80,21 +79,17 @@ const Rekapitulasi: React.FC = () => {
       if (dateTo) params.append('to', dateTo);
       if (selectedUsers.length > 0) params.append('userIds', selectedUsers.join(','));
 
-      const token = getToken();
-      const res = await fetch(`/api/work-logs/recap?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      });
-      const json = await res.json();
-      if (json.success) {
-        setRawData(json.data || []);
+      const res = await WorkLogAPI.getRecap(params.toString());
+      if (res && res.success) {
+        setRawData(res.data || []);
       } else {
-        showToast('Gagal memuat data rekapitulasi', 'error');
+        showToast(res?.message || 'Gagal memuat data rekapitulasi', 'error');
       }
     } catch {
       showToast('Gagal memuat data rekapitulasi', 'error');
     }
     setLoading(false);
-  }, [dateFrom, dateTo, selectedUsers]);
+  }, [dateFrom, dateTo, selectedUsers, showToast]);
 
   useEffect(() => {
     fetchRecap();

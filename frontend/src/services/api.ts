@@ -143,6 +143,7 @@ export const WorkLogAPI = {
   submit: (id: string) => API.put<WorkLog>(`/work-logs/${id}/submit`),
   delete: (id: string) => API.delete(`/work-logs/${id}`),
   getMyStats: () => API.get<WorkStats>('/work-logs/stats/me'),
+  getRecap: (params = '') => API.get<{ userId: string; userName: string; jenis: string; berkas: number; buku: number; bundle: number }[]>(`/work-logs/recap${params ? '?' + params : ''}`),
 };
 
 // ===== ATTENDANCE API =====
