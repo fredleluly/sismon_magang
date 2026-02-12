@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { exportRekapitulasiExcel } from '../../utils/excelExport';
 import { useToast } from '../../context/ToastContext';
 import { UsersAPI, WorkLogAPI } from '../../services/api';
+import * as XLSX from 'xlsx';
 import type { User } from '../../types';
 
 interface RecapRow {
