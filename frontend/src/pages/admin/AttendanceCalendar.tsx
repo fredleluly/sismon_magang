@@ -358,20 +358,20 @@ const AttendanceCalendar: React.FC = () => {
         [`Filter: ${filterLabel || 'Semua'}`],
         [`Total Data: ${dataToExport.length}`],
         [],
-        ['No', 'Nama', 'Institusi', 'Tanggal', 'Jam Masuk', 'Status'],
+        ['No', 'Nama', 'Institusi', 'Tanggal', 'Jam Masuk', 'Jam Keluar', 'Status'],
       ];
 
       dataToExport.forEach((att, index) => {
         const name = typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown';
         const instansi = typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-';
         const tanggal = new Date(att.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-        wsData.push([index + 1, name, instansi, tanggal, att.jamMasuk || '-', att.status]);
+        wsData.push([index + 1, name, instansi, tanggal, att.jamMasuk || '-', att.jamKeluar || '-', att.status]);
       });
 
       const ws = XLSX.utils.aoa_to_sheet(wsData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Kehadiran');
-      ws['!cols'] = [{ wch: 5 }, { wch: 22 }, { wch: 22 }, { wch: 20 }, { wch: 12 }, { wch: 12 }];
+      ws['!cols'] = [{ wch: 5 }, { wch: 22 }, { wch: 22 }, { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
 
       let filename = 'Kehadiran';
       if (filterMode === 'mingguan') filename = 'Kehadiran_Mingguan';
@@ -693,6 +693,7 @@ const AttendanceCalendar: React.FC = () => {
                     <th>Institusi</th>
                     {filterMode !== 'harian' && <th>Tanggal</th>}
                     <th>Jam Masuk</th>
+                    <th>Jam Keluar</th>
                     <th>Status</th>
                     <th>Aksi</th>
                   </tr>
@@ -707,6 +708,7 @@ const AttendanceCalendar: React.FC = () => {
                         <td style={{ fontSize: 12 }}>{new Date(att.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                       )}
                       <td className="time-cell">{att.jamMasuk || '-'}</td>
+                      <td className="time-cell">{att.jamKeluar || '-'}</td>
                       <td>
                         <span className={`status-badge status-${(isThresholdLoaded ? getStatusWithLate(att) : att.status || '').toLowerCase().replace(/\s+/g, '-')}`}>{isThresholdLoaded ? getStatusWithLate(att) : att.status}</span>
                       </td>
