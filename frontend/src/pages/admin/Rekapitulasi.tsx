@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import * as XLSX from 'xlsx';
+import { exportRekapitulasiExcel } from '../../utils/excelExport';
 import { useToast } from '../../context/ToastContext';
 import { UsersAPI } from '../../services/api';
 import { getToken } from '../../services/api';
@@ -165,72 +165,26 @@ const Rekapitulasi: React.FC = () => {
     }
   };
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     if (pivotRows.length === 0) {
       showToast('Tidak ada data untuk diekspor', 'error');
       return;
     }
-
-    // Build header rows
-    const headerRow1: string[] = ['TASK'];
-    const headerRow2: string[] = ['NAMA PESERTA'];
-    jenisList.forEach((j) => {
-      headerRow1.push(j.toUpperCase(), '', '', '');
-      headerRow2.push('BERKAS', 'BUKU', 'BUNDLE', 'TOTAL');
-    });
-    headerRow1.push('TOTAL');
-    headerRow2.push('');
-
-    // Build data rows
-    const dataRows: (string | number)[][] = [];
-    pivotRows.forEach((row) => {
-      const r: (string | number)[] = [row.userName];
-      jenisList.forEach((j) => {
-        const c = row.cells[j] || { berkas: 0, buku: 0, bundle: 0, total: 0 };
-        r.push(c.berkas, c.buku, c.bundle, c.total);
-      });
-      r.push(row.grandTotal);
-      dataRows.push(r);
-    });
-
-    // TOTAL row
-    const totalRow: (string | number)[] = ['TOTAL'];
-    jenisList.forEach((j) => {
-      totalRow.push(totalsRow[j].berkas, totalsRow[j].buku, totalsRow[j].bundle, totalsRow[j].total);
-    });
-    totalRow.push(grandTotalAll);
-    dataRows.push(totalRow);
-
-    const wsData = [headerRow1, headerRow2, ...dataRows];
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-    // Merge cells for header row 1 (jenis groups)
-    const merges: XLSX.Range[] = [];
-    let col = 1;
-    jenisList.forEach(() => {
-      merges.push({ s: { r: 0, c: col }, e: { r: 0, c: col + 3 } });
-      col += 4;
-    });
-    // Merge TASK cell (0,0) vertically with NAMA PESERTA
-    // Merge TOTAL header
-    merges.push({ s: { r: 0, c: col }, e: { r: 1, c: col } });
-    ws['!merges'] = merges;
-
-    // Auto-size columns
-    const colWidths = wsData[0].map((_, i) => ({
-      wch: Math.max(
-        ...wsData.map((r) => String(r[i] ?? '').length),
-        8
-      ) + 2,
-    }));
-    ws['!cols'] = colWidths;
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Rekapitulasi');
-
-    const dateStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
-    XLSX.writeFile(wb, `Rekapitulasi_Pekerjaan_${dateStr}.xlsx`);
-    showToast('Berhasil mengekspor data ke Excel', 'success');
+    try {
+      const filterInfo = dateFrom && dateTo
+        ? `${new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} — ${new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`
+        : undefined;
+      await exportRekapitulasiExcel(
+        jenisList,
+        pivotRows,
+        totalsRow,
+        grandTotalAll,
+        filterInfo,
+      );
+      showToast('Berhasil mengekspor data ke Excel', 'success');
+    } catch {
+      showToast('Gagal mengekspor data ke Excel', 'error');
+    }
   };
 
   const formatDateLabel = () => {

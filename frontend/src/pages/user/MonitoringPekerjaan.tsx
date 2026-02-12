@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { WorkLogAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { WorkLog } from '../../types';
-import * as XLSX from 'xlsx';
+import { exportExcel } from '../../utils/excelExport';
 import './MonitoringPekerjaan.css';
 
 const MonitoringPekerjaan: React.FC = () => {
@@ -291,7 +291,7 @@ const MonitoringPekerjaan: React.FC = () => {
         const dateStr = toDateString(selectedDate);
         dataToDownload = workData.filter((w) => w.tanggal.split('T')[0] === dateStr);
         dateRangeStr = selectedDate.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        filename = `Statistik-Pekerjaan-Today-${exportSelectedDate}.xlsx`;
+        filename = `Statistik_Pekerjaan_Harian`;
       } else if (filterType === 'mingguan') {
         dataToDownload = workData;
         const now = new Date();
@@ -299,14 +299,14 @@ const MonitoringPekerjaan: React.FC = () => {
         const weekStart = new Date(now.setDate(first));
         const weekEnd = new Date(now.setDate(first + 6));
         dateRangeStr = `${toDateString(weekStart)} sampai ${toDateString(weekEnd)}`;
-        filename = `Statistik-Pekerjaan-Weekly-${toDateString(weekStart)}-sampai-${toDateString(weekEnd)}.xlsx`;
+        filename = `Statistik_Pekerjaan_Mingguan`;
       } else if (filterType === 'bulanan') {
         dataToDownload = workData;
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         const monthName = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][month];
         dateRangeStr = `${monthName} ${year}`;
-        filename = `Statistik-Pekerjaan-Monthly-${monthName}-${year}.xlsx`;
+        filename = `Statistik_Pekerjaan_${monthName}_${year}`;
       } else if (filterType === 'custom') {
         if (!tempExportDateStart || !tempExportDateEnd) {
           showToast('Pilih rentang tanggal terlebih dahulu', 'error');
@@ -317,7 +317,7 @@ const MonitoringPekerjaan: React.FC = () => {
           return workDate >= tempExportDateStart && workDate <= tempExportDateEnd;
         });
         dateRangeStr = `${tempExportDateStart} sampai ${tempExportDateEnd}`;
-        filename = `Statistik-Pekerjaan-Custom-${tempExportDateStart}-sampai-${tempExportDateEnd}.xlsx`;
+        filename = `Statistik_Pekerjaan_Custom`;
       }
 
       if (dataToDownload.length === 0) {
@@ -325,25 +325,51 @@ const MonitoringPekerjaan: React.FC = () => {
         return;
       }
 
-      const wsData: any[] = [
-        ['MONITORING PEKERJAAN'],
-        [dateRangeStr],
-        [`Total Data: ${dataToDownload.length}`],
-        [],
-        ['No', 'Tanggal', 'Job Desk', 'Keterangan', 'Berkas', 'Buku', 'Bundle'],
-      ];
+      const totalBerkas = dataToDownload.reduce((s, w) => s + (w.berkas || 0), 0);
+      const totalBuku = dataToDownload.reduce((s, w) => s + (w.buku || 0), 0);
+      const totalBundle = dataToDownload.reduce((s, w) => s + (w.bundle || 0), 0);
 
-      dataToDownload.forEach((work, index) => {
-        const date = new Date(work.tanggal).toLocaleDateString('id-ID');
-        wsData.push([index + 1, date, work.jenis, work.keterangan || '-', work.berkas, work.buku, work.bundle]);
+      await exportExcel({
+        fileName: filename,
+        companyName: 'SISMON Magang',
+        sheets: [{
+          sheetName: 'Monitoring',
+          title: 'MONITORING PEKERJAAN',
+          subtitle: dateRangeStr,
+          infoLines: [
+            `Total Data: ${dataToDownload.length} pekerjaan`,
+            `Total Berkas: ${totalBerkas} | Buku: ${totalBuku} | Bundle: ${totalBundle}`,
+          ],
+          columns: [
+            { header: 'No', key: 'no', width: 6, type: 'number' },
+            { header: 'Tanggal', key: 'tanggal', width: 22, type: 'date' },
+            { header: 'Job Desk', key: 'jenis', width: 20 },
+            { header: 'Keterangan', key: 'keterangan', width: 28 },
+            { header: 'Berkas', key: 'berkas', width: 10, type: 'number' },
+            { header: 'Buku', key: 'buku', width: 10, type: 'number' },
+            { header: 'Bundle', key: 'bundle', width: 10, type: 'number' },
+          ],
+          data: dataToDownload.map((work, index) => ({
+            no: index + 1,
+            tanggal: new Date(work.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+            jenis: work.jenis,
+            keterangan: work.keterangan || '-',
+            berkas: work.berkas || 0,
+            buku: work.buku || 0,
+            bundle: work.bundle || 0,
+          })),
+          summaryRow: {
+            no: '',
+            tanggal: '',
+            jenis: '',
+            keterangan: '',
+            berkas: totalBerkas,
+            buku: totalBuku,
+            bundle: totalBundle,
+          },
+          summaryLabel: 'TOTAL',
+        }],
       });
-
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Monitoring');
-      ws['!cols'] = [{ wch: 5 }, { wch: 12 }, { wch: 18 }, { wch: 20 }, { wch: 8 }, { wch: 8 }, { wch: 8 }];
-
-      XLSX.writeFile(wb, filename);
       showToast('Excel berhasil diunduh!', 'success');
       setIsExportModalOpen(false);
     } catch (error) {
@@ -505,7 +531,7 @@ const MonitoringPekerjaan: React.FC = () => {
     );
   };
 
-  const downloadExcel = () => {
+  const downloadExcel = async () => {
     if (selectedDayData.length === 0 && workData.length === 0) {
       handleExportClick();
       return;
@@ -521,27 +547,51 @@ const MonitoringPekerjaan: React.FC = () => {
           })
         : `${dateRangeStart} sampai ${dateRangeEnd}`;
 
-      const wsData: any[] = [
-        ['MONITORING PEKERJAAN'],
-        [selectedDateStr],
-        [`Total Data: ${dataToExport.length}`],
-        [],
-        ['No', 'Tanggal', 'Job Desk', 'Keterangan', 'Berkas', 'Buku', 'Bundle'],
-      ];
+      const totalBerkas = dataToExport.reduce((s, w) => s + (w.berkas || 0), 0);
+      const totalBuku = dataToExport.reduce((s, w) => s + (w.buku || 0), 0);
+      const totalBundle = dataToExport.reduce((s, w) => s + (w.bundle || 0), 0);
 
-      dataToExport.forEach((work, index) => {
-        const date = new Date(work.tanggal).toLocaleDateString('id-ID');
-        wsData.push([index + 1, date, work.jenis, work.keterangan || '-', work.berkas, work.buku, work.bundle]);
+      await exportExcel({
+        fileName: 'Monitor_Pekerjaan',
+        companyName: 'SISMON Magang',
+        sheets: [{
+          sheetName: 'Monitoring',
+          title: 'MONITORING PEKERJAAN',
+          subtitle: selectedDateStr,
+          infoLines: [
+            `Total Data: ${dataToExport.length} pekerjaan`,
+            `Total Berkas: ${totalBerkas} | Buku: ${totalBuku} | Bundle: ${totalBundle}`,
+          ],
+          columns: [
+            { header: 'No', key: 'no', width: 6, type: 'number' },
+            { header: 'Tanggal', key: 'tanggal', width: 22, type: 'date' },
+            { header: 'Job Desk', key: 'jenis', width: 20 },
+            { header: 'Keterangan', key: 'keterangan', width: 28 },
+            { header: 'Berkas', key: 'berkas', width: 10, type: 'number' },
+            { header: 'Buku', key: 'buku', width: 10, type: 'number' },
+            { header: 'Bundle', key: 'bundle', width: 10, type: 'number' },
+          ],
+          data: dataToExport.map((work, index) => ({
+            no: index + 1,
+            tanggal: new Date(work.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+            jenis: work.jenis,
+            keterangan: work.keterangan || '-',
+            berkas: work.berkas || 0,
+            buku: work.buku || 0,
+            bundle: work.bundle || 0,
+          })),
+          summaryRow: {
+            no: '',
+            tanggal: '',
+            jenis: '',
+            keterangan: '',
+            berkas: totalBerkas,
+            buku: totalBuku,
+            bundle: totalBundle,
+          },
+          summaryLabel: 'TOTAL',
+        }],
       });
-
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Monitoring');
-
-      ws['!cols'] = [{ wch: 5 }, { wch: 12 }, { wch: 18 }, { wch: 20 }, { wch: 8 }, { wch: 8 }, { wch: 8 }];
-
-      const filename = `Monitor-Pekerjaan-${toDateString(new Date())}.xlsx`;
-      XLSX.writeFile(wb, filename);
       showToast('Excel berhasil diunduh!', 'success');
     } catch (error) {
       console.error('Error downloading Excel:', error);

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import * as XLSX from 'xlsx';
+import { exportExcel } from '../../utils/excelExport';
 import { WorkLogAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { WorkLog } from '../../types';
@@ -24,32 +24,64 @@ const LogAktivitas: React.FC = () => {
 
   const avColors = ['av-a','av-b','av-c','av-d','av-e'];
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     if (filtered.length === 0) {
       showToast('Tidak ada data untuk diekspor', 'error');
       return;
     }
-    const data = filtered.map((l, i) => ({
-      'No': i + 1,
-      'Nama Peserta': (l.userId as any)?.name || 'Unknown',
-      'Tanggal': l.tanggal ? new Date(l.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-',
-      'Jenis Pekerjaan': l.jenis || '-',
-      'Keterangan': l.keterangan || '-',
-      'Berkas': l.berkas || 0,
-      'Buku': l.buku || 0,
-      'Bundle': l.bundle || 0,
-    }));
-    const ws = XLSX.utils.json_to_sheet(data);
-    // Auto-size columns
-    const colWidths = Object.keys(data[0]).map(key => ({
-      wch: Math.max(key.length, ...data.map(row => String((row as any)[key]).length)) + 2,
-    }));
-    ws['!cols'] = colWidths;
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Log Aktivitas');
-    const today = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
-    XLSX.writeFile(wb, `Log_Aktivitas_${today}.xlsx`);
-    showToast('Berhasil mengekspor data ke Excel', 'success');
+    try {
+      const totalBerkas = filtered.reduce((s, l) => s + (l.berkas || 0), 0);
+      const totalBuku = filtered.reduce((s, l) => s + (l.buku || 0), 0);
+      const totalBundle = filtered.reduce((s, l) => s + (l.bundle || 0), 0);
+
+      await exportExcel({
+        fileName: 'Log_Aktivitas',
+        companyName: 'SISMON Magang',
+        sheets: [{
+          sheetName: 'Log Aktivitas',
+          title: 'LOG AKTIVITAS PEKERJAAN',
+          subtitle: 'Laporan Aktivitas Peserta Magang',
+          infoLines: [
+            `Total Data: ${filtered.length} aktivitas`,
+            `Dicetak: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+          ],
+          columns: [
+            { header: 'No', key: 'no', width: 6, type: 'number' },
+            { header: 'Nama Peserta', key: 'nama', width: 24 },
+            { header: 'Tanggal', key: 'tanggal', width: 22, type: 'date' },
+            { header: 'Jenis Pekerjaan', key: 'jenis', width: 20 },
+            { header: 'Keterangan', key: 'keterangan', width: 28 },
+            { header: 'Berkas', key: 'berkas', width: 10, type: 'number' },
+            { header: 'Buku', key: 'buku', width: 10, type: 'number' },
+            { header: 'Bundle', key: 'bundle', width: 10, type: 'number' },
+          ],
+          data: filtered.map((l, i) => ({
+            no: i + 1,
+            nama: (l.userId as any)?.name || 'Unknown',
+            tanggal: l.tanggal ? new Date(l.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-',
+            jenis: l.jenis || '-',
+            keterangan: l.keterangan || '-',
+            berkas: l.berkas || 0,
+            buku: l.buku || 0,
+            bundle: l.bundle || 0,
+          })),
+          summaryRow: {
+            no: '',
+            nama: '',
+            tanggal: '',
+            jenis: '',
+            keterangan: '',
+            berkas: totalBerkas,
+            buku: totalBuku,
+            bundle: totalBundle,
+          },
+          summaryLabel: 'TOTAL',
+        }],
+      });
+      showToast('Berhasil mengekspor data ke Excel', 'success');
+    } catch {
+      showToast('Gagal mengekspor data ke Excel', 'error');
+    }
   };
 
   return (

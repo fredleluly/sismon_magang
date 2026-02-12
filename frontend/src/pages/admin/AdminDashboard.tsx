@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Chart, registerables } from "chart.js";
-import * as XLSX from "xlsx";
+import { exportExcel } from '../../utils/excelExport';
 import {
   DashboardAPI,
   getToken,
@@ -114,168 +114,210 @@ const AdminDashboard: React.FC = () => {
     } catch {}
   };
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     if (!data) {
       showToast("Data tidak tersedia", "error");
       return;
     }
 
     try {
-      const workbook = XLSX.utils.book_new();
+      const todayStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      const sheets: any[] = [];
 
-      // Sheet 1: Summary Stats
-      const summaryData = [
-        ["RINGKASAN DASHBOARD PESERTA MAGANG", ""],
-        [""],
-        ["Total Kendala", totalComplaints],
-        ["Total Peserta Magang", data.totalPeserta || 0],
-        ["Rata-rata Produktivitas (Item/hari)", data.avgProductivity || 0],
-        ["Tingkat Kehadiran Hari Ini", (data.attendanceRate || 0) + "%"],
-        [
-          "Peserta Hadir Hari Ini",
-          (data.todayAttendance || 0) + "/" + (data.totalPeserta || 0),
+      // Sheet 1: Ringkasan Dashboard
+      sheets.push({
+        sheetName: 'Ringkasan',
+        title: 'RINGKASAN DASHBOARD',
+        subtitle: 'Laporan Monitoring Peserta Magang',
+        infoLines: [
+          `Tanggal Cetak: ${todayStr}`,
         ],
-      ];
-      const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-      summarySheet["!cols"] = [{ wch: 30 }, { wch: 20 }];
-      XLSX.utils.book_append_sheet(workbook, summarySheet, "Ringkasan");
+        columns: [
+          { header: 'No', key: 'no', width: 6, type: 'number' as const },
+          { header: 'Indikator', key: 'indikator', width: 35 },
+          { header: 'Nilai', key: 'nilai', width: 20, type: 'number' as const },
+          { header: 'Keterangan', key: 'keterangan', width: 30 },
+        ],
+        data: [
+          { no: 1, indikator: 'Total Peserta Magang', nilai: data.totalPeserta || 0, keterangan: 'Peserta aktif' },
+          { no: 2, indikator: 'Total Kendala/Keluhan', nilai: totalComplaints, keterangan: 'Laporan masuk' },
+          { no: 3, indikator: 'Rata-rata Produktivitas', nilai: data.avgProductivity || 0, keterangan: 'Item/hari per orang' },
+          { no: 4, indikator: 'Tingkat Kehadiran Hari Ini', nilai: data.attendanceRate || 0, keterangan: `${data.todayAttendance || 0}/${data.totalPeserta || 0} hadir` },
+          { no: 5, indikator: 'Total Berkas', nilai: data.totalBerkas || 0, keterangan: 'Keseluruhan' },
+          { no: 6, indikator: 'Total Buku', nilai: data.totalBuku || 0, keterangan: 'Keseluruhan' },
+          { no: 7, indikator: 'Total Bundle', nilai: data.totalBundle || 0, keterangan: 'Keseluruhan' },
+          { no: 8, indikator: 'Grand Total Item', nilai: (data.totalBerkas || 0) + (data.totalBuku || 0) + (data.totalBundle || 0), keterangan: 'Berkas + Buku + Bundle' },
+        ],
+      });
 
-      // Sheet 2: Weekly Progress
+      // Sheet 2: Progres Mingguan
       if (data.weeklyProgress && data.weeklyProgress.length > 0) {
-        const weeklyHeaders = ["Tanggal", "Berkas", "Buku", "Bundle"];
-        const weeklyData = data.weeklyProgress.map((w) => [
-          new Date(w._id).toLocaleDateString("id-ID"),
-          w.berkas || 0,
-          w.buku || 0,
-          w.bundle || 0,
-        ]);
-        const weeklySheet = XLSX.utils.aoa_to_sheet([
-          weeklyHeaders,
-          ...weeklyData,
-        ]);
-        weeklySheet["!cols"] = [
-          { wch: 15 },
-          { wch: 12 },
-          { wch: 12 },
-          { wch: 12 },
-        ];
-        XLSX.utils.book_append_sheet(workbook, weeklySheet, "Progres Mingguan");
-      }
+        const wp = data.weeklyProgress;
+        const totalBerkas = wp.reduce((s, w) => s + (w.berkas || 0), 0);
+        const totalBuku = wp.reduce((s, w) => s + (w.buku || 0), 0);
+        const totalBundle = wp.reduce((s, w) => s + (w.bundle || 0), 0);
 
-      // Sheet 3: Work Distribution
-      if (data.workDistribution && data.workDistribution.length > 0) {
-        const distHeaders = ["Jenis Pekerjaan", "Jumlah"];
-        const distData = data.workDistribution.map((w) => [
-          w._id || "Lainnya",
-          w.count || 0,
-        ]);
-        const distSheet = XLSX.utils.aoa_to_sheet([distHeaders, ...distData]);
-        distSheet["!cols"] = [{ wch: 30 }, { wch: 15 }];
-        XLSX.utils.book_append_sheet(workbook, distSheet, "Distribusi Tugas");
-      }
-
-      // Sheet 4: Top Performers
-      if (data.topPerformers && data.topPerformers.length > 0) {
-        const perfHeaders = [
-          "Peringkat",
-          "Nama Peserta",
-          "Total Item",
-          "Institusi",
-        ];
-        const perfData = data.topPerformers.map((p, i) => [
-          i + 1,
-          p.name || "-",
-          p.totalItems || 0,
-          p.instansi || "-",
-        ]);
-        const perfSheet = XLSX.utils.aoa_to_sheet([perfHeaders, ...perfData]);
-        perfSheet["!cols"] = [
-          { wch: 12 },
-          { wch: 25 },
-          { wch: 15 },
-          { wch: 30 },
-        ];
-        XLSX.utils.book_append_sheet(workbook, perfSheet, "Top Peserta");
-      }
-
-      // Sheet 5: Today's Attendance
-      if (attendanceList.length > 0) {
-        const attHeaders = [
-          "No",
-          "Nama Peserta",
-          "Institusi",
-          "Jam Masuk",
-          "Jam Keluar",
-          "Status",
-        ];
-        const attData = attendanceList.map((r, i) => [
-          i + 1,
-          r.userId?.name || "Unknown",
-          r.userId?.instansi || "-",
-          r.jamMasuk || "-",
-          r.jamKeluar || "Belum Keluar",
-          r.jamKeluar ? "Keluar" : "Aktif",
-        ]);
-        const attSheet = XLSX.utils.aoa_to_sheet([attHeaders, ...attData]);
-        attSheet["!cols"] = [
-          { wch: 8 },
-          { wch: 25 },
-          { wch: 30 },
-          { wch: 12 },
-          { wch: 12 },
-          { wch: 12 },
-        ];
-        XLSX.utils.book_append_sheet(workbook, attSheet, "Kehadiran Hari Ini");
-      }
-
-      // Sheet 6: Recent Activity
-      if (data.recentActivity && data.recentActivity.length > 0) {
-        const actHeaders = [
-          "No",
-          "Nama Peserta",
-          "Jenis Pekerjaan",
-          "Berkas",
-          "Buku",
-          "Bundle",
-          "Tanggal",
-          "Keterangan",
-        ];
-        const actData = data.recentActivity.map((a, i) => {
-          const userName =
-            typeof a.userId === "string"
-              ? "Unknown"
-              : a.userId?.name || "Unknown";
-          return [
-            i + 1,
-            userName,
-            a.jenis || "-",
-            a.berkas || 0,
-            a.buku || 0,
-            a.bundle || 0,
-            new Date(a.createdAt).toLocaleDateString("id-ID"),
-            a.keterangan || "-",
-          ];
+        sheets.push({
+          sheetName: 'Progres Mingguan',
+          title: 'PROGRES PEKERJAAN MINGGUAN',
+          subtitle: 'Tren penyelesaian tugas per kategori',
+          infoLines: [
+            `Periode: ${wp.length} hari terakhir`,
+            `Total: ${totalBerkas + totalBuku + totalBundle} item`,
+          ],
+          columns: [
+            { header: 'No', key: 'no', width: 6, type: 'number' as const },
+            { header: 'Tanggal', key: 'tanggal', width: 22, type: 'date' as const },
+            { header: 'Berkas', key: 'berkas', width: 12, type: 'number' as const },
+            { header: 'Buku', key: 'buku', width: 12, type: 'number' as const },
+            { header: 'Bundle', key: 'bundle', width: 12, type: 'number' as const },
+            { header: 'Total', key: 'total', width: 12, type: 'number' as const },
+          ],
+          data: wp.map((w, i) => ({
+            no: i + 1,
+            tanggal: new Date(w._id).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+            berkas: w.berkas || 0,
+            buku: w.buku || 0,
+            bundle: w.bundle || 0,
+            total: (w.berkas || 0) + (w.buku || 0) + (w.bundle || 0),
+          })),
+          summaryRow: { no: '', tanggal: '', berkas: totalBerkas, buku: totalBuku, bundle: totalBundle, total: totalBerkas + totalBuku + totalBundle },
+          summaryLabel: 'TOTAL',
         });
-        const actSheet = XLSX.utils.aoa_to_sheet([actHeaders, ...actData]);
-        actSheet["!cols"] = [
-          { wch: 8 },
-          { wch: 25 },
-          { wch: 25 },
-          { wch: 10 },
-          { wch: 10 },
-          { wch: 10 },
-          { wch: 15 },
-          { wch: 20 },
-        ];
-        XLSX.utils.book_append_sheet(workbook, actSheet, "Aktivitas Terbaru");
       }
 
-      // Generate filename with timestamp
-      const timestamp = new Date().toISOString().split("T")[0];
-      const filename = `Dashboard-Monitoring-${timestamp}.xlsx`;
+      // Sheet 3: Distribusi Tugas
+      if (data.workDistribution && data.workDistribution.length > 0) {
+        const wd = data.workDistribution;
+        const totalCount = wd.reduce((s, w) => s + (w.count || 0), 0);
 
-      // Write file
-      XLSX.writeFile(workbook, filename);
+        sheets.push({
+          sheetName: 'Distribusi Tugas',
+          title: 'DISTRIBUSI JENIS PEKERJAAN',
+          subtitle: 'Sebaran tugas berdasarkan kategori',
+          infoLines: [
+            `Total Jenis: ${wd.length} kategori`,
+            `Total Pekerjaan: ${totalCount} item`,
+          ],
+          columns: [
+            { header: 'No', key: 'no', width: 6, type: 'number' as const },
+            { header: 'Jenis Pekerjaan', key: 'jenis', width: 30 },
+            { header: 'Jumlah', key: 'jumlah', width: 14, type: 'number' as const },
+            { header: 'Persentase', key: 'persen', width: 14 },
+          ],
+          data: wd.map((w, i) => ({
+            no: i + 1,
+            jenis: w._id || 'Lainnya',
+            jumlah: w.count || 0,
+            persen: totalCount > 0 ? ((w.count || 0) / totalCount * 100).toFixed(1) + '%' : '0%',
+          })),
+          summaryRow: { no: '', jenis: '', jumlah: totalCount, persen: '100%' },
+          summaryLabel: 'TOTAL',
+        });
+      }
+
+      // Sheet 4: Top Peserta
+      if (data.topPerformers && data.topPerformers.length > 0) {
+        sheets.push({
+          sheetName: 'Top Peserta',
+          title: 'PERINGKAT PESERTA TERBAIK',
+          subtitle: 'Berdasarkan total item yang diselesaikan',
+          infoLines: [
+            `Total: ${data.topPerformers.length} peserta`,
+          ],
+          columns: [
+            { header: 'Peringkat', key: 'rank', width: 12, type: 'number' as const },
+            { header: 'Nama Peserta', key: 'nama', width: 28 },
+            { header: 'Institusi', key: 'instansi', width: 30 },
+            { header: 'Total Item', key: 'totalItems', width: 14, type: 'number' as const },
+          ],
+          data: data.topPerformers.map((p, i) => ({
+            rank: i + 1,
+            nama: p.name || '-',
+            instansi: p.instansi || '-',
+            totalItems: p.totalItems || 0,
+          })),
+        });
+      }
+
+      // Sheet 5: Kehadiran Hari Ini
+      if (attendanceList.length > 0) {
+        const aktif = attendanceList.filter((r: any) => !r.jamKeluar).length;
+        const keluar = attendanceList.filter((r: any) => r.jamKeluar).length;
+
+        sheets.push({
+          sheetName: 'Kehadiran Hari Ini',
+          title: 'DAFTAR KEHADIRAN HARI INI',
+          subtitle: todayStr,
+          infoLines: [
+            `Total Hadir: ${attendanceList.length} peserta`,
+            `Aktif: ${aktif} | Sudah Keluar: ${keluar}`,
+          ],
+          columns: [
+            { header: 'No', key: 'no', width: 6, type: 'number' as const },
+            { header: 'Nama Peserta', key: 'nama', width: 28 },
+            { header: 'Institusi', key: 'instansi', width: 30 },
+            { header: 'Jam Masuk', key: 'jamMasuk', width: 14 },
+            { header: 'Jam Keluar', key: 'jamKeluar', width: 14 },
+            { header: 'Status', key: 'status', width: 14 },
+          ],
+          data: attendanceList.map((r: any, i: number) => ({
+            no: i + 1,
+            nama: r.userId?.name || 'Unknown',
+            instansi: r.userId?.instansi || '-',
+            jamMasuk: r.jamMasuk || '-',
+            jamKeluar: r.jamKeluar || 'Belum Keluar',
+            status: r.jamKeluar ? 'Selesai' : 'Aktif',
+          })),
+        });
+      }
+
+      // Sheet 6: Aktivitas Terbaru
+      if (data.recentActivity && data.recentActivity.length > 0) {
+        const ra = data.recentActivity;
+        const totalB = ra.reduce((s: number, a: any) => s + (a.berkas || 0), 0);
+        const totalK = ra.reduce((s: number, a: any) => s + (a.buku || 0), 0);
+        const totalBd = ra.reduce((s: number, a: any) => s + (a.bundle || 0), 0);
+
+        sheets.push({
+          sheetName: 'Aktivitas Terbaru',
+          title: 'AKTIVITAS PEKERJAAN TERBARU',
+          subtitle: 'Update terkini dari peserta magang',
+          infoLines: [
+            `Total: ${ra.length} aktivitas`,
+            `Berkas: ${totalB} | Buku: ${totalK} | Bundle: ${totalBd}`,
+          ],
+          columns: [
+            { header: 'No', key: 'no', width: 6, type: 'number' as const },
+            { header: 'Nama Peserta', key: 'nama', width: 24 },
+            { header: 'Jenis Pekerjaan', key: 'jenis', width: 22 },
+            { header: 'Berkas', key: 'berkas', width: 10, type: 'number' as const },
+            { header: 'Buku', key: 'buku', width: 10, type: 'number' as const },
+            { header: 'Bundle', key: 'bundle', width: 10, type: 'number' as const },
+            { header: 'Tanggal', key: 'tanggal', width: 22, type: 'date' as const },
+            { header: 'Keterangan', key: 'keterangan', width: 28 },
+          ],
+          data: ra.map((a: any, i: number) => ({
+            no: i + 1,
+            nama: typeof a.userId === 'string' ? 'Unknown' : a.userId?.name || 'Unknown',
+            jenis: a.jenis || '-',
+            berkas: a.berkas || 0,
+            buku: a.buku || 0,
+            bundle: a.bundle || 0,
+            tanggal: new Date(a.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+            keterangan: a.keterangan || '-',
+          })),
+          summaryRow: { no: '', nama: '', jenis: '', berkas: totalB, buku: totalK, bundle: totalBd, tanggal: '', keterangan: '' },
+          summaryLabel: 'TOTAL',
+        });
+      }
+
+      await exportExcel({
+        fileName: 'Dashboard_Monitoring',
+        companyName: 'SISMON Magang',
+        creator: 'Admin Dashboard',
+        sheets,
+      });
       showToast("Data berhasil diekspor ke Excel", "success");
     } catch (error) {
       console.error("Export error:", error);
