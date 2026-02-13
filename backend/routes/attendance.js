@@ -96,8 +96,11 @@ router.post('/scan', auth, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Anda sudah absen hari ini.' });
     }
 
-    const now = new Date();
-    const jamMasuk = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+const now = new Date();
+const jamMasuk = now.toLocaleTimeString('id-ID', { 
+  hour: '2-digit', 
+  minute: '2-digit',
+  timeZone: 'Asia/Jakarta'});
 
     // Get late threshold (default 08:00)
     const lateThreshold = process.env.LATE_THRESHOLD || '08:00';
@@ -151,14 +154,22 @@ router.post('/photo-checkin', auth, upload.single('foto'), async (req, res) => {
     }
 
     // Use timestamp from user's device if provided, otherwise server time
-    let jamMasuk;
-    if (timestamp) {
-      const userDate = new Date(timestamp);
-      jamMasuk = userDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    } else {
-      const now = new Date();
-      jamMasuk = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    }
+let jamMasuk;
+if (timestamp) {
+  const userDate = new Date(timestamp);
+  jamMasuk = userDate.toLocaleTimeString('id-ID', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    timeZone: 'Asia/Jakarta'
+  });
+} else {
+  const now = new Date();
+  jamMasuk = now.toLocaleTimeString('id-ID', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    timeZone: 'Asia/Jakarta'
+  });
+}
 
     // Get late threshold (default 08:00)
     const lateThreshold = process.env.LATE_THRESHOLD || '08:00';
@@ -226,15 +237,23 @@ router.post('/photo-checkout', auth, upload.single('foto'), async (req, res) => 
       return res.status(400).json({ success: false, message: 'Anda sudah absen pulang hari ini.' });
     }
 
-    // Use timestamp from user's device if provided, otherwise server time
-    let jamKeluar;
-    if (timestamp) {
-      const userDate = new Date(timestamp);
-      jamKeluar = userDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    } else {
-      const now = new Date();
-      jamKeluar = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    }
+   // Use timestamp from user's device if provided, otherwise server time
+let jamKeluar;
+if (timestamp) {
+  const userDate = new Date(timestamp);
+  jamKeluar = userDate.toLocaleTimeString('id-ID', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    timeZone: 'Asia/Jakarta'
+  });
+} else {
+  const now = new Date();
+  jamKeluar = now.toLocaleTimeString('id-ID', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    timeZone: 'Asia/Jakarta'
+  });
+}
 
     const fotoPulangTimestamp = timestamp
       ? new Date(timestamp).toLocaleString('id-ID', { timeZone: timezone || 'Asia/Jakarta' })
@@ -508,7 +527,11 @@ router.put('/:id/checkout', auth, async (req, res) => {
     }
 
     const now = new Date();
-    att.jamKeluar = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+att.jamKeluar = now.toLocaleTimeString('id-ID', { 
+  hour: '2-digit', 
+  minute: '2-digit',
+  timeZone: 'Asia/Jakarta'
+});
     await att.save();
 
     res.json({ success: true, message: 'Berhasil clock out.', data: att });
