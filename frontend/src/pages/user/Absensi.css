@@ -36,13 +36,11 @@
 .date-text h3 {
   font-size: 1.125rem;
   font-weight: 700;
-  color: var(--gray-900);
   margin: 0 0 0.25rem 0;
 }
 
 .date-text p {
   font-size: 0.875rem;
-  color: var(--gray-500);
   margin: 0;
 }
 
@@ -60,8 +58,9 @@
 .last-absensi span {
   display: block;
   font-size: 0.75rem;
-  color: var(--gray-500);
   margin-bottom: 0.25rem;
+  font-style: italic;
+  font-weight: bold;
 }
 
 .last-absensi .time {
