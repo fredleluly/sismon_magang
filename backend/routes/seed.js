@@ -71,6 +71,7 @@ router.get('/', async (req, res) => {
     const users = [];
 
     for (let i = 1; i <= 10; i++) {
+        console.log(`Creating user ${i}...`);
         const user = await db.users.insert({
             name: `Peserta Magang ${i}`,
             email: `peserta${i}@gmail.com`,
@@ -84,8 +85,10 @@ router.get('/', async (req, res) => {
         });
         users.push(user);
     }
+    console.log(`Created ${users.length} users.`);
 
     // 3. Generate Data for Last 30 Days
+    console.log('Generating activity data...');
     const today = new Date();
     const startDate = new Date();
     startDate.setDate(today.getDate() - 30);
@@ -95,8 +98,12 @@ router.get('/', async (req, res) => {
     let complaintCount = 0;
 
     for (const user of users) {
+        if (!user || !user._id) {
+             console.error('User invalid:', user);
+             continue;
+        }
+        
         // Loop through each day from startDate to today
-        // Note: new Date(startDate) creates a copy, so startDate itself isn't mutated by loop
         for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
             const currentDay = new Date(d);
             const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
@@ -110,6 +117,7 @@ router.get('/', async (req, res) => {
                 const jamMasuk = status === 'Hadir' ? `0${randomInt(7, 8)}:${randomInt(10, 59)}` : (status === 'Telat' ? `09:${randomInt(10, 30)}` : '');
                 const jamKeluar = (status === 'Hadir' || status === 'Telat') ? `17:${randomInt(0, 30)}` : '';
 
+                try {
                 // Attendance Record
                 await db.attendance.insert({
                     userId: user._id,
@@ -123,6 +131,10 @@ router.get('/', async (req, res) => {
                     updatedAt: currentDay
                 });
                 attendanceCount++;
+                } catch (e) {
+                    console.error('Error creating attendance:', e);
+                    throw e;
+                }
 
                 // Work Log (Only if Hadir/Telat)
                 if (status === 'Hadir' || status === 'Telat') {
@@ -136,33 +148,40 @@ router.get('/', async (req, res) => {
                         'Deploy ke server staging'
                     ]);
 
-                     // Specific logic for WorkLog "jenis" if needed, defaulting to random based on original script
-                     // Original script: jenis: random(['WFO', 'WFH'])
-                    
-                    await db.workLogs.insert({
-                        userId: user._id,
-                        tanggal: currentDay,
-                        jenis: random(['WFO', 'WFH']),
-                        keterangan: activity,
-                        berkas: randomInt(0, 2),
-                        buku: randomInt(0, 1),
-                        bundle: randomInt(0, 1),
-                        status: 'Selesai',
-                        createdAt: currentDay,
-                        updatedAt: currentDay
-                    });
-                    workLogCount++;
+                    try {
+                        await db.workLogs.insert({
+                            userId: user._id,
+                            tanggal: currentDay,
+                            jenis: random(['WFO', 'WFH']),
+                            keterangan: activity,
+                            berkas: randomInt(0, 2),
+                            buku: randomInt(0, 1),
+                            bundle: randomInt(0, 1),
+                            status: 'Selesai',
+                            createdAt: currentDay,
+                            updatedAt: currentDay
+                        });
+                        workLogCount++;
+                    } catch (e) {
+                         console.error('Error creating worklog:', e);
+                         throw e;
+                    }
                 }
             } else {
                  // Alpha / Tidak Hadir
-                await db.attendance.insert({
-                    userId: user._id,
-                    tanggal: currentDay,
-                    status: 'Alpha',
-                    createdAt: currentDay,
-                    updatedAt: currentDay
-                });
-                attendanceCount++;
+                try {
+                    await db.attendance.insert({
+                        userId: user._id,
+                        tanggal: currentDay,
+                        status: 'Alpha',
+                        createdAt: currentDay,
+                        updatedAt: currentDay
+                    });
+                    attendanceCount++;
+                } catch (e) {
+                    console.error('Error creating alpha attendance:', e);
+                    throw e;
+                }
             }
         }
 
@@ -171,17 +190,22 @@ router.get('/', async (req, res) => {
         const categories = ['Fasilitas', 'Teknis', 'Administrasi', 'Lainnya'];
         
         for (let k = 0; k < numComplaints; k++) {
-            await db.complaints.insert({
-                userId: user._id,
-                judul: `Kendala ${random(['Internet', 'AC', 'Komputer', 'Akses'])}`,
-                kategori: random(categories),
-                prioritas: random(['Low', 'Medium', 'High']),
-                deskripsi: 'Mohon bantuannya untuk kendala ini.',
-                status: random(['Menunggu', 'Diproses', 'Selesai']),
-                createdAt: new Date(),
-                updatedAt: new Date()
-            });
-            complaintCount++;
+            try {
+                await db.complaints.insert({
+                    userId: user._id,
+                    judul: `Kendala ${random(['Internet', 'AC', 'Komputer', 'Akses'])}`,
+                    kategori: random(categories),
+                    prioritas: random(['Low', 'Medium', 'High']),
+                    deskripsi: 'Mohon bantuannya untuk kendala ini.',
+                    status: random(['Menunggu', 'Diproses', 'Selesai']),
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                });
+                complaintCount++;
+            } catch (e) {
+                console.error('Error creating complaint:', e);
+                throw e;
+            }
         }
     }
 
@@ -197,8 +221,10 @@ router.get('/', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Seed Error:', error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Seed Error at top level catch:', error);
+    // Be safer about logging the error property
+     const msg = error ? (error.message || 'Unknown error') : 'Unknown error';
+    res.status(500).json({ success: false, message: msg });
   }
 });
 
