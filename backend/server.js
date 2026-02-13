@@ -11,6 +11,43 @@ const path = require("path");
 
 const app = express();
 
+// ===== DB CONNECTION (CACHED FOR VERCEL) =====
+const MONGODB_URI =
+  process.env.MONGODB_URI ||
+  "mongodb://breaklimited12_db_user:00FMxh3cSnXf3CQ7@ac-9wljaxr-shard-00-00.ha9nmsu.mongodb.net:27017,ac-9wljaxr-shard-00-01.ha9nmsu.mongodb.net:27017,ac-9wljaxr-shard-00-02.ha9nmsu.mongodb.net:27017/pln_magang_monitoring?ssl=true&replicaSet=atlas-7ro3bk-shard-0&authSource=admin&retryWrites=true&w=majority&appName=cluster-magang";
+
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+async function connectDB() {
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false, // Disable Mongoose buffering
+    };
+
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      console.log("✅ MongoDB New Connection Established");
+      return mongoose;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
+
+  return cached.conn;
+}
+
 // ===== MIDDLEWARE =====
 const corsOptions = {
   origin: "*",
@@ -25,17 +62,35 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(morgan("dev"));
 
-// Serve frontend static files
-// app.use(express.static(path.join(__dirname, '../pln-magang')));
+// Ensure DB is connected before handling requests
+app.use(async (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    try {
+      await connectDB();
+    } catch (err) {
+      console.error("❌ MongoDB connection failed in middleware:", err.message);
+    }
+  }
+  next();
+});
 
-// Serve uploaded files
-// Note: Di Vercel serverless, file upload lokal tidak akan tersimpan permanen.
-// Gunakan cloud storage seperti Cloudinary untuk produksi.
+// Serve uploads
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ===== ROUTES =====
-app.get("/", (req, res) => {
-  const dbStatus = mongoose.connection.readyState;
+app.get("/", async (req, res) => {
+  let dbStatus = mongoose.connection.readyState;
+  
+  // Try to reconnect if disconnected
+  if (dbStatus !== 1) {
+    try {
+        await connectDB();
+        dbStatus = mongoose.connection.readyState;
+    } catch (e) {
+        console.error("Reconnection failed:", e);
+    }
+  }
+
   const statusMap = {
     0: "Disconnected 🔴",
     1: "Connected 🟢",
@@ -61,11 +116,6 @@ app.use("/api/seed", require("./routes/seed"));
 app.use("/api/target-section", require("./routes/targetSection"));
 app.use("/api/performance", require("./routes/performance"));
 
-// Fallback: serve frontend
-// app.get('*', (req, res) => {
-//   res.sendFile(path.join(__dirname, '../pln-magang/login.html'));
-// });
-
 // ===== ERROR HANDLER =====
 app.use((err, req, res, next) => {
   console.error("Error:", err.message);
@@ -75,25 +125,13 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ===== CONNECT DB & START =====
+// ===== START SERVER =====
 const PORT = process.env.PORT || 5001;
 const HTTPS_PORT = process.env.HTTPS_PORT || 5443;
-const MONGODB_URI =
-  process.env.MONGODB_URI ||
-  "mongodb://breaklimited12_db_user:00FMxh3cSnXf3CQ7@ac-9wljaxr-shard-00-00.ha9nmsu.mongodb.net:27017,ac-9wljaxr-shard-00-01.ha9nmsu.mongodb.net:27017,ac-9wljaxr-shard-00-02.ha9nmsu.mongodb.net:27017/pln_magang_monitoring?ssl=true&replicaSet=atlas-7ro3bk-shard-0&authSource=admin&retryWrites=true&w=majority&appName=cluster-magang";
 
-// Connect to MongoDB
-mongoose
-  .connect(MONGODB_URI)
-  .then(() => {
-    console.log("✅ MongoDB Connected");
-  })
-  .catch((err) => {
-    console.error("❌ MongoDB connection error:", err.message);
-  });
+// Connect DB (Initial)
+connectDB().catch(err => console.error(err));
 
-// PENTING UNTUK VERCEL:
-// Bungkus app.listen agar hanya jalan saat di-run lokal (bukan saat di-import oleh Vercel)
 if (require.main === module) {
   // HTTP Server
   app.listen(PORT, "0.0.0.0", () => {
@@ -102,16 +140,11 @@ if (require.main === module) {
     console.log(`📂 Frontend: http://localhost:${PORT}/login.html`);
   });
 
-  // HTTPS Server (Hanya jalan di lokal untuk dev kamera)
+  // HTTPS Server (Local Only)
   try {
     const https = require("https");
     const fs = require("fs");
     const certPath = path.join(__dirname, "cert");
-
-    if (!fs.existsSync(path.join(certPath, "key.pem"))) {
-      // Skiping generation logic for brevity in Vercel context, checking existence only
-      // ... (Logika generate cert tetap ada di file asli jika tidak dihapus, tapi di sini kita sederhanakan untuk blok if ini)
-    }
 
     if (fs.existsSync(path.join(certPath, "key.pem"))) {
       const sslOptions = {
@@ -124,9 +157,9 @@ if (require.main === module) {
       });
     }
   } catch (err) {
-    console.log("⚠️  HTTPS tidak aktif:", err.message);
+    console.log("⚠️  HTTPS not active:", err.message);
   }
 }
 
-// Export app untuk Vercel
 module.exports = app;
+

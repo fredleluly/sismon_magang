@@ -51,6 +51,7 @@ export interface Attendance {
   fotoPulangTimestamp?: string;
   locationMasuk?: GeoLocation;
   locationPulang?: GeoLocation;
+  keterangan?: string;
   createdAt?: string;
 }
 

@@ -213,7 +213,7 @@ const AttendanceCalendar: React.FC = () => {
       const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59);
       const from = toDateStr(startOfMonth);
       const to = toDateStr(endOfMonth);
-      const res = await AttendanceAPI.getAll(`from=${from}&to=${to}&limit=1000`);
+      const res = await AttendanceAPI.getAll(`from=${from}&to=${to}&limit=1000&_t=${new Date().getTime()}`);
       if (res && res.success) {
         setAttendanceData(res.data || []);
       } else {
@@ -442,7 +442,7 @@ const AttendanceCalendar: React.FC = () => {
         setFilterLabel(`${fromDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} - ${toDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`);
       }
 
-      const res = await AttendanceAPI.getAll(`from=${from}&to=${to}&limit=5000`);
+      const res = await AttendanceAPI.getAll(`from=${from}&to=${to}&limit=5000&_t=${new Date().getTime()}`);
       if (res && res.success) {
         setFilterData(res.data || []);
         setSelectedDayData([]);
@@ -958,7 +958,25 @@ const AttendanceCalendar: React.FC = () => {
                         <td style={{ fontSize: 12 }}>{new Date(att.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                       )}
                       <td className="time-cell">{att.jamMasuk || '-'}</td>
-                      <td className="time-cell">{att.jamKeluar || '-'}</td>
+                      <td>
+                        <div className="reason-container">
+                          <span className="time-cell">{att.jamKeluar || '-'}</span>
+                          {att.keterangan && (
+                            <div className="reason-badge">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                              </svg>
+                              Info
+                              <div className="reason-tooltip">
+                                <strong>Alasan Pulang Cepat:</strong><br/>
+                                {att.keterangan}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </td>
                       <td>
                         <span className={`status-badge status-${(isThresholdLoaded ? getStatusWithLate(att) : att.status || '').toLowerCase().replace(/\s+/g, '-')}`}>{isThresholdLoaded ? getStatusWithLate(att) : att.status}</span>
                       </td>

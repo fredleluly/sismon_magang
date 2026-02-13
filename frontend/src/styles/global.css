@@ -3,7 +3,7 @@
    Main Stylesheet - style.css
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&family=Poppins:wght@300;400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&family=Poppins:wght@300;400;500;600;700;800&display=swap");
 
 :root {
   --primary-50: #e6f4fa;
@@ -60,7 +60,7 @@ html {
   -webkit-font-smoothing: antialiased;
 }
 body {
-  font-family: 'Plus Jakarta Sans', 'Poppins', sans-serif;
+  font-family: "Plus Jakarta Sans", "Poppins", sans-serif;
   font-size: 14px;
   line-height: 1.6;
   color: var(--gray-800);
@@ -364,10 +364,14 @@ img {
   object-fit: cover;
 }
 .auth-right .hero-bg::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(10, 101, 153, 0.92), rgba(4, 59, 97, 0.95));
+  background: linear-gradient(
+    135deg,
+    rgba(10, 101, 153, 0.92),
+    rgba(4, 59, 97, 0.95)
+  );
 }
 .auth-right .hero-content {
   position: relative;
@@ -482,10 +486,14 @@ img {
   object-fit: cover;
 }
 .auth-page.login-page .login-bg::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(10, 101, 153, 0.92), rgba(4, 59, 97, 0.95));
+  background: linear-gradient(
+    135deg,
+    rgba(10, 101, 153, 0.92),
+    rgba(4, 59, 97, 0.95)
+  );
 }
 .auth-page.login-page .login-card {
   position: relative;
@@ -515,10 +523,14 @@ img {
   opacity: 0.25;
 }
 .app-bg::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(232, 244, 248, 0.85) 0%, rgba(200, 235, 245, 0.9) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(232, 244, 248, 0.85) 0%,
+    rgba(200, 235, 245, 0.9) 100%
+  );
 }
 
 /* ===== SIDEBAR ===== */
@@ -614,7 +626,7 @@ img {
   box-shadow: 0 4px 16px rgba(0, 212, 255, 0.25);
 }
 .sidebar-menu .menu-item.active::after {
-  content: '';
+  content: "";
   position: absolute;
   right: 12px;
   width: 7px;
@@ -792,7 +804,7 @@ img {
   animation-delay: 0.3s;
 }
 .stat-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -806,7 +818,11 @@ img {
   background: linear-gradient(90deg, var(--accent-green), var(--accent-teal));
 }
 .stat-card:nth-child(3)::before {
-  background: linear-gradient(90deg, var(--accent-yellow), var(--accent-orange));
+  background: linear-gradient(
+    90deg,
+    var(--accent-yellow),
+    var(--accent-orange)
+  );
 }
 .stat-card:hover {
   transform: translateY(-4px);
@@ -1285,8 +1301,8 @@ img {
   background-color: #fff;
   box-shadow: 0 0 0 4px rgba(26, 143, 201, 0.1);
 }
-.form-group input[type='number'],
-.form-group input[type='date'] {
+.form-group input[type="number"],
+.form-group input[type="date"] {
   width: 100%;
   padding: 14px 16px;
   background: var(--gray-50);
@@ -1296,8 +1312,8 @@ img {
   color: var(--gray-800);
   transition: var(--transition-base);
 }
-.form-group input[type='number']:focus,
-.form-group input[type='date']:focus {
+.form-group input[type="number"]:focus,
+.form-group input[type="date"]:focus {
   border-color: var(--primary-400);
   background: #fff;
   box-shadow: 0 0 0 4px rgba(26, 143, 201, 0.1);
@@ -1615,6 +1631,7 @@ img {
   padding: 36px;
   border: 1px solid rgba(226, 232, 240, 0.6);
   box-shadow: var(--shadow-card);
+  margin-top: 24px;
   animation: slideUp 0.5s ease 0.2s both;
 }
 .profile-info-card h3 {
@@ -2291,7 +2308,7 @@ img {
   background: #e2e8f0;
   color: #64748b;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
@@ -2300,7 +2317,7 @@ img {
 }
 
 .recap-filter-btn.active {
-  background: #0a6599;
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
   color: white;
 }
 
@@ -2321,10 +2338,10 @@ img {
 
 .recap-export-btn {
   padding: 6px 12px;
-  background: #22c55e;
+  background: linear-gradient(135deg, var(--accent-green), #059669);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
@@ -2372,18 +2389,22 @@ img {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes modalScale {
-  from { 
-    opacity: 0; 
-    transform: translate(-50%, -48%) scale(0.96); 
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
   }
-  to { 
-    opacity: 1; 
-    transform: translate(-50%, -50%) scale(1); 
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
@@ -2531,60 +2552,60 @@ img {
     align-items: flex-start;
     gap: 12px;
   }
-  
+
   .recap-jobdesk-filter {
     width: 100%;
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
   }
-  
+
   .recap-filter-buttons {
     width: 100%;
   }
-  
+
   .recap-filter-btn {
     flex: 1;
     text-align: center;
     padding: 8px 10px;
     font-size: 11px;
   }
-  
+
   .recap-date-range-btn {
     width: 100%;
     justify-content: center;
     padding: 8px 12px;
     font-size: 11px;
   }
-  
+
   .recap-export-btn {
     width: 100%;
     justify-content: center;
     padding: 8px 12px;
     font-size: 11px;
   }
-  
+
   .recap-date-modal {
     width: 95%;
     padding: 16px;
     /* remove top override to keep it centered */
     /* top: 50% is inherited */
   }
-  
+
   .recap-calendars-grid {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-  
+
   .recap-calendar-cell {
     min-height: 32px;
     font-size: 11px;
   }
-  
+
   .recap-date-modal-footer {
     flex-direction: column;
   }
-  
+
   .recap-date-modal-footer button {
     width: 100%;
     padding: 10px 12px;
@@ -2595,31 +2616,31 @@ img {
   .recap-jobdesk-filter {
     gap: 6px;
   }
-  
+
   .recap-filter-btn {
     padding: 6px 8px;
     font-size: 10px;
   }
-  
+
   .recap-date-range-btn {
     padding: 6px 10px;
     font-size: 10px;
   }
-  
+
   .recap-export-btn {
     padding: 6px 10px;
     font-size: 10px;
   }
-  
+
   .recap-date-modal {
     padding: 12px;
   }
-  
+
   .recap-calendar-cell {
     min-height: 28px;
     font-size: 10px;
   }
-  
+
   .recap-calendar-weekday {
     font-size: 8px;
   }
@@ -2630,13 +2651,13 @@ img {
     padding: 5px 6px;
     font-size: 9px;
   }
-  
+
   .recap-date-range-btn,
   .recap-export-btn {
     padding: 5px 8px;
     font-size: 9px;
   }
-  
+
   .recap-calendar-cell {
     min-height: 24px;
     font-size: 9px;

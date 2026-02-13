@@ -152,8 +152,8 @@ export const AttendanceAPI = {
   scan: (token: string) => API.post<Attendance>('/attendance/scan', { token }),
   photoCheckin: (foto: string, timestamp: string, timezone: string, location?: { latitude: number; longitude: number; address: string; accuracy: number }) =>
     API.post<Attendance>('/attendance/photo-checkin', { foto, timestamp, timezone, ...location }),
-  photoCheckout: (foto: string, timestamp: string, timezone: string, location?: { latitude: number; longitude: number; address: string; accuracy: number }) =>
-    API.post<Attendance>('/attendance/photo-checkout', { foto, timestamp, timezone, ...location }),
+  photoCheckout: (foto: string, timestamp: string, timezone: string, location?: { latitude: number; longitude: number; address: string; accuracy: number }, keterangan?: string) =>
+    API.post<Attendance>('/attendance/photo-checkout', { foto, timestamp, timezone, ...location, keterangan }),
   getPhoto: (id: string) => API.get<{ foto: string; fotoTimestamp: string }>(`/attendance/${id}/photo`),
   getPhotoPulang: (id: string) => API.get<{ foto: string; fotoTimestamp: string }>(`/attendance/${id}/photo-pulang`),
   checkout: (id: string) => API.put<Attendance>(`/attendance/${id}/checkout`),

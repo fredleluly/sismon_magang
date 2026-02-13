@@ -43,6 +43,10 @@ const Absensi: React.FC = () => {
   const [qrToken, setQrToken] = useState('');
   const [scannedResult, setScannedResult] = useState<string | null>(null);
 
+  // Early Leave State
+  const [showEarlyReasonModal, setShowEarlyReasonModal] = useState(false);
+  const [earlyReason, setEarlyReason] = useState('');
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -206,6 +210,11 @@ const Absensi: React.FC = () => {
     } catch {
       return false;
     }
+  };
+
+  const isEarlyLeave = (): boolean => {
+    const now = new Date();
+    return now.getHours() < 17;
   };
 
   // ========== CAMERA & FACE DETECTION ==========
@@ -392,10 +401,15 @@ const Absensi: React.FC = () => {
       return;
     }
 
+    if (absenMode === 'pulang' && isEarlyLeave()) {
+      setShowEarlyReasonModal(true);
+      return;
+    }
+
     await doSubmit();
   };
 
-  const doSubmit = async () => {
+  const doSubmit = async (reason?: string) => {
     setSubmitting(true);
     try {
       const locationData = geoLocation
@@ -411,7 +425,7 @@ const Absensi: React.FC = () => {
       if (absenMode === 'masuk') {
         res = await AttendanceAPI.photoCheckin(capturedPhoto!, captureTimestamp, captureTimezone, locationData);
       } else {
-        res = await AttendanceAPI.photoCheckout(capturedPhoto!, captureTimestamp, captureTimezone, locationData);
+        res = await AttendanceAPI.photoCheckout(capturedPhoto!, captureTimestamp, captureTimezone, locationData, reason);
       }
 
       if (res && res.success) {
@@ -1270,6 +1284,74 @@ const Absensi: React.FC = () => {
           </tbody>
         </table>
       </div>
+      {/* EARLY LEAVE COMPLAINT MODAL */}
+      {showEarlyReasonModal && (
+        <div className="late-warning-overlay">
+          <div className="late-warning-modal">
+            <div className="late-warning-icon">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#d97706"
+                strokeWidth="2"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+            <h3>Pulang Lebih Awal?</h3>
+            <p>
+              Anda melakukan absen pulang sebelum jam 17:00. Mohon sertakan alasan Anda.
+            </p>
+            
+            <textarea
+              className="early-reason-input"
+              placeholder="Contoh: Izin sakit, urusan keluarga, dll..."
+              value={earlyReason}
+              onChange={(e) => setEarlyReason(e.target.value)}
+              rows={3}
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                marginTop: '10px',
+                marginBottom: '10px',
+                fontFamily: 'inherit',
+                fontSize: '14px'
+              }}
+            />
+
+            <div className="late-warning-buttons">
+              <button
+                className="btn-cancel"
+                onClick={() => {
+                  setShowEarlyReasonModal(false);
+                  setEarlyReason('');
+                }}
+              >
+                Batal
+              </button>
+              <button
+                className="btn-proceed"
+                onClick={async () => {
+                  if (!earlyReason.trim()) {
+                    showToast('Mohon isi alasan pulang lebih awal', 'error');
+                    return;
+                  }
+                  setShowEarlyReasonModal(false);
+                  await doSubmit(earlyReason);
+                  setEarlyReason('');
+                }}
+              >
+                Kirim Absensi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
