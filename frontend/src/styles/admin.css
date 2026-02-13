@@ -3278,9 +3278,9 @@ img {
 }
 
 .dashboard-custom-date {
-  position: relative;
   flex: 1;
-  min-width: 150px;
+  position: relative; /* Menjadi jangkar untuk popup */
+  z-index: 100; /* Memberikan konteks penumpukan yang lebih tinggi */
 }
 
 .dashboard-custom-trigger {
@@ -3313,17 +3313,22 @@ img {
 
 .dashboard-date-popup {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 8px); /* Muncul tepat di bawah trigger */
   right: 0;
-  margin-top: 8px;
   background: white;
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(
+    --shadow-xl
+  ); /* Gunakan shadow yang lebih tegas agar terlihat di atas */
   padding: 16px;
-  z-index: 50;
+
+  /* INI KUNCINYA: Pastikan z-index sangat tinggi */
+  z-index: 9999 !important;
+
   width: 320px;
   animation: fadeInUp 0.2s ease;
+  pointer-events: auto; /* Memastikan bisa diklik */
 }
 
 .admin-stats-grid {
@@ -3362,11 +3367,17 @@ img {
   }
 
   .dashboard-filter-bar {
+    overflow: visible !important;
+    position: relative;
+    z-index: 50;
+  }
+
+  /* .dashboard-filter-bar {
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
     width: 100%;
-  }
+  } */
 
   .dashboard-filter-group {
     width: 100%;
@@ -3526,6 +3537,7 @@ img {
 
   .dashboard-month-export-row {
     display: flex;
+    align-items: center;
     flex-direction: column;
     gap: 6px;
     width: 100%;
@@ -3625,10 +3637,11 @@ img {
   .dashboard-date-popup {
     width: calc(100vw - 32px);
     max-width: 300px;
-    right: auto;
-    left: 50%;
-    transform: translateX(-50%);
+    /* right: 0; */
+    left: 75%;
+    /* transform: translateX(-50%); */
     padding: 12px;
+    z-index: 999;
   }
 
   .rekap-filter-actions {
