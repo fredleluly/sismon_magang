@@ -285,7 +285,9 @@ img {
   right: 0;
   left: var(--sidebar-width);
   z-index: 50;
-  transition: var(--transition-base); /* Smooth transition for width/left changes */
+  transition: var(
+    --transition-base
+  ); /* Smooth transition for width/left changes */
 }
 
 /* Adjust main content padding to prevent overlap with fixed topbar */
@@ -386,7 +388,8 @@ img {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 28px;
+  gap: 20px;
+  margin-bottom: 0px;
 }
 .page-header-actions {
   display: flex;
@@ -473,23 +476,28 @@ img {
 .btn-export {
   background: linear-gradient(135deg, var(--accent-green), #059669);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(46, 213, 115, 0.25);
-  padding: 12px 24px;
+  box-shadow: 0 2px 8px rgba(46, 213, 115, 0.25);
+  padding: 8px 16px;
   border-radius: var(--radius-md);
   font-weight: 600;
-  font-size: 14px;
+  font-size: 12px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   transition: var(--transition-base);
+  height: 32px;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  min-width: fit-content;
 }
 .btn-export:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(46, 213, 115, 0.35);
+  box-shadow: 0 4px 16px rgba(46, 213, 115, 0.35);
 }
 .btn-export svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 .btn-filter {
   background: #fff;
@@ -578,7 +586,7 @@ img {
   box-shadow: var(--shadow-xl);
 }
 .admin-stat-card .stat-info .stat-label {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--gray-500);
   margin-bottom: 8px;
@@ -2412,7 +2420,7 @@ img {
   border-color: var(--primary-500);
 }
 .rekap-user-option input[type="checkbox"]:checked::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 5px;
   top: 1px;
@@ -2620,7 +2628,7 @@ img {
   :root {
     --sidebar-width: 240px;
   }
-  
+
   .charts-row {
     grid-template-columns: 1fr;
   }
@@ -2630,11 +2638,11 @@ img {
   .qr-layout {
     grid-template-columns: 1fr;
   }
-  
+
   .admin-stats-grid {
     grid-template-columns: repeat(3, 1fr);
   }
-  
+
   /* Make sure the last card (if 5 cards) spans all columns or flex behaves nicely */
   .admin-stat-card:nth-child(5) {
     grid-column: span 1;
@@ -2662,7 +2670,7 @@ img {
     right: 20px;
     width: 36px;
     height: 36px;
-    background: rgba(255,255,255,0.15);
+    background: rgba(255, 255, 255, 0.15);
   }
 
   .main-content {
@@ -2692,7 +2700,7 @@ img {
   .keluhan-stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .page-content {
     padding: 20px;
   }
@@ -2812,7 +2820,7 @@ img {
   .table-container {
     max-height: calc(100vh - 320px);
   }
-  
+
   /* Fix chart hieght on tablet */
   .chart-canvas-wrapper {
     height: 240px;
@@ -2825,11 +2833,11 @@ img {
     width: 85%; /* Slightly smaller than full width */
     max-width: 320px;
   }
-  
+
   .page-content {
     padding: 16px;
   }
-  
+
   .topbar-right {
     gap: 8px;
   }
@@ -2849,21 +2857,21 @@ img {
     text-overflow: ellipsis;
     max-width: 150px;
   }
-  
+
   .page-header h1 {
     font-size: 20px;
   }
-  
+
   /* Stats become 1 column */
   .admin-stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   /* Buttons full width on mobile */
   .page-header-actions .btn {
     width: 100%;
   }
-  
+
   .chart-card {
     padding: 16px;
   }
@@ -2872,14 +2880,14 @@ img {
     align-items: flex-start;
     gap: 4px;
   }
-  
+
   .donut-legend {
     gap: 8px;
   }
   .donut-legend .legend-item {
     font-size: 11px;
   }
-  
+
   /* Filter stack */
   .filter-bar {
     flex-direction: column;
@@ -2888,7 +2896,7 @@ img {
   .filter-group {
     width: 100%;
   }
-  .filter-group select, 
+  .filter-group select,
   .filter-group input {
     width: 100%;
   }
@@ -3038,25 +3046,49 @@ img {
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   background: white;
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-md);
-  padding: 0 12px;
-  height: 40px;
+  padding: 0 8px;
+  height: 32px;
+  gap: 4px;
+  flex: 1;
+  min-width: 150px;
 }
 
 .month-nav-btn {
   background: none;
   color: var(--gray-500);
-  padding: 4px;
+  padding: 2px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: var(--transition-base);
+  border: none;
+  cursor: pointer;
+}
+
+.month-nav-btn:hover {
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+
+.month-nav-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
 .month-display {
-  margin: 0 12px;
-  font-size: 14px;
+  margin: 0 2px;
+  font-size: 12px;
   font-weight: 600;
-  min-width: 100px;
   text-align: center;
+  flex: 1;
+  white-space: nowrap;
 }
 
 .custom-date-range-toggle {
@@ -3077,7 +3109,7 @@ img {
   -webkit-overflow-scrolling: touch;
   width: 100%;
   max-width: 100%;
-  box-shadow: inset -10px 0 10px -10px rgba(0,0,0,0.1); /* Hint scroll */
+  box-shadow: inset -10px 0 10px -10px rgba(0, 0, 0, 0.1); /* Hint scroll */
 }
 
 /* Mobile Responsive Overrides */
@@ -3087,18 +3119,18 @@ img {
     align-items: stretch;
     gap: 12px;
   }
-  
+
   .work-filter-left {
     flex-direction: column;
     align-items: stretch;
     width: 100%;
   }
-  
+
   .filter-buttons {
     display: flex;
     width: 100%;
   }
-  
+
   .filter-buttons .filter-btn {
     flex: 1;
     text-align: center;
@@ -3109,45 +3141,45 @@ img {
     width: 100%;
     justify-content: space-between;
   }
-  
+
   .custom-date-range-toggle {
     width: 100%;
     min-width: 0 !important; /* Override inline/base style */
     justify-content: space-between;
   }
-  
+
   .rekap-user-filter-container {
     width: 100%;
   }
-  
+
   .rekap-user-btn {
     width: 100%;
     justify-content: space-between;
     min-width: 0;
   }
-  
+
   .rekap-filter-actions {
     width: 100%;
   }
-  
+
   .rekap-filter-actions .btn-export {
     width: 100%;
     justify-content: center;
   }
 
   /* Adjust Sticky Column on Mobile */
-  .rekap-td-name, 
+  .rekap-td-name,
   .rekap-th-sticky {
     position: sticky;
     left: 0;
     z-index: 20;
     /* Reduce width slightly on mobile if needed, or keep it */
-    min-width: 120px; 
+    min-width: 120px;
     max-width: 140px;
     font-size: 12px;
-    box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
   }
-  
+
   .rekap-table tbody td {
     padding: 8px 6px;
     font-size: 12px;
@@ -3159,7 +3191,7 @@ img {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .rekap-info-badge {
     width: 100%;
   }
@@ -3169,7 +3201,7 @@ img {
   .page-header h1 {
     font-size: 20px;
   }
-  
+
   .rekap-td-name,
   .rekap-th-sticky {
     min-width: 100px;
@@ -3184,52 +3216,98 @@ img {
 
 .dashboard-filter-bar {
   display: flex;
-  gap: 12px;
+  justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
+  background: rgba(255, 255, 255, 0.535);
+  backdrop-filter: blur(10px);
+  padding: 12px 20px;
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+  flex-direction: row; /* Desktop tetap baris */
+}
+
+.dashboard-filter-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dashboard-month-export-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
 }
 
 .dashboard-filter-group {
-  display: flex;
-  background: white;
+  display: inline-flex;
+  /* background: var(--gray-100); */
   padding: 4px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  margin-right: 10px;
+  /* border: 1px solid var(--gray-200); */
+}
+
+.dashboard-filter-group .dashboard-filter-btn {
+  flex: 1;
+  padding: 8px 12px;
 }
 
 .dashboard-filter-btn {
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
+  color: var(--gray-600);
+  transition: all var(--transition-base);
+  border: none;
   background: transparent;
-  color: var(--gray-500);
-  transition: all 0.2s;
+}
+
+.dashboard-filter-btn:hover {
+  color: var(--primary-600);
 }
 
 .dashboard-filter-btn.active {
-  background: var(--primary-50);
+  background: #fff;
   color: var(--primary-600);
+  box-shadow: var(--shadow-sm);
 }
 
 .dashboard-custom-date {
   position: relative;
+  flex: 1;
+  min-width: 150px;
 }
 
 .dashboard-custom-trigger {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: white;
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-md);
-  padding: 0 12px;
-  height: 40px;
-  font-size: 13px;
+  padding: 0 10px;
+  height: 32px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--gray-700);
-  min-width: 200px;
+  min-width: 160px;
   justify-content: space-between;
+  transition: var(--transition-base);
+}
+
+.dashboard-custom-trigger:hover {
+  border-color: var(--primary-400);
+  background: var(--primary-50);
+}
+
+.dashboard-custom-trigger svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 }
 
 .dashboard-date-popup {
@@ -3244,6 +3322,7 @@ img {
   padding: 16px;
   z-index: 50;
   width: 320px;
+  animation: fadeInUp 0.2s ease;
 }
 
 .admin-stats-grid {
@@ -3263,45 +3342,133 @@ img {
 }
 
 @media (max-width: 768px) {
+  .page-header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .page-header {
+    margin-bottom: 0;
+  }
+
+  .page-header h1 {
+    font-size: 22px;
+  }
+
+  .page-header p {
+    font-size: 13px;
+  }
+
   .dashboard-filter-bar {
     flex-direction: column;
     align-items: stretch;
-  }
-  
-  .dashboard-filter-group {
+    gap: 8px;
     width: 100%;
   }
-  
+
+  .dashboard-filter-group {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
   .dashboard-filter-btn {
     flex: 1;
     text-align: center;
+    padding: 5px 12px;
+    font-size: 12px;
+    height: 36px;
   }
-  
+
+  .dashboard-month-export-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+  }
+
   .dashboard-custom-trigger {
     width: 100%;
     min-width: 0;
+    height: 36px;
+    font-size: 12px;
+    padding: 0 10px;
+    flex: 1;
   }
 
-  /* Reuse month-picker-container styles from Rekapitulasi or define similar override */
+  .month-picker-container,
+  .dashboard-custom-trigger {
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 0 12px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--gray-700);
+    transition: all var(--transition-base);
+    cursor: pointer;
+  }
+
   .month-picker-container {
-      width: 100%;
-      justify-content: space-between;
+    width: 100%;
+    justify-content: space-between;
+    height: 36px;
+    padding: 0 8px;
+    flex: 1;
+  }
+
+  .month-nav-btn {
+    padding: 2px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .month-nav-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .month-display {
+    font-size: 12px;
+    font-weight: 600;
   }
 
   .admin-stats-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
+    gap: 12px;
   }
-  
+
   .btn-export {
     width: 100%;
     justify-content: center;
+    height: 36px;
+    font-size: 12px;
+    padding: 0 12px;
+    flex-shrink: 0;
+  }
+
+  .btn-export svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .dashboard-date-popup {
+    width: calc(100vw - 32px);
+    max-width: 300px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px;
   }
 
   .rekap-filter-actions {
     width: 100%;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     margin-left: 0;
     justify-content: stretch;
   }
@@ -3309,16 +3476,158 @@ img {
   .rekap-filter-actions button {
     width: 100%;
   }
+
+  .month-picker-container:hover {
+    border-color: var(--primary-300);
+    box-shadow: 0 0 0 3px rgba(26, 143, 201, 0.05);
+  }
 }
 
 @media (max-width: 480px) {
-  .admin-stats-grid {
-    grid-template-columns: 1fr; 
+  .page-header-row {
+    flex-direction: column;
+    gap: 14px;
   }
-  
+
+  .page-header h1 {
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .page-header p {
+    font-size: 12px;
+  }
+
+  .dashboard-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .dashboard-filter-group {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    background: white;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+    padding: 2px;
+  }
+
+  .dashboard-filter-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+    border-radius: 5px;
+    text-align: center;
+    height: 32px;
+  }
+
+  .dashboard-month-export-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .dashboard-custom-trigger {
+    width: 100%;
+    min-width: 0;
+    height: 32px;
+    font-size: 11px;
+    padding: 0 8px;
+    background: white;
+    flex: 1;
+  }
+
+  .month-picker-container {
+    width: 100%;
+    height: 32px;
+    padding: 0 8px;
+    gap: 2px;
+    flex: 1;
+  }
+
+  .month-nav-btn {
+    padding: 2px;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .month-nav-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .month-display {
+    font-size: 11px;
+    font-weight: 600;
+    flex: 1;
+    text-align: center;
+  }
+
+  .admin-stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .admin-stat-card {
+    padding: 14px;
+  }
+
+  .admin-stat-card:nth-child(5) {
+    grid-column: span 2;
+  }
+
+  .admin-stat-card .stat-info .stat-value {
+    font-size: 24px;
+  }
+
+  .admin-stat-card .stat-info .stat-label {
+    font-size: 8.5px;
+  }
+
+  .admin-stat-card .stat-info .stat-change {
+    font-size: 10px;
+  }
+
+  .btn-export {
+    background: linear-gradient(135deg, var(--accent-green), #059669);
+    color: #fff;
+    padding: 0 18px;
+    height: 40px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all var(--transition-base);
+    border: none;
+  }
+
+  .btn-export:hover {
+    background: var(--primary-600);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13, 122, 181, 0.2);
+  }
+
+  .btn-export svg {
+    width: 16px;
+    height: 16px;
+  }
+
   .dashboard-date-popup {
-      width: 280px; 
-      right: -20px; /* shift slightly if needed or center */
+    width: calc(100vw - 32px);
+    max-width: 300px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px;
   }
 
   .rekap-filter-actions {
@@ -3331,12 +3640,6 @@ img {
     width: 100%;
     padding: 10px 12px;
     font-size: 12px;
-  }
-
-  .btn-export {
-    width: 100% !important;
-    padding: 10px 12px !important;
-    font-size: 12px !important;
   }
 }
 
@@ -3444,78 +3747,96 @@ img {
   }
 }
 
+/* ============================================
+   UPDATED RESPONSIVE SECTION
+   ============================================ */
+
 @media (max-width: 768px) {
-  .work-filter-bar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
+  /* Sidebar handling */
+  .sidebar {
+    transform: translateX(-100%);
+    z-index: 9999;
   }
-  
-  .work-filter-left {
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
+  .sidebar.open {
+    transform: translateX(0);
   }
-  
-  .filter-buttons {
-    width: 100%;
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .filter-btn {
-    width: 100%;
-    flex: none;
-    min-width: 0;
-    padding: 12px 16px;
-    font-size: 13px;
+  .main-content {
+    margin-left: 0;
+    padding-top: 65px;
   }
 
-  .month-picker-container {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .custom-date-range-toggle {
-    width: 100%;
-    min-width: 0 !important;
-    justify-content: space-between;
-  }
-  
+  /* KHUSUS: BARIS MONTH PICKER & EXPORT */
+  .dashboard-month-export-row,
   .rekap-filter-actions {
-    width: 100%;
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .rekap-filter-actions button {
+    display: flex !important;
+    flex-direction: row !important; /* Paksa tetap sejajar horizontal */
+    align-items: center;
+    gap: 8px;
     width: 100%;
   }
 
-  .btn-apply-filter {
-    width: 100%;
-    padding: 12px 16px;
-    font-size: 13px;
+  /* Month Picker mengambil sisa ruang yang ada */
+  .month-picker-container,
+  .dashboard-custom-trigger {
+    flex: 1;
+    min-width: 0;
+    height: 38px;
+  }
+
+  /* Tombol Export menyesuaikan konten, tidak melar */
+  .btn-export,
+  .rekap-filter-actions .btn-export {
+    width: auto !important;
+    flex-shrink: 0;
+    height: 38px;
+    padding: 0 12px;
+    font-size: 12px;
+    white-space: nowrap;
+    margin-left: 0;
+  }
+
+  .rekap-td-name,
+  .rekap-th-sticky {
+    position: sticky;
+    left: 0;
+    z-index: 20;
+    min-width: 100px;
+    background: #fff;
   }
 }
 
 @media (max-width: 480px) {
-  .filter-btn {
-    padding: 10px 14px;
-    font-size: 12px;
-    min-width: 0;
+  .page-header h1 {
+    font-size: 20px;
   }
 
-  .btn-apply-filter {
-    padding: 10px 14px;
-    font-size: 12px;
+  /* Sempurnakan tampilan di HP kecil */
+  .dashboard-month-export-row,
+  .rekap-filter-actions {
+    gap: 6px;
   }
 
-  .work-filter-bar {
+  .month-display {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .month-nav-btn {
+    width: 20px;
+    height: 24px;
+  }
+
+  .btn-export {
+    padding: 0 10px;
+    font-size: 11px;
+  }
+
+  /* Menghilangkan teks panjang jika perlu */
+  /* .btn-export span { display: none; } */
+
+  /* Stats grid tetap 2 kolom */
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
-  }
-
-  .filter-buttons {
-    gap: 8px;
   }
 }
