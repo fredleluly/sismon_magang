@@ -205,7 +205,7 @@ router.post('/photo-checkin', auth, upload.single('foto'), async (req, res) => {
 // POST /api/attendance/photo-checkout — user takes photo to record checkout (pulang)
 router.post('/photo-checkout', auth, upload.single('foto'), async (req, res) => {
   try {
-    const { foto, timestamp, timezone, latitude, longitude, address, accuracy } = req.body;
+    const { foto, timestamp, timezone, latitude, longitude, address, accuracy, keterangan } = req.body;
     
     if (!req.file && !foto) {
       return res.status(400).json({ success: false, message: 'Foto wajib diambil untuk absensi pulang.' });
@@ -248,6 +248,10 @@ router.post('/photo-checkout', auth, upload.single('foto'), async (req, res) => 
       address: address || '',
       accuracy: accuracy ? parseFloat(accuracy) : null,
     };
+
+    if (keterangan) {
+      attendance.keterangan = keterangan;
+    }
 
     if (req.file) {
       attendance.fotoPulangUrl = `/uploads/${req.file.filename}`;

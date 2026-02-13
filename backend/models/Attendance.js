@@ -25,8 +25,10 @@ const attendanceSchema = new mongoose.Schema({
     latitude: { type: Number, default: null },
     longitude: { type: Number, default: null },
     address: { type: String, default: '' },
+    address: { type: String, default: '' },
     accuracy: { type: Number, default: null },
   },
+  keterangan: { type: String, default: '' },
 }, { timestamps: true });
 
 // One attendance per user per day
