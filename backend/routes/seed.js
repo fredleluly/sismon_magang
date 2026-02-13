@@ -1,10 +1,10 @@
-const express = require('express');
-const router = express.Router();
-const mongoose = require('mongoose');
-const User = require('../models/User');
-const Attendance = require('../models/Attendance');
-const WorkLog = require('../models/WorkLog');
-const Complaint = require('../models/Complaint');
+const router = require('express').Router();
+// const mongoose = require('mongoose');
+// const User = require('../models/User');
+// const Attendance = require('../models/Attendance');
+// const WorkLog = require('../models/WorkLog');
+// const Complaint = require('../models/Complaint');
+const db = require('../db');
 
 // Helper to get random item from array
 const random = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -22,40 +22,48 @@ const randomDate = (start, end) => {
 router.get('/', async (req, res) => {
   try {
     // 0. Ensure Admin & Super Admin Exist
-    const existingAdmin = await User.findOne({ email: 'admin@plniconplus.co.id' });
-    const existingSuperAdmin = await User.findOne({ email: 'superadmin@plniconplus.co.id' });
+    const existingAdmin = await db.users.findOne({ email: 'admin@plniconplus.co.id' });
+    const existingSuperAdmin = await db.users.findOne({ email: 'superadmin@plniconplus.co.id' });
 
     if (!existingAdmin) {
-      await User.create({
+      await db.users.insert({
         name: 'Administrator',
         email: 'admin@plniconplus.co.id',
         password: 'admin123',
         role: 'admin',
         instansi: 'PLN ICON+',
         jabatan: 'Administrator',
+        createdAt: new Date(),
+        updatedAt: new Date()
       });
     }
 
     if (!existingSuperAdmin) {
-      await User.create({
+      await db.users.insert({
         name: 'Super Admin',
         email: 'superadmin@plniconplus.co.id',
         password: 'super123',
         role: 'admin',
         instansi: 'PLN ICON+',
         jabatan: 'Super Administrator',
+        createdAt: new Date(),
+        updatedAt: new Date()
       });
     }
 
     // 1. Clear existing non-admin data
-    const nonAdminUsers = await User.find({ role: { $ne: 'admin' } }).select('_id');
+    // Find non-admin users first to get their IDs
+    // NeDB: $ne operator
+    const nonAdminUsers = await db.users.find({ role: { $ne: 'admin' } }); 
     const nonAdminIds = nonAdminUsers.map(u => u._id);
 
     if (nonAdminIds.length > 0) {
-      await Attendance.deleteMany({ userId: { $in: nonAdminIds } });
-      await WorkLog.deleteMany({ userId: { $in: nonAdminIds } });
-      await Complaint.deleteMany({ userId: { $in: nonAdminIds } });
-      await User.deleteMany({ _id: { $in: nonAdminIds } });
+      // Remove data associated with these users
+      // NeDB remove with multi: true
+      await db.attendance.remove({ userId: { $in: nonAdminIds } }, { multi: true });
+      await db.workLogs.remove({ userId: { $in: nonAdminIds } }, { multi: true });
+      await db.complaints.remove({ userId: { $in: nonAdminIds } }, { multi: true });
+      await db.users.remove({ _id: { $in: nonAdminIds } }, { multi: true });
     }
 
     // 2. Create Dummy Users
@@ -63,16 +71,17 @@ router.get('/', async (req, res) => {
     const users = [];
 
     for (let i = 1; i <= 10; i++) {
-        const user = new User({
+        const user = await db.users.insert({
             name: `Peserta Magang ${i}`,
             email: `peserta${i}@gmail.com`,
-            password: 'password123', // Will be hashed by pre-save hook
+            password: 'password123', // Plain text as per migration simplicity
             role: 'user',
             instansi: random(instansiList),
             status: 'Aktif',
-            jabatan: 'Mahasiswa Magang'
+            jabatan: 'Mahasiswa Magang',
+            createdAt: new Date(),
+            updatedAt: new Date()
         });
-        await user.save();
         users.push(user);
     }
 
@@ -98,17 +107,21 @@ router.get('/', async (req, res) => {
             if (Math.random() > 0.1) { 
                 const status = Math.random() > 0.1 ? 'Hadir' : random(['Telat', 'Sakit', 'Izin']);
                 
+                const jamMasuk = status === 'Hadir' ? `0${randomInt(7, 8)}:${randomInt(10, 59)}` : (status === 'Telat' ? `09:${randomInt(10, 30)}` : '');
+                const jamKeluar = (status === 'Hadir' || status === 'Telat') ? `17:${randomInt(0, 30)}` : '';
+
                 // Attendance Record
-                const attendance = new Attendance({
+                await db.attendance.insert({
                     userId: user._id,
                     tanggal: currentDay,
-                    jamMasuk: status === 'Hadir' ? `0${randomInt(7, 8)}:${randomInt(10, 59)}` : (status === 'Telat' ? `09:${randomInt(10, 30)}` : ''),
-                    jamKeluar: (status === 'Hadir' || status === 'Telat') ? `17:${randomInt(0, 30)}` : '',
+                    jamMasuk,
+                    jamKeluar,
                     status: status,
                     fotoAbsensi: '', // No photo for dummy
-                    fotoTimestamp: currentDay.toISOString()
+                    fotoTimestamp: currentDay.toISOString(),
+                    createdAt: currentDay,
+                    updatedAt: currentDay
                 });
-                await attendance.save();
                 attendanceCount++;
 
                 // Work Log (Only if Hadir/Telat)
@@ -123,7 +136,10 @@ router.get('/', async (req, res) => {
                         'Deploy ke server staging'
                     ]);
 
-                    const workLog = new WorkLog({
+                     // Specific logic for WorkLog "jenis" if needed, defaulting to random based on original script
+                     // Original script: jenis: random(['WFO', 'WFH'])
+                    
+                    await db.workLogs.insert({
                         userId: user._id,
                         tanggal: currentDay,
                         jenis: random(['WFO', 'WFH']),
@@ -131,19 +147,21 @@ router.get('/', async (req, res) => {
                         berkas: randomInt(0, 2),
                         buku: randomInt(0, 1),
                         bundle: randomInt(0, 1),
-                        status: 'Selesai'
+                        status: 'Selesai',
+                        createdAt: currentDay,
+                        updatedAt: currentDay
                     });
-                    await workLog.save();
                     workLogCount++;
                 }
             } else {
                  // Alpha / Tidak Hadir
-                 const attendance = new Attendance({
+                await db.attendance.insert({
                     userId: user._id,
                     tanggal: currentDay,
-                    status: 'Alpha'
+                    status: 'Alpha',
+                    createdAt: currentDay,
+                    updatedAt: currentDay
                 });
-                await attendance.save();
                 attendanceCount++;
             }
         }
@@ -153,15 +171,16 @@ router.get('/', async (req, res) => {
         const categories = ['Fasilitas', 'Teknis', 'Administrasi', 'Lainnya'];
         
         for (let k = 0; k < numComplaints; k++) {
-            const complaint = new Complaint({
+            await db.complaints.insert({
                 userId: user._id,
                 judul: `Kendala ${random(['Internet', 'AC', 'Komputer', 'Akses'])}`,
                 kategori: random(categories),
                 prioritas: random(['Low', 'Medium', 'High']),
                 deskripsi: 'Mohon bantuannya untuk kendala ini.',
-                status: random(['Menunggu', 'Diproses', 'Selesai'])
+                status: random(['Menunggu', 'Diproses', 'Selesai']),
+                createdAt: new Date(),
+                updatedAt: new Date()
             });
-            await complaint.save();
             complaintCount++;
         }
     }

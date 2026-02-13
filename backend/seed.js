@@ -4,15 +4,16 @@
 // ============================================
 
 require('dotenv').config();
-const mongoose = require('mongoose');
-const User = require('./models/User');
+// const mongoose = require('mongoose');
+// const User = require('./models/User');
+const db = require('./db');
 
 async function seed() {
-  await mongoose.connect(process.env.MONGODB_URI);
-  console.log('✅ Connected to MongoDB');
+  // await mongoose.connect(process.env.MONGODB_URI);
+  console.log('✅ Connected to NeDB');
 
-  const existingAdmin = await User.findOne({ email: 'admin@plniconplus.co.id' });
-  const existingSuperAdmin = await User.findOne({ email: 'superadmin@plniconplus.co.id' });
+  const existingAdmin = await db.users.findOne({ email: 'admin@plniconplus.co.id' });
+  const existingSuperAdmin = await db.users.findOne({ email: 'superadmin@plniconplus.co.id' });
 
   if (existingAdmin && existingSuperAdmin) {
     console.log('⚠️  Admin accounts already exist. Skipping seed.');
@@ -20,25 +21,29 @@ async function seed() {
   }
 
   if (!existingAdmin) {
-    await User.create({
+    await db.users.insert({
       name: 'Administrator',
       email: 'admin@plniconplus.co.id',
       password: 'admin123',
       role: 'admin',
       instansi: 'PLN ICON+',
       jabatan: 'Administrator',
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
     console.log('👤 Admin account created');
   }
 
   if (!existingSuperAdmin) {
-    await User.create({
+    await db.users.insert({
       name: 'Super Admin',
       email: 'superadmin@plniconplus.co.id',
       password: 'super123',
       role: 'admin',
       instansi: 'PLN ICON+',
       jabatan: 'Super Administrator',
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
     console.log('👤 Super Admin account created');
   }

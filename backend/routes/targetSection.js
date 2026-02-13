@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const TargetSection = require('../models/TargetSection');
+// const TargetSection = require('../models/TargetSection');
+const db = require('../db');
 const { auth, adminOnly } = require('../middleware/auth');
 
 // GET /api/target-section — list all targets
 router.get('/', auth, adminOnly, async (req, res) => {
   try {
-    const targets = await TargetSection.find().sort({ jenis: 1 });
+    const targets = await db.targetSection.find({}).sort({ jenis: 1 });
     res.json({ success: true, data: targets });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -22,16 +23,15 @@ router.put('/', auth, adminOnly, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Data targets harus berupa array.' });
     }
 
-    const ops = targets.map(t => ({
-      updateOne: {
-        filter: { jenis: t.jenis },
-        update: { $set: { jenis: t.jenis, targetPerDay: t.targetPerDay || 0 } },
-        upsert: true
-      }
-    }));
+    for (const t of targets) {
+        await db.targetSection.update(
+            { jenis: t.jenis },
+            { $set: { jenis: t.jenis, targetPerDay: t.targetPerDay || 0 } },
+            { upsert: true }
+        );
+    }
 
-    await TargetSection.bulkWrite(ops);
-    const updated = await TargetSection.find().sort({ jenis: 1 });
+    const updated = await db.targetSection.find({}).sort({ jenis: 1 });
     res.json({ success: true, message: 'Target berhasil disimpan.', data: updated });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

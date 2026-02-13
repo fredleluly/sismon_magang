@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+// const User = require('../models/User'); // Removed Mongoose model
+const db = require('../db'); // Import NeDB
 
 // Verify JWT token
 const auth = async (req, res, next) => {
@@ -10,10 +11,15 @@ const auth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
+    // const user = await User.findById(decoded.id);
+    const user = await db.users.findOne({ _id: decoded.id });
+    
     if (!user) {
       return res.status(401).json({ success: false, message: 'User tidak ditemukan.' });
     }
+    
+    // Helper to simulate Mongoose document method if needed, or just attach plain object
+    // user.toJSON = () => { ... } // NeDB returns plain objects usually
 
     req.user = user;
     req.userId = user._id;

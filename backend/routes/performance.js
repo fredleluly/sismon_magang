@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const PerformanceEvaluation = require('../models/PerformanceEvaluation');
-const Attendance = require('../models/Attendance');
-const WorkLog = require('../models/WorkLog');
-const TargetSection = require('../models/TargetSection');
-const User = require('../models/User');
+// const PerformanceEvaluation = require('../models/PerformanceEvaluation');
+// const Attendance = require('../models/Attendance');
+// const WorkLog = require('../models/WorkLog');
+// const TargetSection = require('../models/TargetSection');
+// const User = require('../models/User');
+const db = require('../db');
 const { auth, adminOnly } = require('../middleware/auth');
 
 // ===== Helper: get working days in a month (excluding weekends + holidays) =====
@@ -13,12 +14,13 @@ async function getWorkingDays(bulan, tahun) {
   const endDate = new Date(tahun, bulan, 0); // last day of month
 
   // Get holidays from attendance records
-  const holidays = await Attendance.find({
+  // Get holidays from attendance records
+  const holidays = await db.attendance.find({
     tanggal: { $gte: startDate, $lte: endDate },
     status: 'Hari Libur'
-  }).distinct('tanggal');
+  }); // .distinct('tanggal') is not available in NeDB
 
-  const holidayDates = new Set(holidays.map(d => new Date(d).toDateString()));
+  const holidayDates = new Set(holidays.map(d => new Date(d.tanggal).toDateString()));
 
   const workingDays = [];
   for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
@@ -48,7 +50,8 @@ async function calculateAbsen(userId, bulan, tahun) {
   }
 
   // Get all attendance records for the month
-  const attendanceRecords = await Attendance.find({
+  // Get all attendance records for the month
+  const attendanceRecords = await db.attendance.find({
     userId,
     tanggal: { $gte: startDate, $lte: endDate }
   });
@@ -93,7 +96,7 @@ router.get('/calculate/:userId', auth, adminOnly, async (req, res) => {
     const bulan = parseInt(req.query.bulan) || new Date().getMonth() + 1;
     const tahun = parseInt(req.query.tahun) || new Date().getFullYear();
 
-    const user = await User.findById(userId);
+    const user = await db.users.findOne({ _id: userId });
     if (!user) return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
 
     const startDate = new Date(tahun, bulan - 1, 1);
@@ -106,7 +109,8 @@ router.get('/calculate/:userId', auth, adminOnly, async (req, res) => {
     const totalWorkingDays = workingDays.length;
 
     // Get all attendance records for the month
-    const attendanceRecords = await Attendance.find({
+    // Get all attendance records for the month
+    const attendanceRecords = await db.attendance.find({
       userId,
       tanggal: { $gte: startDate, $lte: endDate }
     });
@@ -182,26 +186,34 @@ router.post('/', auth, adminOnly, async (req, res) => {
     }
 
     // Check if finalized evaluation already exists
-    const existing = await PerformanceEvaluation.findOne({ userId, bulan, tahun });
+    // Check if finalized evaluation already exists
+    let existing = await db.performance.findOne({ userId, bulan, tahun });
     if (existing && existing.status === 'Final' && status !== 'Final') {
       return res.status(400).json({ success: false, message: 'Penilaian sudah difinalisasi dan tidak bisa diubah.' });
     }
 
     // Save only manual inputs (kuantitas, kualitas, laporan)
-    // absen and hasil will be calculated dynamically when fetching
-    const evaluation = await PerformanceEvaluation.findOneAndUpdate(
-      { userId, bulan, tahun },
-      {
+    const updateData = {
+        userId, bulan, tahun,
         kuantitas: kuantitas || 0,
         kualitas: kualitas || 0,
         laporan: !!laporan,
         status: status || 'Draft',
-        // absen and hasil are NOT saved - will be calculated on GET
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
-
-    await evaluation.populate('userId', 'name email instansi');
+        updatedAt: new Date()
+    };
+    
+    let evaluation;
+    if (existing) {
+        await db.performance.update({ _id: existing._id }, { $set: updateData });
+        evaluation = await db.performance.findOne({ _id: existing._id });
+    } else {
+        updateData.createdAt = new Date();
+        evaluation = await db.performance.insert(updateData);
+    }
+    
+    // Manual populate
+    const user = await db.users.findOne({ _id: userId });
+    evaluation.userId = user ? { _id: user._id, name: user.name, email: user.email, instansi: user.instansi } : null;
 
     // Calculate absen and hasil dynamically for response
     const absen = await calculateAbsen(userId, bulan, tahun);
@@ -209,8 +221,9 @@ router.post('/', auth, adminOnly, async (req, res) => {
     const hasil = parseFloat((absen + (kuantitas || 0) + (kualitas || 0) + laporanValue).toFixed(2));
 
     // Add calculated fields to response
+    // Add calculated fields to response
     const responseData = {
-      ...evaluation.toObject(),
+      ...evaluation, // already object
       absen,
       hasil
     };
@@ -235,8 +248,16 @@ router.get('/', auth, adminOnly, async (req, res) => {
     const bulan = parseInt(req.query.bulan) || new Date().getMonth() + 1;
     const tahun = parseInt(req.query.tahun) || new Date().getFullYear();
 
-    const evaluations = await PerformanceEvaluation.find({ bulan, tahun })
-      .populate('userId', 'name email instansi');
+    let evaluations = await db.performance.find({ bulan, tahun });
+    
+    // Manual populate
+     evaluations = await Promise.all(evaluations.map(async (ev) => {
+        const user = await db.users.findOne({ _id: ev.userId });
+        return { 
+            ...ev, 
+            userId: user ? { _id: user._id, name: user.name, email: user.email, instansi: user.instansi } : ev.userId 
+        };
+    }));
 
     // Recalculate absen and hasil dynamically for each evaluation
     const evaluationsWithDynamicScores = await Promise.all(
@@ -247,7 +268,7 @@ router.get('/', auth, adminOnly, async (req, res) => {
         const hasil = parseFloat((absen + ev.kuantitas + ev.kualitas + laporanValue).toFixed(2));
         
         return {
-          ...ev.toObject(),
+          ...ev,
           absen,
           hasil
         };
@@ -269,8 +290,16 @@ router.get('/ranking', auth, adminOnly, async (req, res) => {
     const bulan = parseInt(req.query.bulan) || new Date().getMonth() + 1;
     const tahun = parseInt(req.query.tahun) || new Date().getFullYear();
 
-    const rankings = await PerformanceEvaluation.find({ bulan, tahun, status: 'Final' })
-      .populate('userId', 'name email instansi');
+    let rankings = await db.performance.find({ bulan, tahun, status: 'Final' });
+    
+     // Manual populate
+     rankings = await Promise.all(rankings.map(async (ev) => {
+        const user = await db.users.findOne({ _id: ev.userId });
+        return { 
+            ...ev, 
+            userId: user ? { _id: user._id, name: user.name, email: user.email, instansi: user.instansi } : ev.userId 
+        };
+    }));
 
     // Recalculate absen and hasil dynamically for each evaluation
     const rankingsWithDynamicScores = await Promise.all(
@@ -281,7 +310,7 @@ router.get('/ranking', auth, adminOnly, async (req, res) => {
         const hasil = parseFloat((absen + ev.kuantitas + ev.kualitas + laporanValue).toFixed(2));
         
         return {
-          ...ev.toObject(),
+          ...ev,
           absen,
           hasil
         };
@@ -300,12 +329,12 @@ router.get('/ranking', auth, adminOnly, async (req, res) => {
 // DELETE /api/performance/:id — delete draft evaluation
 router.delete('/:id', auth, adminOnly, async (req, res) => {
   try {
-    const evaluation = await PerformanceEvaluation.findById(req.params.id);
+    const evaluation = await db.performance.findOne({ _id: req.params.id });
     if (!evaluation) return res.status(404).json({ success: false, message: 'Penilaian tidak ditemukan.' });
     if (evaluation.status === 'Final') {
       return res.status(400).json({ success: false, message: 'Penilaian final tidak bisa dihapus.' });
     }
-    await PerformanceEvaluation.findByIdAndDelete(req.params.id);
+    await db.performance.remove({ _id: req.params.id }, { multi: false });
     res.json({ success: true, message: 'Penilaian draft berhasil dihapus.' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -318,11 +347,14 @@ router.delete('/delete-all-finals/:bulan/:tahun', auth, adminOnly, async (req, r
     const bulan = parseInt(req.params.bulan);
     const tahun = parseInt(req.params.tahun);
 
-    const result = await PerformanceEvaluation.deleteMany({ 
+    // NeDB remove returns number of removed documents
+    const numRemoved = await db.performance.remove({ 
       bulan, 
       tahun, 
       status: 'Final' 
-    });
+    }, { multi: true });
+
+    const result = { deletedCount: numRemoved };
 
     console.log(`[DELETE ALL FINALS] Deleted ${result.deletedCount} finalized evaluations for ${bulan}/${tahun}`);
 

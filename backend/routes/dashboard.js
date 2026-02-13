@@ -1,25 +1,28 @@
 const router = require('express').Router();
-const User = require('../models/User');
-const WorkLog = require('../models/WorkLog');
-const Attendance = require('../models/Attendance');
-const Complaint = require('../models/Complaint');
+// Mongoose models -> replaced by NeDB
+const db = require('../db');
 const { auth, adminOnly } = require('../middleware/auth');
 
 // GET /api/dashboard/admin — admin dashboard stats
 router.get('/admin', auth, adminOnly, async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const totalPeserta = await User.countDocuments({ role: 'user' });
+    const totalPeserta = await db.users.count({ role: 'user' });
 
-    // Total completed work
-    const workStats = await WorkLog.aggregate([
-      { $match: { status: 'Selesai' } },
-      { $group: { _id: null, total: { $sum: 1 }, berkas: { $sum: '$berkas' }, buku: { $sum: '$buku' }, bundle: { $sum: '$bundle' } } }
-    ]);
-    const ws = workStats[0] || { total: 0, berkas: 0, buku: 0, bundle: 0 };
+    // Total completed work & stats
+    // Fetch all completed work logs
+    const completedLogs = await db.workLogs.find({ status: 'Selesai' });
+    
+    // Calculate total items
+    const ws = completedLogs.reduce((acc, log) => ({
+        total: acc.total + 1,
+        berkas: acc.berkas + (log.berkas || 0),
+        buku: acc.buku + (log.buku || 0),
+        bundle: acc.bundle + (log.bundle || 0)
+    }), { total: 0, berkas: 0, buku: 0, bundle: 0 });
 
     // Today's attendance
-    const todayAttendance = await Attendance.countDocuments({
+    const todayAttendance = await db.attendance.count({
       tanggal: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59') }
     });
 
@@ -30,56 +33,43 @@ router.get('/admin', auth, adminOnly, async (req, res) => {
     const avgProductivity = totalPeserta > 0 ? Math.round((ws.berkas + ws.buku + ws.bundle) / totalPeserta) : 0;
 
     // Top 5 performers
-    const topPerformers = await WorkLog.aggregate([
-      { $match: { status: 'Selesai' } },
-      { $group: { _id: '$userId', totalItems: { $sum: { $add: ['$berkas', '$buku', '$bundle'] } } } },
-      { $sort: { totalItems: -1 } },
-      { $limit: 5 },
-      { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'user' } },
-      { $unwind: '$user' },
-      { $project: { name: '$user.name', totalItems: 1 } }
-    ]);
+    // Group by userId -> sum items -> sort -> limit -> populate
+    const performerMap = {};
+    for (const log of completedLogs) {
+        if (!performerMap[log.userId]) {
+            performerMap[log.userId] = 0;
+        }
+        performerMap[log.userId] += ((log.berkas || 0) + (log.buku || 0) + (log.bundle || 0));
+    }
+    
+    // Convert map to array, sort, take top 5
+    let topPerformersList = Object.keys(performerMap).map(userId => ({
+        userId,
+        totalItems: performerMap[userId]
+    })).sort((a, b) => b.totalItems - a.totalItems).slice(0, 5);
+
+    // Populate user names
+    const topPerformers = await Promise.all(topPerformersList.map(async (p) => {
+        const user = await db.users.findOne({ _id: p.userId });
+        return { name: user ? user.name : 'Unknown', totalItems: p.totalItems };
+    }));
 
     const { startDate, endDate } = req.query;
-    let dateFilter = {};
+    // Filter logic manual
+    let filteredLogs = completedLogs;
     if (startDate && endDate) {
-      dateFilter = {
-        tanggal: {
-          $gte: new Date(startDate),
-          $lte: new Date(endDate + 'T23:59:59')
-        }
-      };
+        const start = new Date(startDate);
+        const end = new Date(endDate + 'T23:59:59');
+        filteredLogs = completedLogs.filter(log => {
+             const logDate = new Date(log.tanggal);
+             return logDate >= start && logDate <= end;
+        });
     }
 
     // Specific totals by jenis (Filtered)
-    const specificStats = await WorkLog.aggregate([
-      { $match: { status: 'Selesai', ...dateFilter } },
-      { 
-        $group: { 
-          _id: '$jenis', 
-          count: { $sum: 1 },
-          totalItems: { $sum: { $add: ['$berkas', '$buku', '$bundle'] } } 
-        } 
-      }
-    ]);
-
-    // Register specific breakdown
-    const registerStatsAgg = await WorkLog.aggregate([
-      { $match: { status: 'Selesai', jenis: 'Register', ...dateFilter } },
-      { 
-        $group: { 
-          _id: null, 
-          berkas: { $sum: '$berkas' }, 
-          buku: { $sum: '$buku' }, 
-          bundle: { $sum: '$bundle' }
-        } 
-      }
-    ]);
-    const registerStats = registerStatsAgg[0] || { berkas: 0, buku: 0, bundle: 0 };
-
     const getStat = (jenis) => {
-      const found = specificStats.find(s => s._id === jenis);
-      return found ? found.totalItems : 0;
+        const matching = filteredLogs.filter(l => l.jenis === jenis);
+        return matching.reduce((sum, l) => sum + (l.berkas || 0) + (l.buku || 0) + (l.bundle || 0), 0);
     };
 
     const totalSortir = getStat('Sortir');
@@ -87,81 +77,83 @@ router.get('/admin', auth, adminOnly, async (req, res) => {
     const totalScanning = getStat('Scanning');
     const totalRegister = getStat('Register');
     const totalStikering = getStat('Stikering');
-    
-    // Rekardus stats (Filtered)
     const totalRekardus = getStat('Rekardus');
 
-    // Chart Data (Filtered) - previously weeklyProgress
-    // If filtered, show data within range. If not, default to last 2 weeks?
-    // User requested filters apply to chart.
-    // If no filter, we can keep default behavior or apply default range in frontend.
-    // Let's assume frontend sends dates. If not, we default to last 2 weeks here or just return all?
-    // Better to use the dateFilter if present, else default.
-    let chartMatch = { status: 'Selesai', jenis: 'Rekardus' };
+    // Register specific breakdown
+    const registerLogs = filteredLogs.filter(l => l.jenis === 'Register');
+    const registerStats = registerLogs.reduce((acc, log) => ({
+        berkas: acc.berkas + (log.berkas || 0),
+        buku: acc.buku + (log.buku || 0),
+        bundle: acc.bundle + (log.bundle || 0)
+    }), { berkas: 0, buku: 0, bundle: 0 });
+
+
+    // Chart Data (Filtered)
+    // If startDate/endDate present, use filteredLogs. Else check default range (2 weeks).
+    let chartLogs = [];
     if (startDate && endDate) {
-      chartMatch = { ...chartMatch, ...dateFilter };
+        // filter already applied to filteredLogs BUT we need to filter specifically for 'Rekardus' AND 'Selesai' (completedLogs/filteredLogs already Selesai)
+        chartLogs = filteredLogs.filter(l => l.jenis === 'Rekardus');
     } else {
        const twoWeeksAgo = new Date();
        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-       chartMatch.tanggal = { $gte: twoWeeksAgo };
+       chartLogs = completedLogs.filter(l => l.jenis === 'Rekardus' && new Date(l.tanggal) >= twoWeeksAgo);
     }
 
-    const chartData = await WorkLog.aggregate([
-      { $match: chartMatch },
-      {
-        $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$tanggal' } },
-          berkas: { $sum: '$berkas' }, buku: { $sum: '$buku' }, bundle: { $sum: '$bundle' },
-          total: { $sum: { $add: ['$berkas', '$buku', '$bundle'] } }
+    // Group chart data by date
+    const chartMap = {};
+    for (const log of chartLogs) {
+        const dateStr = new Date(log.tanggal).toISOString().split('T')[0];
+        if (!chartMap[dateStr]) {
+            chartMap[dateStr] = { _id: dateStr, berkas: 0, buku: 0, bundle: 0, total: 0 };
         }
-      },
-      { $sort: { _id: 1 } }
-    ]);
+        chartMap[dateStr].berkas += (log.berkas || 0);
+        chartMap[dateStr].buku += (log.buku || 0);
+        chartMap[dateStr].bundle += (log.bundle || 0);
+        chartMap[dateStr].total += ((log.berkas || 0) + (log.buku || 0) + (log.bundle || 0));
+    }
+    const chartData = Object.values(chartMap).sort((a, b) => a._id.localeCompare(b._id));
 
     // Work distribution by jenis (Filtered)
-    const workDistribution = await WorkLog.aggregate([
-      { $match: { status: 'Selesai', ...dateFilter } },
-      { $group: { _id: '$jenis', count: { $sum: 1 } } },
-      { $sort: { count: -1 } }
-    ]);
+    const distMap = {};
+    for (const log of filteredLogs) {
+        if (!distMap[log.jenis]) distMap[log.jenis] = 0;
+        distMap[log.jenis]++;
+    }
+    const workDistribution = Object.keys(distMap).map(jenis => ({ _id: jenis, count: distMap[jenis] })).sort((a, b) => b.count - a.count);
 
-    // Recent activity (Not necessarily filtered by date for dashboard view, usually just latest)
-    // But maybe user wants to see activity in that range?
-    // Usually "Recent Activity" feed stays "Recent". Let's keep it latest.
-    const recentActivity = await WorkLog.find({ status: 'Selesai' })
-      .populate('userId', 'name')
-      .sort({ createdAt: -1 })
-      .limit(5);
+    // Recent activity
+    let recentActivity = await db.workLogs.find({ status: 'Selesai' }).sort({ createdAt: -1 }).limit(5);
+    recentActivity = await Promise.all(recentActivity.map(async (l) => {
+        const user = await db.users.findOne({ _id: l.userId });
+        return { 
+            ...l, 
+            userId: user ? { _id: user._id, name: user.name } : null 
+        };
+    }));
 
     res.json({
       success: true,
       data: {
         totalPeserta,
-        totalPekerjaanSelesai: ws.total, // This is total ALL TIME usually, unless we want to filter this too?
-        // Let's align "Total Pekerjaan Selesai" with the filter too if requested "filter tersebut untuk 5 stat grid... dan juga untuk donut chart".
-        // The 5 stat grid is handled. Donut chart is workDistribution (handled).
-        // Area chart is chartData (handled).
-        
-        // These legacy totals might be less relevant now but keeping them safe.
+        totalPekerjaanSelesai: ws.total, 
         totalBerkas: ws.berkas, 
         totalBuku: ws.buku,
         totalBundle: ws.bundle,
         
-        // New specific stats
         totalSortir,
         totalSteples,
         totalScanning,
         totalRegister,
         totalStikering,
         totalRekardus,
-        registerStats, // New specific stats for donut chart
+        registerStats,
 
         todayAttendance,
         attendanceRate,
         avgProductivity,
         topPerformers,
-        weeklyProgress: chartData, // reuse field name to avoid frontend break, or rename? 
-        // Frontend expects weeklyProgress for the chart. Let's keep the key but it contains filtered data.
+        weeklyProgress: chartData, 
         workDistribution,
         recentActivity
       }
@@ -174,38 +166,44 @@ router.get('/admin', auth, adminOnly, async (req, res) => {
 // GET /api/dashboard/user — user dashboard stats
 router.get('/user', auth, async (req, res) => {
   try {
-    const stats = await WorkLog.aggregate([
-      { $match: { userId: req.userId, status: 'Selesai' } },
-      { $group: { _id: null, berkas: { $sum: '$berkas' }, buku: { $sum: '$buku' }, bundle: { $sum: '$bundle' } } }
-    ]);
-    const s = stats[0] || { berkas: 0, buku: 0, bundle: 0 };
+    // User stats
+    const userLogs = await db.workLogs.find({ userId: req.userId, status: 'Selesai' });
+    const s = userLogs.reduce((acc, log) => ({
+        berkas: acc.berkas + (log.berkas || 0),
+        buku: acc.buku + (log.buku || 0),
+        bundle: acc.bundle + (log.bundle || 0)
+    }), { berkas: 0, buku: 0, bundle: 0 });
 
     // Pending count
-    const pendingCount = await WorkLog.countDocuments({ userId: req.userId, status: 'Draft' });
+    const pendingCount = await db.workLogs.count({ userId: req.userId, status: 'Draft' });
 
     // Weekly progress
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    const weeklyProgress = await WorkLog.aggregate([
-      { $match: { userId: req.userId, status: 'Selesai', tanggal: { $gte: oneWeekAgo } } },
-      {
-        $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$tanggal' } },
-          berkas: { $sum: '$berkas' }, buku: { $sum: '$buku' }, bundle: { $sum: '$bundle' }
-        }
-      },
-      { $sort: { _id: 1 } }
-    ]);
+    
+    const weekLogs = userLogs.filter(log => new Date(log.tanggal) >= oneWeekAgo);
+    
+    // Group by date
+    const dateMap = {};
+    for (const log of weekLogs) {
+         const dateStr = new Date(log.tanggal).toISOString().split('T')[0];
+         if (!dateMap[dateStr]) dateMap[dateStr] = { _id: dateStr, berkas: 0, buku: 0, bundle: 0 };
+         dateMap[dateStr].berkas += (log.berkas || 0);
+         dateMap[dateStr].buku += (log.buku || 0);
+         dateMap[dateStr].bundle += (log.bundle || 0);
+    }
+    const weeklyProgress = Object.values(dateMap).sort((a, b) => a._id.localeCompare(b._id));
 
     // Work distribution
-    const workDistribution = await WorkLog.aggregate([
-      { $match: { userId: req.userId, status: 'Selesai' } },
-      { $group: { _id: '$jenis', count: { $sum: 1 } } },
-      { $sort: { count: -1 } }
-    ]);
+    const distMap = {};
+    for (const log of userLogs) {
+        if (!distMap[log.jenis]) distMap[log.jenis] = 0;
+        distMap[log.jenis]++;
+    }
+    const workDistribution = Object.keys(distMap).map(jenis => ({ _id: jenis, count: distMap[jenis] })).sort((a, b) => b.count - a.count);
 
     // Recent activity
-    const recentActivity = await WorkLog.find({ userId: req.userId, status: 'Selesai' })
+    const recentActivity = await db.workLogs.find({ userId: req.userId, status: 'Selesai' })
       .sort({ createdAt: -1 })
       .limit(10);
 
