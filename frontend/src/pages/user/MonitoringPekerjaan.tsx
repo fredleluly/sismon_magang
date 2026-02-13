@@ -616,6 +616,22 @@ const MonitoringPekerjaan: React.FC = () => {
     };
   }, [isExportModalOpen]);
 
+  // Effect to manage body scroll for mobile date picker
+  useEffect(() => {
+    // Only apply on mobile/tablet
+    if (window.innerWidth <= 768) {
+      if (isSelectingDateRange) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = 'unset';
+      }
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isSelectingDateRange]);
+
   useEffect(() => {
     loadWorkData();
   }, [filterType, dateRangeStart, dateRangeEnd, currentDate]);
@@ -636,9 +652,21 @@ const MonitoringPekerjaan: React.FC = () => {
     'Desember',
   ][currentDate.getMonth()];
 
+
+
+  // State for mobile check
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <>
       <div className="page-header">
+
         <h1>Statistik Pekerjaan</h1>
         <p>Monitor statistik pekerjaan harian, mingguan, atau bulanan</p>
       </div>
@@ -705,7 +733,7 @@ const MonitoringPekerjaan: React.FC = () => {
               </svg>
             </button>
 
-            {isSelectingDateRange && (
+            {isSelectingDateRange && !isMobile && (
               <div className="custom-date-picker-dropdown">
                 <div className="custom-date-picker-header">
                   <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>
@@ -760,6 +788,68 @@ const MonitoringPekerjaan: React.FC = () => {
                   </button>
                 </div>
               </div>
+            )}
+
+            {isSelectingDateRange && isMobile && ReactDOM.createPortal(
+              <div className="mobile-date-picker-overlay" onClick={(e) => {
+                if (e.target === e.currentTarget) setIsSelectingDateRange(false);
+              }}>
+                <div className="custom-date-picker-dropdown mobile-portal">
+                  <div className="custom-date-picker-header">
+                    <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>
+                      ←
+                    </button>
+                    <span>Pilih Rentang Tanggal</span>
+                    <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>
+                      →
+                    </button>
+                  </div>
+
+                  <div className="custom-calendars-container">
+                    {renderCalendarMonth(0)}
+                    {renderCalendarMonth(1)}
+                  </div>
+
+                  <div className="custom-date-range-info">
+                    {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
+                    {tempDateRangeStart && tempDateRangeEnd && (
+                      <p>
+                        {tempDateRangeStart} sampai {tempDateRangeEnd}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="custom-date-picker-footer">
+                    <button
+                      className="custom-date-apply-btn"
+                      onClick={() => {
+                        if (tempDateRangeStart && tempDateRangeEnd) {
+                          setDateRangeStart(tempDateRangeStart);
+                          setDateRangeEnd(tempDateRangeEnd);
+                          setIsSelectingDateRange(false);
+                          setIsSelectingStart(true);
+                        } else {
+                          showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
+                        }
+                      }}
+                    >
+                      Terapkan
+                    </button>
+                    <button
+                      className="custom-date-cancel-btn"
+                      onClick={() => {
+                        setIsSelectingDateRange(false);
+                        setTempDateRangeStart('');
+                        setTempDateRangeEnd('');
+                        setIsSelectingStart(true);
+                      }}
+                    >
+                      Batal
+                    </button>
+                  </div>
+                </div>
+              </div>,
+              document.body
             )}
           </div>
         )}
@@ -864,30 +954,32 @@ const MonitoringPekerjaan: React.FC = () => {
                 <p>{selectedDayData.length} entri pekerjaan</p>
               </div>
 
-              <table className="work-table">
-                <thead>
-                  <tr>
-                    <th>No</th>
-                    <th>Job Desk</th>
-                    <th>Keterangan</th>
-                    <th>Berkas</th>
-                    <th>Buku</th>
-                    <th>Bundle</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedDayData.map((work, i) => (
-                    <tr key={work._id}>
-                      <td>{i + 1}</td>
-                      <td className="job-cell">{work.jenis}</td>
-                      <td className="desc-cell">{work.keterangan || '-'}</td>
-                      <td className="number-cell">{work.berkas}</td>
-                      <td className="number-cell">{work.buku}</td>
-                      <td className="number-cell">{work.bundle}</td>
+              <div className="work-table-wrapper">
+                <table className="work-table">
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>Job Desk</th>
+                      <th>Keterangan</th>
+                      <th>Berkas</th>
+                      <th>Buku</th>
+                      <th>Bundle</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {selectedDayData.map((work, i) => (
+                      <tr key={work._id}>
+                        <td>{i + 1}</td>
+                        <td className="job-cell">{work.jenis}</td>
+                        <td className="desc-cell">{work.keterangan || '-'}</td>
+                        <td className="number-cell">{work.berkas}</td>
+                        <td className="number-cell">{work.buku}</td>
+                        <td className="number-cell">{work.bundle}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
               <div className="day-summary">
                 <div className="summary-item">

@@ -16,7 +16,9 @@
 .filter-buttons {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto; 
+  padding-bottom: 4px; 
 }
 
 .filter-btn {
@@ -835,11 +837,38 @@
 }
 
 /* ===== WORK TABLE ===== */
+.work-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+}
+
+.work-table-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+
+.work-table-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.work-table-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.work-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
 .work-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
-  margin-bottom: 16px;
+  min-width: 600px; /* Ensure table has minimum width to trigger scroll */
 }
 
 .work-table thead {
@@ -1016,6 +1045,20 @@
 }
 
 /* ===== RESPONSIVE ===== */
+/* ===== RESPONSIVE ===== */
+@media (min-width: 1025px) {
+  .work-filter-bar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 16px;
+  }
+  
+  .filter-buttons {
+    flex-wrap: nowrap;
+  }
+}
+
 @media (max-width: 1024px) {
   .work-monitor-layout {
     grid-template-columns: 1fr;
@@ -1024,6 +1067,7 @@
   .work-details {
     max-height: none;
     overflow-y: visible;
+    overflow-x: hidden; /* Prevent horizontal scroll on the card itself */
   }
 
   .date-picker-calendars {
@@ -1065,14 +1109,61 @@
     font-size: 14px;
   }
 
-  .custom-date-picker-dropdown {
-    min-width: auto;
-    max-width: 95vw;
+  /* Fix Mobile Date Picker Popup */
+  /* Fix Mobile Date Picker Popup (Portal) */
+  .mobile-date-picker-overlay {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(2px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease;
+  }
+  
+  /* Reset the dropdown style when inside portal */
+  .custom-date-picker-dropdown.mobile-portal {
+    position: relative !important; /* Relative to overlay flex item */
+    inset: auto !important;
+    margin: 0 !important;
+    transform: none !important;
+    top: auto !important;
+    left: auto !important;
+    
+    width: 90vw !important;
+    max-width: 320px !important;
+    height: auto !important;
+    max-height: 450px !important;
+    
+    background: white;
+    padding: 16px !important;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    z-index: 10000; /* Higher than overlay */
+    overflow-y: auto !important;
+    animation: scaleIn 0.2s ease;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
+  /* Hide the old inline overlay logic for mobile */
+  .custom-date-range-container::before,
+  .custom-date-range-container:has(.custom-date-picker-dropdown)::before {
+    display: none !important;
+  }
+
+  /* Force single column layout for calendars on mobile */
   .custom-calendars-container {
-    grid-template-columns: 1fr;
-    gap: 10px;
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+    padding: 0 4px;
   }
 
   .custom-date-range-toggle {
@@ -1085,11 +1176,14 @@
 
   .filter-buttons {
     gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
   }
 
   .filter-btn {
     padding: 6px 12px;
     font-size: 12px;
+    white-space: nowrap;
   }
 }
 
