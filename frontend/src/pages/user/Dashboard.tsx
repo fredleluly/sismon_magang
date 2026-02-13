@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { Chart, registerables } from 'chart.js';
 import { DashboardAPI, WorkLogAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -342,7 +343,7 @@ const Dashboard: React.FC = () => {
 
     for (let i = 0; i < firstDay; i++) {
       days.push(
-        <div key={`empty-${i}`} style={{ width: '30px', height: '30px' }}></div>
+        <div key={`empty-${i}`} className="recap-calendar-cell empty"></div>
       );
     }
 
@@ -352,42 +353,16 @@ const Dashboard: React.FC = () => {
       const isStart = startEnd === 'start';
       const isEnd = startEnd === 'end';
 
-      let bgColor = 'transparent';
-      if (isStart || isEnd) {
-        bgColor = '#8b5cf6';
-      } else if (inRange) {
-        bgColor = '#ddd6fe';
-      }
+      let cellClass = 'recap-calendar-cell';
+      if (isStart) cellClass += ' start-date';
+      else if (isEnd) cellClass += ' end-date';
+      else if (inRange) cellClass += ' in-range';
 
       days.push(
         <div
           key={day}
+          className={cellClass}
           onClick={() => handleCalendarDateClick(year, monthIndex, day)}
-          style={{
-            width: '30px',
-            height: '30px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: bgColor,
-            border: inRange ? '1px solid #8b5cf6' : '1px solid transparent',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '12px',
-            fontWeight: inRange ? '600' : '400',
-            color: isStart || isEnd ? 'white' : '#030712',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            if (!isStart && !isEnd && inRange) {
-              (e.currentTarget as HTMLElement).style.background = '#c4b5fd';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isStart && !isEnd && inRange) {
-              (e.currentTarget as HTMLElement).style.background = '#ddd6fe';
-            }
-          }}
         >
           {day}
         </div>
@@ -395,18 +370,16 @@ const Dashboard: React.FC = () => {
     }
 
     return (
-      <div>
-        <div style={{ marginBottom: '8px' }}>
-          <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: '600' }}>{monthName} {year}</h4>
+      <div className="recap-calendar-month">
+        <div className="recap-calendar-header">
+          <h4>{monthName} {year}</h4>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', marginBottom: '12px' }}>
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
-            <div key={day} style={{ textAlign: 'center', fontSize: '10px', fontWeight: 'bold', color: '#64748b', width: '30px' }}>
-              {day}
-            </div>
+        <div className="recap-calendar-weekdays">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+            <div key={i} className="recap-calendar-weekday">{d}</div>
           ))}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
+        <div className="recap-calendar-days">
           {days}
         </div>
       </div>
@@ -731,52 +704,27 @@ const Dashboard: React.FC = () => {
                 </svg>
               </button>
 
-              {isDashboardSelectingDateRange && (
+              {isDashboardSelectingDateRange && ReactDOM.createPortal(
                 <>
-                  <div
-                    onClick={() => setIsDashboardSelectingDateRange(false)}
-                    style={{
-                      position: 'fixed',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: 'rgba(0,0,0,0.3)',
-                      zIndex: 9998,
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: 'fixed',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      background: 'white',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '12px',
-                      padding: '20px',
-                      zIndex: 9999,
-                      boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
-                      minWidth: '580px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <button onClick={handleDashboardDatePickerPrevMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}>←</button>
-                      <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Select Date Range</span>
-                      <button onClick={handleDashboardDatePickerNextMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}>→</button>
+                  <div className="recap-date-modal-overlay" onClick={() => setIsDashboardSelectingDateRange(false)} />
+                  <div className="recap-date-modal">
+                    <div className="recap-date-modal-header">
+                      <button onClick={handleDashboardDatePickerPrevMonth}>←</button>
+                      <span>Select Date Range</span>
+                      <button onClick={handleDashboardDatePickerNextMonth}>→</button>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
+                    <div className="recap-calendars-grid">
                       {renderDashboardCalendarMonth(0)}
                       {renderDashboardCalendarMonth(1)}
                     </div>
 
-                    <div style={{ marginBottom: '12px', fontSize: '12px', color: '#64748b' }}>
+                    <div className="recap-date-info">
                       {dashboardTempDateRangeStart && !dashboardTempDateRangeEnd && <p>Select end date</p>}
                       {dashboardTempDateRangeStart && dashboardTempDateRangeEnd && <p>{dashboardTempDateRangeStart} to {dashboardTempDateRangeEnd}</p>}
                     </div>
 
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    <div className="recap-date-modal-footer">
                       <button
                         onClick={() => {
                           setIsDashboardSelectingDateRange(false);
@@ -784,15 +732,7 @@ const Dashboard: React.FC = () => {
                           setDashboardTempDateRangeEnd('');
                           setDashboardIsSelectingStart(true);
                         }}
-                        style={{
-                          padding: '6px 12px',
-                          background: '#e2e8f0',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                        }}
+                        className="recap-date-cancel-btn"
                       >
                         Cancel
                       </button>
@@ -807,22 +747,14 @@ const Dashboard: React.FC = () => {
                             showToast('Select start and end dates first', 'error');
                           }
                         }}
-                        style={{
-                          padding: '6px 12px',
-                          background: '#0a6599',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                        }}
+                        className="recap-date-apply-btn"
                       >
                         Apply
                       </button>
                     </div>
                   </div>
-                </>
+                </>,
+                document.body
               )}
             </div>
           )}
@@ -846,44 +778,24 @@ const Dashboard: React.FC = () => {
             <p>Ringkasan pekerjaan per job desk</p>
           </div>
           {recapData.length > 0 && (
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <div style={{ display: 'flex', gap: '4px' }}>
+            <div className="recap-jobdesk-filter">
+              <div className="recap-filter-buttons">
                 <button
+                  className={`recap-filter-btn ${recapFilterType === 'bulanan' ? 'active' : ''}`}
                   onClick={() => {
                     setRecapFilterType('bulanan');
                     setIsSelectingDateRange(false);
-                  }}
-                  style={{
-                    padding: '6px 12px',
-                    background: recapFilterType === 'bulanan' ? '#0a6599' : '#e2e8f0',
-                    color: recapFilterType === 'bulanan' ? 'white' : '#64748b',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    transition: 'all 0.3s',
                   }}
                 >
                   Monthly
                 </button>
                 <button
+                  className={`recap-filter-btn ${recapFilterType === 'custom' ? 'active' : ''}`}
                   onClick={() => {
                     setRecapFilterType('custom');
                     if (!isSelectingDateRange) {
                       setIsSelectingStart(true);
                     }
-                  }}
-                  style={{
-                    padding: '6px 12px',
-                    background: recapFilterType === 'custom' ? '#0a6599' : '#e2e8f0',
-                    color: recapFilterType === 'custom' ? 'white' : '#64748b',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    transition: 'all 0.3s',
                   }}
                 >
                   Custom
@@ -893,20 +805,8 @@ const Dashboard: React.FC = () => {
               {recapFilterType === 'custom' && (
                 <div>
                   <button
+                    className="recap-date-range-btn"
                     onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
-                    style={{
-                      padding: '6px 12px',
-                      background: '#e2e8f0',
-                      color: '#64748b',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                    }}
                   >
                     {tempDateRangeStart && tempDateRangeEnd
                       ? `${tempDateRangeStart} - ${tempDateRangeEnd}`
@@ -930,72 +830,43 @@ const Dashboard: React.FC = () => {
                     </svg>
                   </button>
 
-                  {isSelectingDateRange && (
+                  {isSelectingDateRange && ReactDOM.createPortal(
                     <>
                       <div
+                        className="recap-date-modal-overlay"
                         onClick={() => setIsSelectingDateRange(false)}
-                        style={{
-                          position: 'fixed',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          background: 'rgba(0,0,0,0)',
-                          zIndex: 9998,
-                        }}
                       />
-                      <div
-                        style={{
-                          position: 'fixed',
-                          top: '50%',
-                          left: '50%',
-                          transform: 'translate(-50%, -50%)',
-                          background: 'white',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '12px',
-                          padding: '20px',
-                          zIndex: 9999,
-                          boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
-                          minWidth: '580px',
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                          <button onClick={handleDatePickerPrevMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}>←</button>
-                          <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Select Date Range</span>
-                          <button onClick={handleDatePickerNextMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}>→</button>
+                      <div className="recap-date-modal">
+                        <div className="recap-date-modal-header">
+                          <button onClick={handleDatePickerPrevMonth}>←</button>
+                          <span>Select Date Range</span>
+                          <button onClick={handleDatePickerNextMonth}>→</button>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
+                        <div className="recap-calendars-grid">
                           {renderCalendarMonth(0)}
                           {renderCalendarMonth(1)}
                         </div>
 
-                        <div style={{ marginBottom: '12px', fontSize: '12px', color: '#64748b' }}>
+                        <div className="recap-date-info">
                           {tempDateRangeStart && !tempDateRangeEnd && <p>Select end date</p>}
                           {tempDateRangeStart && tempDateRangeEnd && <p>{tempDateRangeStart} to {tempDateRangeEnd}</p>}
                         </div>
 
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <div className="recap-date-modal-footer">
                           <button
+                            className="recap-date-cancel-btn"
                             onClick={() => {
                               setIsSelectingDateRange(false);
                               setTempDateRangeStart('');
                               setTempDateRangeEnd('');
                               setIsSelectingStart(true);
                             }}
-                            style={{
-                              padding: '6px 12px',
-                              background: '#e2e8f0',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                            }}
                           >
                             Cancel
                           </button>
                           <button
+                            className="recap-date-apply-btn"
                             onClick={() => {
                               if (tempDateRangeStart && tempDateRangeEnd) {
                                 setRecapDateRangeStart(tempDateRangeStart);
@@ -1006,41 +877,20 @@ const Dashboard: React.FC = () => {
                                 showToast('Select start and end dates first', 'error');
                               }
                             }}
-                            style={{
-                              padding: '6px 12px',
-                              background: '#0a6599',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                            }}
                           >
                             Apply
                           </button>
                         </div>
                       </div>
-                    </>
+                    </>,
+                    document.body
                   )}
                 </div>
               )}
 
               <button
+                className="recap-export-btn"
                 onClick={downloadRecapExcel}
-                style={{
-                  padding: '6px 12px',
-                  background: '#22c55e',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '14px', height: '14px' }}>
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />

@@ -2272,3 +2272,373 @@ img {
     transform: translateY(0);
   }
 }
+
+/* ===== RECAP JOBDESK FILTER (Dashboard) ===== */
+.recap-jobdesk-filter {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.recap-filter-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.recap-filter-btn {
+  padding: 6px 12px;
+  background: #e2e8f0;
+  color: #64748b;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.recap-filter-btn.active {
+  background: #0a6599;
+  color: white;
+}
+
+.recap-date-range-btn {
+  padding: 6px 12px;
+  background: #e2e8f0;
+  color: #64748b;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.recap-export-btn {
+  padding: 6px 12px;
+  background: #22c55e;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.recap-export-btn:hover {
+  background: #16a34a;
+}
+
+/* Date Picker Modal for Recap Jobdesk */
+.recap-date-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.recap-date-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  z-index: 9999;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  width: 90%;
+  max-width: 650px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalScale 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalScale {
+  from { 
+    opacity: 0; 
+    transform: translate(-50%, -48%) scale(0.96); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translate(-50%, -50%) scale(1); 
+  }
+}
+
+.recap-date-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.recap-date-modal-header button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+}
+
+.recap-date-modal-header span {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.recap-calendars-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.recap-date-info {
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.recap-date-modal-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.recap-date-modal-footer button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.recap-date-cancel-btn {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.recap-date-apply-btn {
+  background: #0a6599;
+  color: white;
+}
+
+/* Calendar Month Styles */
+.recap-calendar-month {
+  width: 100%;
+}
+
+.recap-calendar-header {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.recap-calendar-header h4 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.recap-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.recap-calendar-weekday {
+  text-align: center;
+  font-size: 9px;
+  font-weight: 600;
+  color: #64748b;
+  padding: 4px 0;
+}
+
+.recap-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.recap-calendar-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  transition: all 0.2s ease;
+  min-height: 28px;
+}
+
+.recap-calendar-cell.empty {
+  cursor: default;
+  background: transparent;
+  border: none;
+}
+
+.recap-calendar-cell.in-range {
+  background: #e6f4fa;
+  border-color: #cbd5e1;
+  color: #0a6599;
+}
+
+.recap-calendar-cell.start-date,
+.recap-calendar-cell.end-date {
+  background: linear-gradient(135deg, #0a6599 0%, #0d7ab5 100%);
+  color: white;
+  border-color: #0a6599;
+  font-weight: 700;
+}
+
+.recap-calendar-cell:hover:not(.empty) {
+  border-color: #0a6599;
+  box-shadow: 0 2px 8px rgba(10, 101, 153, 0.1);
+}
+
+/* ===== RECAP JOBDESK RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .activity-card .activity-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .recap-jobdesk-filter {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .recap-filter-buttons {
+    width: 100%;
+  }
+  
+  .recap-filter-btn {
+    flex: 1;
+    text-align: center;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+  
+  .recap-date-range-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+  
+  .recap-export-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+  
+  .recap-date-modal {
+    width: 95%;
+    padding: 16px;
+    /* remove top override to keep it centered */
+    /* top: 50% is inherited */
+  }
+  
+  .recap-calendars-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .recap-calendar-cell {
+    min-height: 32px;
+    font-size: 11px;
+  }
+  
+  .recap-date-modal-footer {
+    flex-direction: column;
+  }
+  
+  .recap-date-modal-footer button {
+    width: 100%;
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .recap-jobdesk-filter {
+    gap: 6px;
+  }
+  
+  .recap-filter-btn {
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+  
+  .recap-date-range-btn {
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+  
+  .recap-export-btn {
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+  
+  .recap-date-modal {
+    padding: 12px;
+  }
+  
+  .recap-calendar-cell {
+    min-height: 28px;
+    font-size: 10px;
+  }
+  
+  .recap-calendar-weekday {
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 360px) {
+  .recap-filter-btn {
+    padding: 5px 6px;
+    font-size: 9px;
+  }
+  
+  .recap-date-range-btn,
+  .recap-export-btn {
+    padding: 5px 8px;
+    font-size: 9px;
+  }
+  
+  .recap-calendar-cell {
+    min-height: 24px;
+    font-size: 9px;
+  }
+}
