@@ -3128,6 +3128,7 @@ img {
 
   .filter-buttons {
     display: flex;
+    align-items: center;
     width: 100%;
   }
 
@@ -3732,6 +3733,7 @@ img {
 /* Responsive Filter Bar Improvements */
 @media (max-width: 1200px) {
   .work-filter-bar {
+    align-items: center;
     gap: 12px;
   }
 
