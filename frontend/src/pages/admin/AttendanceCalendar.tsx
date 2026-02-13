@@ -757,7 +757,6 @@ const AttendanceCalendar: React.FC = () => {
                         <button
                         className="custom-date-range-toggle"
                         onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
-                        style={{ minWidth: 240 }}
                         >
                         {customFrom && customTo
                             ? `${customFrom} - ${customTo}`
