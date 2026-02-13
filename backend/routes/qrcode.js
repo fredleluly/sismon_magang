@@ -1,7 +1,6 @@
 const router = require('express').Router();
 const crypto = require('crypto');
-// const QRCode = require('../models/QRCode');
-const db = require('../db');
+const QRCode = require('../models/QRCode');
 const { auth, adminOnly } = require('../middleware/auth');
 
 // POST /api/qrcode/generate — admin generates daily QR
@@ -10,23 +9,18 @@ router.post('/generate', auth, adminOnly, async (req, res) => {
     const today = new Date().toISOString().split('T')[0];
 
     // Deactivate previous QR codes for today
-    // Deactivate previous QR codes for today
-    await db.qrcode.update(
+    await QRCode.updateMany(
       { tanggal: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59') } },
-      { $set: { active: false } },
-      { multi: true }
+      { active: false }
     );
 
     const token = crypto.randomBytes(16).toString('hex');
 
-    const qr = await db.qrcode.insert({
+    const qr = await QRCode.create({
       tanggal: new Date(today),
       token,
       createdBy: req.userId,
-      active: true,
-      scannedBy: [],
-      createdAt: new Date(),
-      updatedAt: new Date()
+      active: true
     });
 
     res.status(201).json({
@@ -50,19 +44,10 @@ router.post('/generate', auth, adminOnly, async (req, res) => {
 router.get('/today', auth, adminOnly, async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    let qr = await db.qrcode.findOne({
+    const qr = await QRCode.findOne({
       tanggal: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59') },
       active: true
-    });
-    
-    if (qr) {
-        // Manual Populate
-        const users = await Promise.all((qr.scannedBy || []).map(async (userId) => {
-            const u = await db.users.findOne({ _id: userId });
-            return u ? { _id: u._id, name: u.name, email: u.email } : null;
-        }));
-        qr.scannedBy = users.filter(u => u !== null);
-    }
+    }).populate('scannedBy', 'name email');
 
     res.json({ success: true, data: qr });
   } catch (err) {
@@ -76,14 +61,14 @@ router.get('/history', auth, adminOnly, async (req, res) => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const history = await db.qrcode.find({ tanggal: { $gte: sevenDaysAgo } })
+    const history = await QRCode.find({ tanggal: { $gte: sevenDaysAgo } })
       .sort({ tanggal: -1 })
       .limit(7);
 
     const data = history.map(qr => ({
       _id: qr._id,
       tanggal: qr.tanggal,
-      scannedCount: (qr.scannedBy || []).length,
+      scannedCount: qr.scannedBy.length,
       active: qr.active,
       createdAt: qr.createdAt
     }));

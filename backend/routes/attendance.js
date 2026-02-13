@@ -1,7 +1,6 @@
 const router = require('express').Router();
-// const Attendance = require('../models/Attendance');
-// const QRCode = require('../models/QRCode');
-const db = require('../db');
+const Attendance = require('../models/Attendance');
+const QRCode = require('../models/QRCode');
 const { auth, adminOnly } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
@@ -60,17 +59,10 @@ router.get('/', auth, async (req, res) => {
       if (req.query.to) filter.tanggal.$lte = new Date(req.query.to);
     }
 
-    // Fetch records
-    let records = await db.attendance.find(filter).sort({ tanggal: -1 }).limit(parseInt(req.query.limit) || 50);
-
-    // Manual populate
-    records = await Promise.all(records.map(async (r) => {
-        const user = await db.users.findOne({ _id: r.userId });
-        return { 
-            ...r, 
-            userId: user ? { _id: user._id, name: user.name, email: user.email, instansi: user.instansi } : null 
-        };
-    }));
+    const records = await Attendance.find(filter)
+      .populate('userId', 'name email instansi')
+      .sort({ tanggal: -1 })
+      .limit(parseInt(req.query.limit) || 50);
 
     res.json({ success: true, data: records });
   } catch (err) {
@@ -85,23 +77,20 @@ router.post('/scan', auth, async (req, res) => {
     if (!token) return res.status(400).json({ success: false, message: 'Token QR wajib diisi.' });
 
     // Verify QR code
-    const qr = await db.qrcode.findOne({ token, active: true });
+    const qr = await QRCode.findOne({ token, active: true });
     if (!qr) return res.status(400).json({ success: false, message: 'QR Code tidak valid atau sudah expired.' });
 
     // Check if QR is for today
-    // Ensure qr.tanggal is Date object
-    const qrDateObj = new Date(qr.tanggal);
-    const todayStr = new Date().toISOString().split('T')[0];
-    const qrDateStr = qrDateObj.toISOString().split('T')[0];
-    
-    if (todayStr !== qrDateStr) {
+    const today = new Date().toISOString().split('T')[0];
+    const qrDate = qr.tanggal.toISOString().split('T')[0];
+    if (today !== qrDate) {
       return res.status(400).json({ success: false, message: 'QR Code sudah expired (bukan untuk hari ini).' });
     }
 
     // Check if already scanned today
-    const existingAttendance = await db.attendance.findOne({
+    const existingAttendance = await Attendance.findOne({
       userId: req.userId,
-      tanggal: { $gte: new Date(todayStr), $lt: new Date(todayStr + 'T23:59:59') },
+      tanggal: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59') },
     });
     if (existingAttendance) {
       return res.status(400).json({ success: false, message: 'Anda sudah absen hari ini.' });
@@ -116,27 +105,24 @@ router.post('/scan', auth, async (req, res) => {
     // Determine status based on time
     const status = isLate(jamMasuk, lateThreshold) ? 'Telat' : 'Hadir';
 
-    const attendance = await db.attendance.insert({
+    const attendance = await Attendance.create({
       userId: req.userId,
-      tanggal: new Date(todayStr),
+      tanggal: new Date(today),
       jamMasuk,
       jamKeluar: '',
       status,
       qrCodeId: qr._id,
-      createdAt: new Date(),
-      updatedAt: new Date()
     });
 
     // Track scanned user on QR
-    if (!qr.scannedBy) qr.scannedBy = [];
     if (!qr.scannedBy.includes(req.userId)) {
-      // Use $push operator if supported by nedb-promises wrapper or manual update
-      await db.qrcode.update({ _id: qr._id }, { $push: { scannedBy: req.userId } });
+      qr.scannedBy.push(req.userId);
+      await qr.save();
     }
 
     res.status(201).json({ success: true, message: 'Absensi berhasil!', data: attendance });
   } catch (err) {
-    if (err && err.code === 11000) {
+    if (err.code === 11000) {
       return res.status(400).json({ success: false, message: 'Anda sudah absen hari ini.' });
     }
     res.status(500).json({ success: false, message: err.message });
@@ -156,7 +142,7 @@ router.post('/photo-checkin', auth, upload.single('foto'), async (req, res) => {
 
     // Check if already scanned today
     const today = new Date().toISOString().split('T')[0];
-    const existingAttendance = await db.attendance.findOne({
+    const existingAttendance = await Attendance.findOne({
       userId: req.userId,
       tanggal: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59') },
     });
@@ -205,13 +191,11 @@ router.post('/photo-checkin', auth, upload.single('foto'), async (req, res) => {
       attendanceData.fotoAbsensi = foto;
     }
 
-    attendanceData.createdAt = new Date();
-    attendanceData.updatedAt = new Date();
-    const attendance = await db.attendance.insert(attendanceData);
+    const attendance = await Attendance.create(attendanceData);
 
     res.status(201).json({ success: true, message: 'Absensi masuk dengan foto berhasil!', data: attendance });
   } catch (err) {
-    if (err && err.code === 11000) {
+    if (err.code === 11000) {
       return res.status(400).json({ success: false, message: 'Anda sudah absen masuk hari ini.' });
     }
     res.status(500).json({ success: false, message: err.message });
@@ -229,7 +213,7 @@ router.post('/photo-checkout', auth, upload.single('foto'), async (req, res) => 
 
     // Find today's attendance record
     const today = new Date().toISOString().split('T')[0];
-    const attendance = await db.attendance.findOne({
+    const attendance = await Attendance.findOne({
       userId: req.userId,
       tanggal: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59') },
     });
@@ -271,8 +255,7 @@ router.post('/photo-checkout', auth, upload.single('foto'), async (req, res) => 
       attendance.fotoPulang = foto;
     }
 
-    attendance.updatedAt = new Date();
-    await db.attendance.update({ _id: attendance._id }, attendance);
+    await attendance.save();
 
     res.json({ success: true, message: 'Absensi pulang berhasil!', data: attendance });
   } catch (err) {
@@ -311,7 +294,7 @@ router.put('/:id/status', auth, adminOnly, async (req, res) => {
     const allowed = ['Hadir', 'Telat', 'Izin', 'Sakit', 'Alpha', 'Hari Libur', 'Belum Absen'];
     if (!allowed.includes(status)) return res.status(400).json({ success: false, message: 'Status tidak valid.' });
 
-    const att = await db.attendance.findOne({ _id: req.params.id });
+    const att = await Attendance.findById(req.params.id);
     if (!att) return res.status(404).json({ success: false, message: 'Data absensi tidak ditemukan.' });
 
     att.status = status;
@@ -333,15 +316,10 @@ router.put('/:id/status', auth, adminOnly, async (req, res) => {
       att.jamKeluar = jamKeluar;
     }
 
-    att.updatedAt = new Date();
-    await db.attendance.update({ _id: att._id }, att);
+    await att.save();
 
     // return populated user info for frontend convenience
-    const user = await db.users.findOne({ _id: att.userId });
-    const populated = { 
-        ...att, 
-        userId: user ? { _id: user._id, name: user.name, email: user.email, instansi: user.instansi } : null 
-    };
+    const populated = await Attendance.findById(att._id).populate('userId', 'name email instansi');
 
     res.json({ success: true, message: 'Data absensi berhasil diperbarui.', data: populated });
   } catch (err) {
@@ -355,8 +333,8 @@ router.post('/bulk-holiday', auth, adminOnly, async (req, res) => {
     const { tanggal } = req.body;
     if (!tanggal) return res.status(400).json({ success: false, message: 'Tanggal wajib diisi.' });
 
-    // const User = require('../models/User'); // Already require db
-    const users = await db.users.find({ role: 'user' });
+    const User = require('../models/User');
+    const users = await User.find({ role: 'user' });
 
     const dateStr = new Date(tanggal).toISOString().split('T')[0];
     const targetDate = new Date(dateStr);
@@ -365,7 +343,7 @@ router.post('/bulk-holiday', auth, adminOnly, async (req, res) => {
     let updated = 0;
 
     for (const user of users) {
-      const existing = await db.attendance.findOne({
+      const existing = await Attendance.findOne({
         userId: user._id,
         tanggal: { $gte: new Date(dateStr), $lt: new Date(dateStr + 'T23:59:59') },
       });
@@ -373,18 +351,15 @@ router.post('/bulk-holiday', auth, adminOnly, async (req, res) => {
       if (existing) {
         existing.status = 'Hari Libur';
         existing.jamMasuk = '-';
-        existing.updatedAt = new Date();
-        await db.attendance.update({ _id: existing._id }, existing);
+        await existing.save();
         updated++;
       } else {
-        await db.attendance.insert({
+        await Attendance.create({
           userId: user._id,
           tanggal: targetDate,
           jamMasuk: '-',
           jamKeluar: '',
           status: 'Hari Libur',
-          createdAt: new Date(),
-          updatedAt: new Date()
         });
         created++;
       }
@@ -409,13 +384,10 @@ router.post('/cancel-holiday', auth, adminOnly, async (req, res) => {
     const dateStr = new Date(tanggal).toISOString().split('T')[0];
 
     // Delete all attendance records for this date (they were created by bulk-holiday)
-    // NeDB remove returns number of removed documents
-    const numRemoved = await db.attendance.remove({
+    const result = await Attendance.deleteMany({
       tanggal: { $gte: new Date(dateStr), $lt: new Date(dateStr + 'T23:59:59') },
       status: 'Hari Libur',
-    }, { multi: true });
-
-    const result = { deletedCount: numRemoved };
+    });
 
     res.json({
       success: true,
@@ -432,18 +404,9 @@ router.post('/cancel-holiday', auth, adminOnly, async (req, res) => {
 router.get('/today', auth, adminOnly, async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    let records = await db.attendance.find({
+    const records = await Attendance.find({
       tanggal: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59') },
-    });
-    
-    // Manual Populate
-    records = await Promise.all(records.map(async (r) => {
-        const user = await db.users.findOne({ _id: r.userId });
-         return { 
-            ...r, 
-            userId: user ? { _id: user._id, name: user.name, email: user.email, instansi: user.instansi } : null 
-        };
-    }));
+    }).populate('userId', 'name email instansi');
 
     res.json({ success: true, data: records });
   } catch (err) {
@@ -478,7 +441,7 @@ router.post('/settings/late-threshold', auth, adminOnly, async (req, res) => {
 // GET /api/attendance/:id/photo — get attendance photo
 router.get('/:id/photo', auth, async (req, res) => {
   try {
-    const att = await db.attendance.findOne({ _id: req.params.id });
+    const att = await Attendance.findById(req.params.id);
     if (!att) return res.status(404).json({ success: false, message: 'Data absensi tidak ditemukan.' });
 
     // Only the user or admin can view the photo
@@ -508,7 +471,7 @@ router.get('/:id/photo', auth, async (req, res) => {
 // GET /api/attendance/:id/photo-pulang — get checkout photo
 router.get('/:id/photo-pulang', auth, async (req, res) => {
   try {
-    const att = await db.attendance.findOne({ _id: req.params.id });
+    const att = await Attendance.findById(req.params.id);
     if (!att) return res.status(404).json({ success: false, message: 'Data absensi tidak ditemukan.' });
 
     if (att.userId.toString() !== req.userId.toString() && req.user.role !== 'admin') {
@@ -534,7 +497,7 @@ router.get('/:id/photo-pulang', auth, async (req, res) => {
 // PUT /api/attendance/:id/checkout — clock out (legacy, simple)
 router.put('/:id/checkout', auth, async (req, res) => {
   try {
-    const att = await db.attendance.findOne({ _id: req.params.id });
+    const att = await Attendance.findById(req.params.id);
     if (!att) return res.status(404).json({ success: false, message: 'Data absensi tidak ditemukan.' });
     if (att.userId.toString() !== req.userId.toString() && req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Akses ditolak.' });
@@ -542,8 +505,7 @@ router.put('/:id/checkout', auth, async (req, res) => {
 
     const now = new Date();
     att.jamKeluar = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    att.updatedAt = new Date();
-    await db.attendance.update({ _id: att._id }, att);
+    await att.save();
 
     res.json({ success: true, message: 'Berhasil clock out.', data: att });
   } catch (err) {
@@ -555,15 +517,14 @@ router.put('/:id/checkout', auth, async (req, res) => {
 router.put('/:id', auth, adminOnly, async (req, res) => {
   try {
     const { jamMasuk, jamKeluar, status } = req.body;
-    const att = await db.attendance.findOne({ _id: req.params.id });
+    const att = await Attendance.findById(req.params.id);
     if (!att) return res.status(404).json({ success: false, message: 'Data tidak ditemukan' });
 
     if (jamMasuk !== undefined) att.jamMasuk = jamMasuk;
     if (jamKeluar !== undefined) att.jamKeluar = jamKeluar;
     if (status !== undefined) att.status = status;
-    att.updatedAt = new Date();
 
-    await db.attendance.update({ _id: att._id }, att);
+    await att.save();
     res.json({ success: true, message: 'Data berhasil diperbarui', data: att });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

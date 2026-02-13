@@ -4,7 +4,7 @@
 
 require("dotenv").config();
 const express = require("express");
-// const mongoose = require("mongoose");
+const mongoose = require("mongoose");
 const cors = require("cors");
 const morgan = require("morgan");
 const path = require("path");
@@ -35,18 +35,17 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ===== ROUTES =====
 app.get("/", (req, res) => {
-  // const dbStatus = mongoose.connection.readyState;
-  // const statusMap = {
-  //   0: "Disconnected 🔴",
-  //   1: "Connected 🟢",
-  //   2: "Connecting 🟡",
-  //   3: "Disconnecting 🟠",
-  // };
+  const dbStatus = mongoose.connection.readyState;
+  const statusMap = {
+    0: "Disconnected 🔴",
+    1: "Connected 🟢",
+    2: "Connecting 🟡",
+    3: "Disconnecting 🟠",
+  };
 
   res.json({
-    message: "PLN Magang Monitoring API is running! (NeDB Version)",
-    // database_status: statusMap[dbStatus] || "Unknown",
-    database_type: "NeDB (Local File System)",
+    message: "PLN Magang Monitoring API is running!",
+    database_status: statusMap[dbStatus] || "Unknown",
     timestamp: new Date().toISOString(),
   });
 });
@@ -58,9 +57,8 @@ app.use("/api/attendance", require("./routes/attendance"));
 app.use("/api/complaints", require("./routes/complaints"));
 app.use("/api/qrcode", require("./routes/qrcode"));
 app.use("/api/dashboard", require("./routes/dashboard"));
-
-app.use("/api/target-section", require("./routes/targetSection"));
 app.use("/api/seed", require("./routes/seed"));
+app.use("/api/target-section", require("./routes/targetSection"));
 app.use("/api/performance", require("./routes/performance"));
 
 // Fallback: serve frontend
@@ -80,18 +78,19 @@ app.use((err, req, res, next) => {
 // ===== CONNECT DB & START =====
 const PORT = process.env.PORT || 5001;
 const HTTPS_PORT = process.env.HTTPS_PORT || 5443;
-const MONGODB_URI = "nedb://local"; // Placeholder, not used
+const MONGODB_URI =
+  process.env.MONGODB_URI ||
+  "mongodb://breaklimited12_db_user:00FMxh3cSnXf3CQ7@ac-9wljaxr-shard-00-00.ha9nmsu.mongodb.net:27017,ac-9wljaxr-shard-00-01.ha9nmsu.mongodb.net:27017,ac-9wljaxr-shard-00-02.ha9nmsu.mongodb.net:27017/pln_magang_monitoring?ssl=true&replicaSet=atlas-7ro3bk-shard-0&authSource=admin&retryWrites=true&w=majority&appName=cluster-magang";
 
 // Connect to MongoDB
-// mongoose
-//   .connect(MONGODB_URI)
-//   .then(() => {
-//     console.log("✅ MongoDB Connected");
-//   })
-//   .catch((err) => {
-//     console.error("❌ MongoDB connection error:", err.message);
-//   });
-console.log("✅ NeDB Database Initialized (Local)");
+mongoose
+  .connect(MONGODB_URI)
+  .then(() => {
+    console.log("✅ MongoDB Connected");
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection error:", err.message);
+  });
 
 // PENTING UNTUK VERCEL:
 // Bungkus app.listen agar hanya jalan saat di-run lokal (bukan saat di-import oleh Vercel)

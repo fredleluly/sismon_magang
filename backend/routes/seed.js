@@ -1,10 +1,10 @@
-const router = require('express').Router();
-// const mongoose = require('mongoose');
-// const User = require('../models/User');
-// const Attendance = require('../models/Attendance');
-// const WorkLog = require('../models/WorkLog');
-// const Complaint = require('../models/Complaint');
-const db = require('../db');
+const express = require('express');
+const router = express.Router();
+const mongoose = require('mongoose');
+const User = require('../models/User');
+const Attendance = require('../models/Attendance');
+const WorkLog = require('../models/WorkLog');
+const Complaint = require('../models/Complaint');
 
 // Helper to get random item from array
 const random = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -22,48 +22,40 @@ const randomDate = (start, end) => {
 router.get('/', async (req, res) => {
   try {
     // 0. Ensure Admin & Super Admin Exist
-    const existingAdmin = await db.users.findOne({ email: 'admin@plniconplus.co.id' });
-    const existingSuperAdmin = await db.users.findOne({ email: 'superadmin@plniconplus.co.id' });
+    const existingAdmin = await User.findOne({ email: 'admin@plniconplus.co.id' });
+    const existingSuperAdmin = await User.findOne({ email: 'superadmin@plniconplus.co.id' });
 
     if (!existingAdmin) {
-      await db.users.insert({
+      await User.create({
         name: 'Administrator',
         email: 'admin@plniconplus.co.id',
         password: 'admin123',
         role: 'admin',
         instansi: 'PLN ICON+',
         jabatan: 'Administrator',
-        createdAt: new Date(),
-        updatedAt: new Date()
       });
     }
 
     if (!existingSuperAdmin) {
-      await db.users.insert({
+      await User.create({
         name: 'Super Admin',
         email: 'superadmin@plniconplus.co.id',
         password: 'super123',
         role: 'admin',
         instansi: 'PLN ICON+',
         jabatan: 'Super Administrator',
-        createdAt: new Date(),
-        updatedAt: new Date()
       });
     }
 
     // 1. Clear existing non-admin data
-    // Find non-admin users first to get their IDs
-    // NeDB: $ne operator
-    const nonAdminUsers = await db.users.find({ role: { $ne: 'admin' } }); 
+    const nonAdminUsers = await User.find({ role: { $ne: 'admin' } }).select('_id');
     const nonAdminIds = nonAdminUsers.map(u => u._id);
 
     if (nonAdminIds.length > 0) {
-      // Remove data associated with these users
-      // NeDB remove with multi: true
-      await db.attendance.remove({ userId: { $in: nonAdminIds } }, { multi: true });
-      await db.workLogs.remove({ userId: { $in: nonAdminIds } }, { multi: true });
-      await db.complaints.remove({ userId: { $in: nonAdminIds } }, { multi: true });
-      await db.users.remove({ _id: { $in: nonAdminIds } }, { multi: true });
+      await Attendance.deleteMany({ userId: { $in: nonAdminIds } });
+      await WorkLog.deleteMany({ userId: { $in: nonAdminIds } });
+      await Complaint.deleteMany({ userId: { $in: nonAdminIds } });
+      await User.deleteMany({ _id: { $in: nonAdminIds } });
     }
 
     // 2. Create Dummy Users
@@ -71,24 +63,20 @@ router.get('/', async (req, res) => {
     const users = [];
 
     for (let i = 1; i <= 10; i++) {
-        console.log(`Creating user ${i}...`);
-        const user = await db.users.insert({
+        const user = new User({
             name: `Peserta Magang ${i}`,
             email: `peserta${i}@gmail.com`,
-            password: 'password123', // Plain text as per migration simplicity
+            password: 'password123', // Will be hashed by pre-save hook
             role: 'user',
             instansi: random(instansiList),
             status: 'Aktif',
-            jabatan: 'Mahasiswa Magang',
-            createdAt: new Date(),
-            updatedAt: new Date()
+            jabatan: 'Mahasiswa Magang'
         });
+        await user.save();
         users.push(user);
     }
-    console.log(`Created ${users.length} users.`);
 
     // 3. Generate Data for Last 30 Days
-    console.log('Generating activity data...');
     const today = new Date();
     const startDate = new Date();
     startDate.setDate(today.getDate() - 30);
@@ -98,12 +86,8 @@ router.get('/', async (req, res) => {
     let complaintCount = 0;
 
     for (const user of users) {
-        if (!user || !user._id) {
-             console.error('User invalid:', user);
-             continue;
-        }
-        
         // Loop through each day from startDate to today
+        // Note: new Date(startDate) creates a copy, so startDate itself isn't mutated by loop
         for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
             const currentDay = new Date(d);
             const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
@@ -114,27 +98,18 @@ router.get('/', async (req, res) => {
             if (Math.random() > 0.1) { 
                 const status = Math.random() > 0.1 ? 'Hadir' : random(['Telat', 'Sakit', 'Izin']);
                 
-                const jamMasuk = status === 'Hadir' ? `0${randomInt(7, 8)}:${randomInt(10, 59)}` : (status === 'Telat' ? `09:${randomInt(10, 30)}` : '');
-                const jamKeluar = (status === 'Hadir' || status === 'Telat') ? `17:${randomInt(0, 30)}` : '';
-
-                try {
                 // Attendance Record
-                await db.attendance.insert({
+                const attendance = new Attendance({
                     userId: user._id,
                     tanggal: currentDay,
-                    jamMasuk,
-                    jamKeluar,
+                    jamMasuk: status === 'Hadir' ? `0${randomInt(7, 8)}:${randomInt(10, 59)}` : (status === 'Telat' ? `09:${randomInt(10, 30)}` : ''),
+                    jamKeluar: (status === 'Hadir' || status === 'Telat') ? `17:${randomInt(0, 30)}` : '',
                     status: status,
                     fotoAbsensi: '', // No photo for dummy
-                    fotoTimestamp: currentDay.toISOString(),
-                    createdAt: currentDay,
-                    updatedAt: currentDay
+                    fotoTimestamp: currentDay.toISOString()
                 });
+                await attendance.save();
                 attendanceCount++;
-                } catch (e) {
-                    console.error('Error creating attendance:', e);
-                    throw e;
-                }
 
                 // Work Log (Only if Hadir/Telat)
                 if (status === 'Hadir' || status === 'Telat') {
@@ -148,40 +123,28 @@ router.get('/', async (req, res) => {
                         'Deploy ke server staging'
                     ]);
 
-                    try {
-                        await db.workLogs.insert({
-                            userId: user._id,
-                            tanggal: currentDay,
-                            jenis: random(['WFO', 'WFH']),
-                            keterangan: activity,
-                            berkas: randomInt(0, 2),
-                            buku: randomInt(0, 1),
-                            bundle: randomInt(0, 1),
-                            status: 'Selesai',
-                            createdAt: currentDay,
-                            updatedAt: currentDay
-                        });
-                        workLogCount++;
-                    } catch (e) {
-                         console.error('Error creating worklog:', e);
-                         throw e;
-                    }
+                    const workLog = new WorkLog({
+                        userId: user._id,
+                        tanggal: currentDay,
+                        jenis: random(['WFO', 'WFH']),
+                        keterangan: activity,
+                        berkas: randomInt(0, 2),
+                        buku: randomInt(0, 1),
+                        bundle: randomInt(0, 1),
+                        status: 'Selesai'
+                    });
+                    await workLog.save();
+                    workLogCount++;
                 }
             } else {
                  // Alpha / Tidak Hadir
-                try {
-                    await db.attendance.insert({
-                        userId: user._id,
-                        tanggal: currentDay,
-                        status: 'Alpha',
-                        createdAt: currentDay,
-                        updatedAt: currentDay
-                    });
-                    attendanceCount++;
-                } catch (e) {
-                    console.error('Error creating alpha attendance:', e);
-                    throw e;
-                }
+                 const attendance = new Attendance({
+                    userId: user._id,
+                    tanggal: currentDay,
+                    status: 'Alpha'
+                });
+                await attendance.save();
+                attendanceCount++;
             }
         }
 
@@ -190,22 +153,16 @@ router.get('/', async (req, res) => {
         const categories = ['Fasilitas', 'Teknis', 'Administrasi', 'Lainnya'];
         
         for (let k = 0; k < numComplaints; k++) {
-            try {
-                await db.complaints.insert({
-                    userId: user._id,
-                    judul: `Kendala ${random(['Internet', 'AC', 'Komputer', 'Akses'])}`,
-                    kategori: random(categories),
-                    prioritas: random(['Low', 'Medium', 'High']),
-                    deskripsi: 'Mohon bantuannya untuk kendala ini.',
-                    status: random(['Menunggu', 'Diproses', 'Selesai']),
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                });
-                complaintCount++;
-            } catch (e) {
-                console.error('Error creating complaint:', e);
-                throw e;
-            }
+            const complaint = new Complaint({
+                userId: user._id,
+                judul: `Kendala ${random(['Internet', 'AC', 'Komputer', 'Akses'])}`,
+                kategori: random(categories),
+                prioritas: random(['Low', 'Medium', 'High']),
+                deskripsi: 'Mohon bantuannya untuk kendala ini.',
+                status: random(['Menunggu', 'Diproses', 'Selesai'])
+            });
+            await complaint.save();
+            complaintCount++;
         }
     }
 
@@ -221,10 +178,8 @@ router.get('/', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Seed Error at top level catch:', error);
-    // Be safer about logging the error property
-     const msg = error ? (error.message || 'Unknown error') : 'Unknown error';
-    res.status(500).json({ success: false, message: msg });
+    console.error('Seed Error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 

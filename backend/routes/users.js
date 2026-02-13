@@ -1,33 +1,29 @@
 const router = require('express').Router();
-// const User = require('../models/User');
-// const WorkLog = require('../models/WorkLog');
-const db = require('../db');
+const User = require('../models/User');
+const WorkLog = require('../models/WorkLog');
 const { auth, adminOnly } = require('../middleware/auth');
 
 // GET /api/users — list all users (admin) or get own data (user)
 router.get('/', auth, async (req, res) => {
   try {
     if (req.user.role === 'admin') {
-      const users = await db.users.find({ role: 'user' }).sort({ createdAt: -1 });
+      const users = await User.find({ role: 'user' }).sort({ createdAt: -1 });
 
       // Enrich with work stats
       const enriched = await Promise.all(users.map(async (u) => {
-        // NeDB Manual Aggregation
-        const logs = await db.workLogs.find({ userId: u._id, status: 'Selesai' });
-        const s = logs.reduce((acc, log) => ({
-          berkas: acc.berkas + (log.berkas || 0),
-          buku: acc.buku + (log.buku || 0),
-          bundle: acc.bundle + (log.bundle || 0)
-        }), { berkas: 0, buku: 0, bundle: 0 });
-
-        return { ...u, totalBerkas: s.berkas, totalBuku: s.buku, totalBundle: s.bundle };
+        const stats = await WorkLog.aggregate([
+          { $match: { userId: u._id, status: 'Selesai' } },
+          { $group: { _id: null, berkas: { $sum: '$berkas' }, buku: { $sum: '$buku' }, bundle: { $sum: '$bundle' } } }
+        ]);
+        const s = stats[0] || { berkas: 0, buku: 0, bundle: 0 };
+        return { ...u.toJSON(), totalBerkas: s.berkas, totalBuku: s.buku, totalBundle: s.bundle };
       }));
 
       return res.json({ success: true, data: enriched });
     }
 
     // User: return own data
-    res.json({ success: true, data: [req.user] });
+    res.json({ success: true, data: [req.user.toJSON()] });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -36,7 +32,7 @@ router.get('/', auth, async (req, res) => {
 // GET /api/users/:id
 router.get('/:id', auth, async (req, res) => {
   try {
-    const user = await db.users.findOne({ _id: req.params.id });
+    const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
 
     // Only admin can view other users
@@ -44,14 +40,13 @@ router.get('/:id', auth, async (req, res) => {
       return res.status(403).json({ success: false, message: 'Akses ditolak.' });
     }
 
-    const logs = await db.workLogs.find({ userId: user._id, status: 'Selesai' });
-    const s = logs.reduce((acc, log) => ({
-      berkas: acc.berkas + (log.berkas || 0),
-      buku: acc.buku + (log.buku || 0),
-      bundle: acc.bundle + (log.bundle || 0)
-    }), { berkas: 0, buku: 0, bundle: 0 });
+    const stats = await WorkLog.aggregate([
+      { $match: { userId: user._id, status: 'Selesai' } },
+      { $group: { _id: null, berkas: { $sum: '$berkas' }, buku: { $sum: '$buku' }, bundle: { $sum: '$bundle' } } }
+    ]);
+    const s = stats[0] || { berkas: 0, buku: 0, bundle: 0 };
 
-    res.json({ success: true, data: { ...user, totalBerkas: s.berkas, totalBuku: s.buku, totalBundle: s.bundle } });
+    res.json({ success: true, data: { ...user.toJSON(), totalBerkas: s.berkas, totalBuku: s.buku, totalBundle: s.bundle } });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -63,16 +58,14 @@ router.post('/', auth, adminOnly, async (req, res) => {
     const { name, email, password, instansi, status } = req.body;
     if (!name || !email) return res.status(400).json({ success: false, message: 'Nama dan email wajib diisi.' });
 
-    const existing = await db.users.findOne({ email });
+    const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ success: false, message: 'Email sudah terdaftar.' });
 
-    const newUser = {
-      name, email, password: password || 'magang123', instansi, status: status || 'Aktif', role: 'user',
-      createdAt: new Date(), updatedAt: new Date()
-    };
-    const user = await db.users.insert(newUser);
+    const user = await User.create({
+      name, email, password: password || 'magang123', instansi, status: status || 'Aktif', role: 'user'
+    });
 
-    res.status(201).json({ success: true, message: 'Peserta berhasil ditambahkan.', data: user });
+    res.status(201).json({ success: true, message: 'Peserta berhasil ditambahkan.', data: user.toJSON() });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -82,17 +75,16 @@ router.post('/', auth, adminOnly, async (req, res) => {
 router.put('/:id', auth, adminOnly, async (req, res) => {
   try {
     const { name, email, instansi, status } = req.body;
-    const user = await db.users.findOne({ _id: req.params.id });
+    const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
 
     if (name) user.name = name;
     if (email) user.email = email;
     if (instansi) user.instansi = instansi;
     if (status) user.status = status;
-    user.updatedAt = new Date();
 
-    await db.users.update({ _id: req.params.id }, user);
-    res.json({ success: true, message: 'Data peserta berhasil diupdate.', data: user });
+    await user.save();
+    res.json({ success: true, message: 'Data peserta berhasil diupdate.', data: user.toJSON() });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -106,12 +98,11 @@ router.put('/:id/reset-password', auth, adminOnly, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Password minimal 6 karakter.' });
     }
 
-    const user = await db.users.findOne({ _id: req.params.id });
+    const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
 
     user.password = newPassword;
-    user.updatedAt = new Date();
-    await db.users.update({ _id: req.params.id }, user);
+    await user.save();
 
     res.json({ success: true, message: 'Password berhasil direset.' });
   } catch (err) {
@@ -122,9 +113,8 @@ router.put('/:id/reset-password', auth, adminOnly, async (req, res) => {
 // DELETE /api/users/:id — admin delete user
 router.delete('/:id', auth, adminOnly, async (req, res) => {
   try {
-    // NeDB remove is deprecated in favor of remove usually, but nedb-promises uses remove(query, { multi: false })
-    const numRemoved = await db.users.remove({ _id: req.params.id }, { multi: false });
-    if (numRemoved === 0) return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
     res.json({ success: true, message: 'Peserta berhasil dihapus.' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

@@ -1,6 +1,5 @@
 const router = require('express').Router();
-// const Complaint = require('../models/Complaint');
-const db = require('../db');
+const Complaint = require('../models/Complaint');
 const { auth, adminOnly } = require('../middleware/auth');
 
 // GET /api/complaints — user: own, admin: all
@@ -10,16 +9,9 @@ router.get('/', auth, async (req, res) => {
     if (req.query.status) filter.status = req.query.status;
     if (req.query.prioritas) filter.prioritas = req.query.prioritas;
 
-    let complaints = await db.complaints.find(filter).sort({ createdAt: -1 });
-
-    // Manual Populate
-    complaints = await Promise.all(complaints.map(async (c) => {
-        const user = await db.users.findOne({ _id: c.userId });
-        return { 
-            ...c, 
-            userId: user ? { _id: user._id, name: user.name, email: user.email, instansi: user.instansi } : null 
-        };
-    }));
+    const complaints = await Complaint.find(filter)
+      .populate('userId', 'name email instansi')
+      .sort({ createdAt: -1 });
 
     res.json({ success: true, data: complaints });
   } catch (err) {
@@ -35,14 +27,11 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Judul dan deskripsi wajib diisi.' });
     }
 
-    const complaint = await db.complaints.insert({
+    const complaint = await Complaint.create({
       userId: req.userId,
       judul, kategori: kategori || 'Lainnya',
       prioritas: prioritas || 'Medium',
-      deskripsi,
-      status: 'Menunggu', // Default status if not in schema
-      createdAt: new Date(),
-      updatedAt: new Date()
+      deskripsi
     });
 
     res.status(201).json({ success: true, message: 'Laporan kendala berhasil dikirim.', data: complaint });
@@ -59,16 +48,8 @@ router.put('/:id/status', auth, adminOnly, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Status tidak valid.' });
     }
 
-    const complaint = await db.complaints.findOne({ _id: req.params.id });
-     if (!complaint) return res.status(404).json({ success: false, message: 'Laporan tidak ditemukan.' });
-    
-    complaint.status = status;
-    complaint.updatedAt = new Date();
-    await db.complaints.update({ _id: req.params.id }, complaint);
-
-    // populate for response
-    const user = await db.users.findOne({ _id: complaint.userId });
-    complaint.userId = user ? { _id: user._id, name: user.name, email: user.email } : null;
+    const complaint = await Complaint.findByIdAndUpdate(req.params.id, { status }, { new: true })
+      .populate('userId', 'name email');
     if (!complaint) return res.status(404).json({ success: false, message: 'Laporan tidak ditemukan.' });
 
     res.json({ success: true, message: `Status diubah ke "${status}".`, data: complaint });
@@ -80,10 +61,10 @@ router.put('/:id/status', auth, adminOnly, async (req, res) => {
 // GET /api/complaints/stats — admin: complaint stats
 router.get('/stats', auth, adminOnly, async (req, res) => {
   try {
-    const total = await db.complaints.count({});
-    const menunggu = await db.complaints.count({ status: 'Menunggu' });
-    const diproses = await db.complaints.count({ status: 'Diproses' });
-    const selesai = await db.complaints.count({ status: 'Selesai' });
+    const total = await Complaint.countDocuments();
+    const menunggu = await Complaint.countDocuments({ status: 'Menunggu' });
+    const diproses = await Complaint.countDocuments({ status: 'Diproses' });
+    const selesai = await Complaint.countDocuments({ status: 'Selesai' });
 
     res.json({ success: true, data: { total, menunggu, diproses, selesai } });
   } catch (err) {
