@@ -235,7 +235,7 @@ router.post('/', auth, adminOnly, async (req, res) => {
     });
 
   } catch (err) {
-    if (err.code === 11000) {
+    if (err && err.code === 11000) {
       return res.status(400).json({ success: false, message: 'Penilaian untuk user ini di bulan tersebut sudah ada.' });
     }
     res.status(500).json({ success: false, message: err.message });

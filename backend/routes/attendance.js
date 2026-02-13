@@ -136,7 +136,7 @@ router.post('/scan', auth, async (req, res) => {
 
     res.status(201).json({ success: true, message: 'Absensi berhasil!', data: attendance });
   } catch (err) {
-    if (err.code === 11000) {
+    if (err && err.code === 11000) {
       return res.status(400).json({ success: false, message: 'Anda sudah absen hari ini.' });
     }
     res.status(500).json({ success: false, message: err.message });
@@ -211,7 +211,7 @@ router.post('/photo-checkin', auth, upload.single('foto'), async (req, res) => {
 
     res.status(201).json({ success: true, message: 'Absensi masuk dengan foto berhasil!', data: attendance });
   } catch (err) {
-    if (err.code === 11000) {
+    if (err && err.code === 11000) {
       return res.status(400).json({ success: false, message: 'Anda sudah absen masuk hari ini.' });
     }
     res.status(500).json({ success: false, message: err.message });
