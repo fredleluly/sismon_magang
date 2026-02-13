@@ -253,7 +253,6 @@ const LogAktivitas: React.FC = () => {
                     <button 
                       className="custom-date-range-toggle" 
                       onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
-                      style={{ minWidth: 240 }} 
                     >
                       {dateFrom && dateTo 
                         ? `${dateFrom} - ${dateTo}` 

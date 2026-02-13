@@ -3178,6 +3178,137 @@ img {
   }
 }
 
+/* Tablet override for filter bar (Rekapitulasi, LogAktivitas) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .work-filter-bar {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .work-filter-left {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    flex: 1;
+  }
+
+  .filter-btn {
+    min-width: 0;
+  }
+
+  .month-picker-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex: 1;
+    min-width: 180px;
+  }
+
+  .month-picker-container .month-display {
+    flex: 1;
+    text-align: center;
+  }
+
+  .custom-date-range-container {
+    flex: 1;
+    min-width: 180px;
+  }
+
+  .custom-date-range-toggle {
+    width: 100%;
+    min-width: 0 !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .rekap-user-filter-container {
+    width: 100%;
+  }
+
+  .rekap-filter-actions {
+    width: auto;
+    align-self: flex-start;
+  }
+
+  .rekap-filter-actions .btn-export {
+    width: auto;
+  }
+
+  /* Custom Date Picker Dropdown - Tablet */
+  .custom-date-picker-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: auto;
+    min-width: 280px;
+    max-width: 320px;
+    width: 100%;
+    padding: 12px;
+  }
+
+  .custom-date-picker-header {
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+  }
+
+  .custom-date-picker-header span {
+    font-size: 12px;
+  }
+
+  .custom-calendars-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .calendar-month-picker {
+    width: 100%;
+  }
+
+  .calendar-weekdays {
+    gap: 2px;
+  }
+
+  .calendar-days {
+    gap: 2px;
+  }
+
+  .calendar-weekday {
+    font-size: 10px;
+  }
+
+  .calendar-cell {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+  }
+
+  .custom-date-range-info {
+    padding: 8px;
+    margin-bottom: 8px;
+  }
+
+  .custom-date-range-info p {
+    font-size: 11px;
+  }
+
+  .custom-date-picker-footer {
+    gap: 8px;
+  }
+
+  .custom-date-apply-btn,
+  .custom-date-cancel-btn {
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+}
+
 /* ============================================
    ADMIN DASHBOARD & ATTENDANCE RESPONSIVE
    ============================================ */
