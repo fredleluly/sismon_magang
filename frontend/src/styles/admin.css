@@ -3051,7 +3051,7 @@ img {
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-md);
   padding: 0 8px;
-  height: 32px;
+  height: 45px;
   gap: 4px;
   flex: 1;
   min-width: 150px;
@@ -3092,7 +3092,7 @@ img {
 }
 
 .custom-date-range-toggle {
-  min-width: 240px;
+  min-width: 320px;
 }
 
 .rekap-user-filter-container {
@@ -3559,7 +3559,7 @@ img {
   .month-picker-container {
     width: 100%;
     justify-content: space-between;
-    height: 36px;
+    height: 40px;
     padding: 0 8px;
     flex: 1;
   }
