@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Chart, registerables } from "chart.js";
-import { exportExcel } from '../../utils/excelExport';
+import { exportExcel } from "../../utils/excelExport";
 import {
   DashboardAPI,
   getToken,
@@ -52,9 +52,9 @@ const AdminDashboard: React.FC = () => {
 
   // Filter States
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [filterType, setFilterType] = useState<'bulanan' | 'custom'>('bulanan');
-  const [dateRangeStart, setDateRangeStart] = useState<string>('');
-  const [dateRangeEnd, setDateRangeEnd] = useState<string>('');
+  const [filterType, setFilterType] = useState<"bulanan" | "custom">("bulanan");
+  const [dateRangeStart, setDateRangeStart] = useState<string>("");
+  const [dateRangeEnd, setDateRangeEnd] = useState<string>("");
   const [isSelectingDateRange, setIsSelectingDateRange] = useState(false);
   const [datePickerMonth, setDatePickerMonth] = useState(new Date());
   const [isSelectingStart, setIsSelectingStart] = useState(true);
@@ -62,20 +62,20 @@ const AdminDashboard: React.FC = () => {
   // Helper to get date string YYYY-MM-DD
   const toDateString = (date: Date) => {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   };
 
   const loadDashboardData = async () => {
-    let q = '';
-    if (filterType === 'bulanan') {
+    let q = "";
+    if (filterType === "bulanan") {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
       const start = new Date(year, month, 1);
       const end = new Date(year, month + 1, 0);
       q = `?startDate=${toDateString(start)}&endDate=${toDateString(end)}`;
-    } else if (filterType === 'custom' && dateRangeStart && dateRangeEnd) {
+    } else if (filterType === "custom" && dateRangeStart && dateRangeEnd) {
       q = `?startDate=${dateRangeStart}&endDate=${dateRangeEnd}`;
     }
 
@@ -102,13 +102,19 @@ const AdminDashboard: React.FC = () => {
     };
   }, []);
 
-  const handleFilterChange = (type: 'bulanan' | 'custom') => {
+  const handleFilterChange = (type: "bulanan" | "custom") => {
     setFilterType(type);
-    if(type === 'bulanan') setCurrentDate(new Date());
+    if (type === "bulanan") setCurrentDate(new Date());
   };
 
-  const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
-  const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+  const handlePrevMonth = () =>
+    setCurrentDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1),
+    );
+  const handleNextMonth = () =>
+    setCurrentDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1),
+    );
 
   const loadComplaints = async () => {
     try {
@@ -163,32 +169,78 @@ const AdminDashboard: React.FC = () => {
     }
 
     try {
-      const todayStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      const todayStr = new Date().toLocaleDateString("id-ID", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
       const sheets: any[] = [];
 
       // Sheet 1: Ringkasan Dashboard
       sheets.push({
-        sheetName: 'Ringkasan',
-        title: 'RINGKASAN DASHBOARD',
-        subtitle: 'Laporan Monitoring Peserta Magang',
-        infoLines: [
-          `Tanggal Cetak: ${todayStr}`,
-        ],
+        sheetName: "Ringkasan",
+        title: "RINGKASAN DASHBOARD",
+        subtitle: "Laporan Monitoring Peserta Magang",
+        infoLines: [`Tanggal Cetak: ${todayStr}`],
         columns: [
-          { header: 'No', key: 'no', width: 6, type: 'number' as const },
-          { header: 'Indikator', key: 'indikator', width: 35 },
-          { header: 'Nilai', key: 'nilai', width: 20, type: 'number' as const },
-          { header: 'Keterangan', key: 'keterangan', width: 30 },
+          { header: "No", key: "no", width: 6, type: "number" as const },
+          { header: "Indikator", key: "indikator", width: 35 },
+          { header: "Nilai", key: "nilai", width: 20, type: "number" as const },
+          { header: "Keterangan", key: "keterangan", width: 30 },
         ],
         data: [
-          { no: 1, indikator: 'Total Peserta Magang', nilai: data.totalPeserta || 0, keterangan: 'Peserta aktif' },
-          { no: 2, indikator: 'Total Kendala/Keluhan', nilai: totalComplaints, keterangan: 'Laporan masuk' },
-          { no: 3, indikator: 'Rata-rata Produktivitas', nilai: data.avgProductivity || 0, keterangan: 'Item/hari per orang' },
-          { no: 4, indikator: 'Tingkat Kehadiran Hari Ini', nilai: data.attendanceRate || 0, keterangan: `${data.todayAttendance || 0}/${data.totalPeserta || 0} hadir` },
-          { no: 5, indikator: 'Total Berkas', nilai: data.totalBerkas || 0, keterangan: 'Keseluruhan' },
-          { no: 6, indikator: 'Total Buku', nilai: data.totalBuku || 0, keterangan: 'Keseluruhan' },
-          { no: 7, indikator: 'Total Bundle', nilai: data.totalBundle || 0, keterangan: 'Keseluruhan' },
-          { no: 8, indikator: 'Grand Total Item', nilai: (data.totalBerkas || 0) + (data.totalBuku || 0) + (data.totalBundle || 0), keterangan: 'Berkas + Buku + Bundle' },
+          {
+            no: 1,
+            indikator: "Total Peserta Magang",
+            nilai: data.totalPeserta || 0,
+            keterangan: "Peserta aktif",
+          },
+          {
+            no: 2,
+            indikator: "Total Kendala/Keluhan",
+            nilai: totalComplaints,
+            keterangan: "Laporan masuk",
+          },
+          {
+            no: 3,
+            indikator: "Rata-rata Produktivitas",
+            nilai: data.avgProductivity || 0,
+            keterangan: "Item/hari per orang",
+          },
+          {
+            no: 4,
+            indikator: "Tingkat Kehadiran Hari Ini",
+            nilai: data.attendanceRate || 0,
+            keterangan: `${data.todayAttendance || 0}/${data.totalPeserta || 0} hadir`,
+          },
+          {
+            no: 5,
+            indikator: "Total Berkas",
+            nilai: data.totalBerkas || 0,
+            keterangan: "Keseluruhan",
+          },
+          {
+            no: 6,
+            indikator: "Total Buku",
+            nilai: data.totalBuku || 0,
+            keterangan: "Keseluruhan",
+          },
+          {
+            no: 7,
+            indikator: "Total Bundle",
+            nilai: data.totalBundle || 0,
+            keterangan: "Keseluruhan",
+          },
+          {
+            no: 8,
+            indikator: "Grand Total Item",
+            nilai:
+              (data.totalBerkas || 0) +
+              (data.totalBuku || 0) +
+              (data.totalBundle || 0),
+            keterangan: "Berkas + Buku + Bundle",
+          },
         ],
       });
 
@@ -200,31 +252,63 @@ const AdminDashboard: React.FC = () => {
         const totalBundle = wp.reduce((s, w) => s + (w.bundle || 0), 0);
 
         sheets.push({
-          sheetName: 'Progres Mingguan',
-          title: 'PROGRES PEKERJAAN MINGGUAN',
-          subtitle: 'Tren penyelesaian tugas per kategori',
+          sheetName: "Progres Mingguan",
+          title: "PROGRES PEKERJAAN MINGGUAN",
+          subtitle: "Tren penyelesaian tugas per kategori",
           infoLines: [
             `Periode: ${wp.length} hari terakhir`,
             `Total: ${totalBerkas + totalBuku + totalBundle} item`,
           ],
           columns: [
-            { header: 'No', key: 'no', width: 6, type: 'number' as const },
-            { header: 'Tanggal', key: 'tanggal', width: 22, type: 'date' as const },
-            { header: 'Berkas', key: 'berkas', width: 12, type: 'number' as const },
-            { header: 'Buku', key: 'buku', width: 12, type: 'number' as const },
-            { header: 'Bundle', key: 'bundle', width: 12, type: 'number' as const },
-            { header: 'Total', key: 'total', width: 12, type: 'number' as const },
+            { header: "No", key: "no", width: 6, type: "number" as const },
+            {
+              header: "Tanggal",
+              key: "tanggal",
+              width: 22,
+              type: "date" as const,
+            },
+            {
+              header: "Berkas",
+              key: "berkas",
+              width: 12,
+              type: "number" as const,
+            },
+            { header: "Buku", key: "buku", width: 12, type: "number" as const },
+            {
+              header: "Bundle",
+              key: "bundle",
+              width: 12,
+              type: "number" as const,
+            },
+            {
+              header: "Total",
+              key: "total",
+              width: 12,
+              type: "number" as const,
+            },
           ],
           data: wp.map((w, i) => ({
             no: i + 1,
-            tanggal: new Date(w._id).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+            tanggal: new Date(w._id).toLocaleDateString("id-ID", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            }),
             berkas: w.berkas || 0,
             buku: w.buku || 0,
             bundle: w.bundle || 0,
             total: (w.berkas || 0) + (w.buku || 0) + (w.bundle || 0),
           })),
-          summaryRow: { no: '', tanggal: '', berkas: totalBerkas, buku: totalBuku, bundle: totalBundle, total: totalBerkas + totalBuku + totalBundle },
-          summaryLabel: 'TOTAL',
+          summaryRow: {
+            no: "",
+            tanggal: "",
+            berkas: totalBerkas,
+            buku: totalBuku,
+            bundle: totalBundle,
+            total: totalBerkas + totalBuku + totalBundle,
+          },
+          summaryLabel: "TOTAL",
         });
       }
 
@@ -234,49 +318,65 @@ const AdminDashboard: React.FC = () => {
         const totalCount = wd.reduce((s, w) => s + (w.count || 0), 0);
 
         sheets.push({
-          sheetName: 'Distribusi Tugas',
-          title: 'DISTRIBUSI JENIS PEKERJAAN',
-          subtitle: 'Sebaran tugas berdasarkan kategori',
+          sheetName: "Distribusi Tugas",
+          title: "DISTRIBUSI JENIS PEKERJAAN",
+          subtitle: "Sebaran tugas berdasarkan kategori",
           infoLines: [
             `Total Jenis: ${wd.length} kategori`,
             `Total Pekerjaan: ${totalCount} item`,
           ],
           columns: [
-            { header: 'No', key: 'no', width: 6, type: 'number' as const },
-            { header: 'Jenis Pekerjaan', key: 'jenis', width: 30 },
-            { header: 'Jumlah', key: 'jumlah', width: 14, type: 'number' as const },
-            { header: 'Persentase', key: 'persen', width: 14 },
+            { header: "No", key: "no", width: 6, type: "number" as const },
+            { header: "Jenis Pekerjaan", key: "jenis", width: 30 },
+            {
+              header: "Jumlah",
+              key: "jumlah",
+              width: 14,
+              type: "number" as const,
+            },
+            { header: "Persentase", key: "persen", width: 14 },
           ],
           data: wd.map((w, i) => ({
             no: i + 1,
-            jenis: w._id || 'Lainnya',
+            jenis: w._id || "Lainnya",
             jumlah: w.count || 0,
-            persen: totalCount > 0 ? ((w.count || 0) / totalCount * 100).toFixed(1) + '%' : '0%',
+            persen:
+              totalCount > 0
+                ? (((w.count || 0) / totalCount) * 100).toFixed(1) + "%"
+                : "0%",
           })),
-          summaryRow: { no: '', jenis: '', jumlah: totalCount, persen: '100%' },
-          summaryLabel: 'TOTAL',
+          summaryRow: { no: "", jenis: "", jumlah: totalCount, persen: "100%" },
+          summaryLabel: "TOTAL",
         });
       }
 
       // Sheet 4: Top Peserta
       if (data.topPerformers && data.topPerformers.length > 0) {
         sheets.push({
-          sheetName: 'Top Peserta',
-          title: 'PERINGKAT PESERTA TERBAIK',
-          subtitle: 'Berdasarkan total item yang diselesaikan',
-          infoLines: [
-            `Total: ${data.topPerformers.length} peserta`,
-          ],
+          sheetName: "Top Peserta",
+          title: "PERINGKAT PESERTA TERBAIK",
+          subtitle: "Berdasarkan total item yang diselesaikan",
+          infoLines: [`Total: ${data.topPerformers.length} peserta`],
           columns: [
-            { header: 'Peringkat', key: 'rank', width: 12, type: 'number' as const },
-            { header: 'Nama Peserta', key: 'nama', width: 28 },
-            { header: 'Institusi', key: 'instansi', width: 30 },
-            { header: 'Total Item', key: 'totalItems', width: 14, type: 'number' as const },
+            {
+              header: "Peringkat",
+              key: "rank",
+              width: 12,
+              type: "number" as const,
+            },
+            { header: "Nama Peserta", key: "nama", width: 28 },
+            { header: "Institusi", key: "instansi", width: 30 },
+            {
+              header: "Total Item",
+              key: "totalItems",
+              width: 14,
+              type: "number" as const,
+            },
           ],
           data: data.topPerformers.map((p, i) => ({
             rank: i + 1,
-            nama: p.name || '-',
-            instansi: p.instansi || '-',
+            nama: p.name || "-",
+            instansi: p.instansi || "-",
             totalItems: p.totalItems || 0,
           })),
         });
@@ -288,28 +388,28 @@ const AdminDashboard: React.FC = () => {
         const keluar = attendanceList.filter((r: any) => r.jamKeluar).length;
 
         sheets.push({
-          sheetName: 'Kehadiran Hari Ini',
-          title: 'DAFTAR KEHADIRAN HARI INI',
+          sheetName: "Kehadiran Hari Ini",
+          title: "DAFTAR KEHADIRAN HARI INI",
           subtitle: todayStr,
           infoLines: [
             `Total Hadir: ${attendanceList.length} peserta`,
             `Aktif: ${aktif} | Sudah Keluar: ${keluar}`,
           ],
           columns: [
-            { header: 'No', key: 'no', width: 6, type: 'number' as const },
-            { header: 'Nama Peserta', key: 'nama', width: 28 },
-            { header: 'Institusi', key: 'instansi', width: 30 },
-            { header: 'Jam Masuk', key: 'jamMasuk', width: 14 },
-            { header: 'Jam Keluar', key: 'jamKeluar', width: 14 },
-            { header: 'Status', key: 'status', width: 14 },
+            { header: "No", key: "no", width: 6, type: "number" as const },
+            { header: "Nama Peserta", key: "nama", width: 28 },
+            { header: "Institusi", key: "instansi", width: 30 },
+            { header: "Jam Masuk", key: "jamMasuk", width: 14 },
+            { header: "Jam Keluar", key: "jamKeluar", width: 14 },
+            { header: "Status", key: "status", width: 14 },
           ],
           data: attendanceList.map((r: any, i: number) => ({
             no: i + 1,
-            nama: r.userId?.name || 'Unknown',
-            instansi: r.userId?.instansi || '-',
-            jamMasuk: r.jamMasuk || '-',
-            jamKeluar: r.jamKeluar || 'Belum Keluar',
-            status: r.jamKeluar ? 'Selesai' : 'Aktif',
+            nama: r.userId?.name || "Unknown",
+            instansi: r.userId?.instansi || "-",
+            jamMasuk: r.jamMasuk || "-",
+            jamKeluar: r.jamKeluar || "Belum Keluar",
+            status: r.jamKeluar ? "Selesai" : "Aktif",
           })),
         });
       }
@@ -319,45 +419,79 @@ const AdminDashboard: React.FC = () => {
         const ra = data.recentActivity;
         const totalB = ra.reduce((s: number, a: any) => s + (a.berkas || 0), 0);
         const totalK = ra.reduce((s: number, a: any) => s + (a.buku || 0), 0);
-        const totalBd = ra.reduce((s: number, a: any) => s + (a.bundle || 0), 0);
+        const totalBd = ra.reduce(
+          (s: number, a: any) => s + (a.bundle || 0),
+          0,
+        );
 
         sheets.push({
-          sheetName: 'Aktivitas Terbaru',
-          title: 'AKTIVITAS PEKERJAAN TERBARU',
-          subtitle: 'Update terkini dari peserta magang',
+          sheetName: "Aktivitas Terbaru",
+          title: "AKTIVITAS PEKERJAAN TERBARU",
+          subtitle: "Update terkini dari peserta magang",
           infoLines: [
             `Total: ${ra.length} aktivitas`,
             `Berkas: ${totalB} | Buku: ${totalK} | Bundle: ${totalBd}`,
           ],
           columns: [
-            { header: 'No', key: 'no', width: 6, type: 'number' as const },
-            { header: 'Nama Peserta', key: 'nama', width: 24 },
-            { header: 'Jenis Pekerjaan', key: 'jenis', width: 22 },
-            { header: 'Berkas', key: 'berkas', width: 10, type: 'number' as const },
-            { header: 'Buku', key: 'buku', width: 10, type: 'number' as const },
-            { header: 'Bundle', key: 'bundle', width: 10, type: 'number' as const },
-            { header: 'Tanggal', key: 'tanggal', width: 22, type: 'date' as const },
-            { header: 'Keterangan', key: 'keterangan', width: 28 },
+            { header: "No", key: "no", width: 6, type: "number" as const },
+            { header: "Nama Peserta", key: "nama", width: 24 },
+            { header: "Jenis Pekerjaan", key: "jenis", width: 22 },
+            {
+              header: "Berkas",
+              key: "berkas",
+              width: 10,
+              type: "number" as const,
+            },
+            { header: "Buku", key: "buku", width: 10, type: "number" as const },
+            {
+              header: "Bundle",
+              key: "bundle",
+              width: 10,
+              type: "number" as const,
+            },
+            {
+              header: "Tanggal",
+              key: "tanggal",
+              width: 22,
+              type: "date" as const,
+            },
+            { header: "Keterangan", key: "keterangan", width: 28 },
           ],
           data: ra.map((a: any, i: number) => ({
             no: i + 1,
-            nama: typeof a.userId === 'string' ? 'Unknown' : a.userId?.name || 'Unknown',
-            jenis: a.jenis || '-',
+            nama:
+              typeof a.userId === "string"
+                ? "Unknown"
+                : a.userId?.name || "Unknown",
+            jenis: a.jenis || "-",
             berkas: a.berkas || 0,
             buku: a.buku || 0,
             bundle: a.bundle || 0,
-            tanggal: new Date(a.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
-            keterangan: a.keterangan || '-',
+            tanggal: new Date(a.createdAt).toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            }),
+            keterangan: a.keterangan || "-",
           })),
-          summaryRow: { no: '', nama: '', jenis: '', berkas: totalB, buku: totalK, bundle: totalBd, tanggal: '', keterangan: '' },
-          summaryLabel: 'TOTAL',
+          summaryRow: {
+            no: "",
+            nama: "",
+            jenis: "",
+            berkas: totalB,
+            buku: totalK,
+            bundle: totalBd,
+            tanggal: "",
+            keterangan: "",
+          },
+          summaryLabel: "TOTAL",
         });
       }
 
       await exportExcel({
-        fileName: 'Dashboard_Monitoring',
-        companyName: 'SISMON Magang',
-        creator: 'Admin Dashboard',
+        fileName: "Dashboard_Monitoring",
+        companyName: "SISMON Magang",
+        creator: "Admin Dashboard",
         sheets,
       });
       showToast("Data berhasil diekspor ke Excel", "success");
@@ -376,10 +510,16 @@ const AdminDashboard: React.FC = () => {
     if (weeklyRef.current) {
       const wp = data.weeklyProgress || [];
       const labels = wp.map((w) =>
-        new Date(w._id).toLocaleDateString("id-ID", { weekday: "short", day: 'numeric', month: 'short' }),
+        new Date(w._id).toLocaleDateString("id-ID", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+        }),
       );
       // Backend now sends 'total' in weeklyProgress for Rekardus
-      const datasetData = wp.map((w) => (w as any).total || (w.berkas + w.buku + w.bundle));
+      const datasetData = wp.map(
+        (w) => (w as any).total || w.berkas + w.buku + w.bundle,
+      );
 
       const c = new Chart(weeklyRef.current, {
         type: "line",
@@ -434,7 +574,11 @@ const AdminDashboard: React.FC = () => {
 
     // Donut chart — Register totals (berkas, buku, bundle)
     if (donutRef.current) {
-      const regStats = (data as any).registerStats || { berkas: 0, buku: 0, bundle: 0 };
+      const regStats = (data as any).registerStats || {
+        berkas: 0,
+        buku: 0,
+        bundle: 0,
+      };
       const totalBerkas = regStats.berkas || 0;
       const totalBuku = regStats.buku || 0;
       const totalBundle = regStats.bundle || 0;
@@ -516,167 +660,363 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <>
-      <div className="page-header-row" style={{ alignItems: 'center' }}>
+      <div className="page-header-row">
         <div className="page-header">
           <h1>Dashboard Monitoring</h1>
           <p>Overview produktivitas dan kehadiran peserta magang</p>
         </div>
-        
+
         <div className="dashboard-filter-bar">
           {/* Filter UI */}
           <div className="dashboard-filter-group">
-            <button 
-              onClick={() => handleFilterChange('bulanan')}
-              className={`dashboard-filter-btn ${filterType === 'bulanan' ? 'active' : ''}`}
+            <button
+              onClick={() => handleFilterChange("bulanan")}
+              className={`dashboard-filter-btn ${filterType === "bulanan" ? "active" : ""}`}
             >
               Bulanan
             </button>
-            <button 
+            <button
               onClick={() => {
-                handleFilterChange('custom');
-                if(!isSelectingDateRange) setIsSelectingStart(true);
+                handleFilterChange("custom");
+                if (!isSelectingDateRange) setIsSelectingStart(true);
               }}
-              className={`dashboard-filter-btn ${filterType === 'custom' ? 'active' : ''}`}
+              className={`dashboard-filter-btn ${filterType === "custom" ? "active" : ""}`}
             >
               Custom
             </button>
           </div>
 
-          {filterType === 'bulanan' ? (
-             <div className="month-picker-container">
-               <button onClick={handlePrevMonth} className="month-nav-btn">
-                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-               </button>
-               <span className="month-display">
-                 {currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
-               </span>
-               <button onClick={handleNextMonth} className="month-nav-btn">
-                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-               </button>
-             </div>
-          ) : (
-            <div className="dashboard-custom-date">
-              <button 
-                onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
-                className="dashboard-custom-trigger"
-              >
-                {dateRangeStart && dateRangeEnd ? `${dateRangeStart} - ${dateRangeEnd}` : 'Pilih Tanggal'}
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-              </button>
-              
-              {isSelectingDateRange && (
-                <div className="dashboard-date-popup">
-                  <div style={{ marginBottom: 12 }}>
-                    <p style={{ fontSize: 12, color: 'var(--gray-500)', marginBottom: 4 }}>
-                      {isSelectingStart ? 'Pilih Tanggal Awal' : 'Pilih Tanggal Akhir'}
-                    </p>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>
-                      {dateRangeStart || '-'} s/d {dateRangeEnd || '-'}
-                    </div>
-                  </div>
-                  
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <button onClick={() => setDatePickerMonth(new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth()-1))} style={{ padding: 4 }}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                    <span style={{ fontSize: 14, fontWeight: 600 }}>{datePickerMonth.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</span>
-                    <button onClick={() => setDatePickerMonth(new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth()+1))} style={{ padding: 4 }}><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                  </div>
+          <div className="dashboard-month-export-row">
+            {filterType === "bulanan" ? (
+              <div className="month-picker-container">
+                <button onClick={handlePrevMonth} className="month-nav-btn">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                </button>
+                <span className="month-display">
+                  {currentDate.toLocaleDateString("id-ID", {
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </span>
+                <button onClick={handleNextMonth} className="month-nav-btn">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <div className="dashboard-custom-date">
+                <button
+                  onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
+                  className="dashboard-custom-trigger"
+                >
+                  {dateRangeStart && dateRangeEnd
+                    ? `${dateRangeStart} - ${dateRangeEnd}`
+                    : "Pilih Tanggal"}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 8 }}>
-                    {['M','S','S','R','K','J','S'].map(d => <div key={d} style={{ fontSize: 11, textAlign: 'center', color: 'var(--gray-400)', padding: 4 }}>{d}</div>)}
-                    {Array.from({ length: new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth(), 1).getDay() }).map((_, i) => <div key={`e-${i}`} />)}
-                    {Array.from({ length: new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth()+1, 0).getDate() }).map((_, i) => {
-                      const d = i + 1;
-                      const dateStr = `${datePickerMonth.getFullYear()}-${String(datePickerMonth.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                      const isSelected = dateStr === dateRangeStart || dateStr === dateRangeEnd;
-                      const inRange = dateRangeStart && dateRangeEnd && dateStr > dateRangeStart && dateStr < dateRangeEnd;
-                      
-                      return (
-                        <div 
-                          key={d} 
-                          onClick={() => {
-                            if (isSelectingStart) {
-                              setDateRangeStart(dateStr);
-                              setDateRangeEnd('');
-                              setIsSelectingStart(false);
-                            } else {
-                              if (dateStr >= dateRangeStart) {
-                                setDateRangeEnd(dateStr);
-                                setIsSelectingDateRange(false);
-                                setIsSelectingStart(true);
-                              } else {
-                                showToast('Tanggal akhir harus lebih besar', 'error');
-                              }
-                            }
-                          }}
+                {isSelectingDateRange && (
+                  <div className="dashboard-date-popup">
+                    <div style={{ marginBottom: 12 }}>
+                      <p
+                        style={{
+                          fontSize: 12,
+                          color: "var(--gray-500)",
+                          marginBottom: 4,
+                        }}
+                      >
+                        {isSelectingStart
+                          ? "Pilih Tanggal Awal"
+                          : "Pilih Tanggal Akhir"}
+                      </p>
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>
+                        {dateRangeStart || "-"} s/d {dateRangeEnd || "-"}
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 12,
+                      }}
+                    >
+                      <button
+                        onClick={() =>
+                          setDatePickerMonth(
+                            new Date(
+                              datePickerMonth.getFullYear(),
+                              datePickerMonth.getMonth() - 1,
+                            ),
+                          )
+                        }
+                        style={{ padding: 4 }}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                      </button>
+                      <span style={{ fontSize: 14, fontWeight: 600 }}>
+                        {datePickerMonth.toLocaleDateString("id-ID", {
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </span>
+                      <button
+                        onClick={() =>
+                          setDatePickerMonth(
+                            new Date(
+                              datePickerMonth.getFullYear(),
+                              datePickerMonth.getMonth() + 1,
+                            ),
+                          )
+                        }
+                        style={{ padding: 4 }}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(7, 1fr)",
+                        gap: 2,
+                        marginBottom: 8,
+                      }}
+                    >
+                      {["M", "S", "S", "R", "K", "J", "S"].map((d) => (
+                        <div
+                          key={d}
                           style={{
-                            padding: 6, textAlign: 'center', fontSize: 13, cursor: 'pointer', borderRadius: 4,
-                            background: isSelected ? 'var(--primary-500)' : inRange ? 'var(--primary-50)' : 'transparent',
-                            color: isSelected ? 'white' : 'inherit'
+                            fontSize: 11,
+                            textAlign: "center",
+                            color: "var(--gray-400)",
+                            padding: 4,
                           }}
                         >
                           {d}
                         </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+                      ))}
+                      {Array.from({
+                        length: new Date(
+                          datePickerMonth.getFullYear(),
+                          datePickerMonth.getMonth(),
+                          1,
+                        ).getDay(),
+                      }).map((_, i) => (
+                        <div key={`e-${i}`} />
+                      ))}
+                      {Array.from({
+                        length: new Date(
+                          datePickerMonth.getFullYear(),
+                          datePickerMonth.getMonth() + 1,
+                          0,
+                        ).getDate(),
+                      }).map((_, i) => {
+                        const d = i + 1;
+                        const dateStr = `${datePickerMonth.getFullYear()}-${String(datePickerMonth.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+                        const isSelected =
+                          dateStr === dateRangeStart ||
+                          dateStr === dateRangeEnd;
+                        const inRange =
+                          dateRangeStart &&
+                          dateRangeEnd &&
+                          dateStr > dateRangeStart &&
+                          dateStr < dateRangeEnd;
 
-          <button
-            className="btn-export"
-            onClick={exportToExcel}
-            title="Ekspor ke Excel"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
+                        return (
+                          <div
+                            key={d}
+                            onClick={() => {
+                              if (isSelectingStart) {
+                                setDateRangeStart(dateStr);
+                                setDateRangeEnd("");
+                                setIsSelectingStart(false);
+                              } else {
+                                if (dateStr >= dateRangeStart) {
+                                  setDateRangeEnd(dateStr);
+                                  setIsSelectingDateRange(false);
+                                  setIsSelectingStart(true);
+                                } else {
+                                  showToast(
+                                    "Tanggal akhir harus lebih besar",
+                                    "error",
+                                  );
+                                }
+                              }
+                            }}
+                            style={{
+                              padding: 6,
+                              textAlign: "center",
+                              fontSize: 13,
+                              cursor: "pointer",
+                              borderRadius: 4,
+                              background: isSelected
+                                ? "var(--primary-500)"
+                                : inRange
+                                  ? "var(--primary-50)"
+                                  : "transparent",
+                              color: isSelected ? "white" : "inherit",
+                            }}
+                          >
+                            {d}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button
+              className="btn-export"
+              onClick={exportToExcel}
+              title="Ekspor ke Excel"
             >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Ekspor Excel
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Ekspor Excel
+            </button>
+          </div>
         </div>
       </div>
       <div className="admin-stats-grid">
         <div className="admin-stat-card">
           <div className="stat-info">
             <div className="stat-label">Total Sortir</div>
-            <div className="stat-value" ref={el => el && data && animateCounter(el, data.totalSortir || 0)}>0</div>
+            <div
+              className="stat-value"
+              ref={(el) =>
+                el && data && animateCounter(el, data.totalSortir || 0)
+              }
+            >
+              0
+            </div>
             <div className="stat-change">Item selesai</div>
           </div>
         </div>
         <div className="admin-stat-card">
           <div className="stat-info">
             <div className="stat-label">Total Pencopotan Steples</div>
-            <div className="stat-value" ref={el => el && data && animateCounter(el, data.totalSteples || 0)}>0</div>
+            <div
+              className="stat-value"
+              ref={(el) =>
+                el && data && animateCounter(el, data.totalSteples || 0)
+              }
+            >
+              0
+            </div>
             <div className="stat-change">Item selesai</div>
           </div>
         </div>
         <div className="admin-stat-card">
           <div className="stat-info">
             <div className="stat-label">Total Scanning</div>
-            <div className="stat-value" ref={el => el && data && animateCounter(el, data.totalScanning || 0)}>0</div>
+            <div
+              className="stat-value"
+              ref={(el) =>
+                el && data && animateCounter(el, data.totalScanning || 0)
+              }
+            >
+              0
+            </div>
             <div className="stat-change">Item selesai</div>
           </div>
         </div>
         <div className="admin-stat-card">
           <div className="stat-info">
             <div className="stat-label">Total Register</div>
-            <div className="stat-value" ref={el => el && data && animateCounter(el, data.totalRegister || 0)}>0</div>
+            <div
+              className="stat-value"
+              ref={(el) =>
+                el && data && animateCounter(el, data.totalRegister || 0)
+              }
+            >
+              0
+            </div>
             <div className="stat-change">Item selesai</div>
           </div>
         </div>
         <div className="admin-stat-card">
           <div className="stat-info">
             <div className="stat-label">Total Stikering</div>
-            <div className="stat-value" ref={el => el && data && animateCounter(el, data.totalStikering || 0)}>0</div>
+            <div
+              className="stat-value"
+              ref={(el) =>
+                el && data && animateCounter(el, data.totalStikering || 0)
+              }
+            >
+              0
+            </div>
             <div className="stat-change">Item selesai</div>
           </div>
         </div>
@@ -686,7 +1026,10 @@ const AdminDashboard: React.FC = () => {
         <div className="chart-card">
           <div className="chart-header">
             <h3>Grafik Rekardus</h3>
-            <p>Total Rekardus: <strong>{(data.totalRekardus || 0).toLocaleString()}</strong> item</p>
+            <p>
+              Total Rekardus:{" "}
+              <strong>{(data.totalRekardus || 0).toLocaleString()}</strong> item
+            </p>
           </div>
           <div className="chart-canvas-wrapper">
             <canvas ref={weeklyRef} />
