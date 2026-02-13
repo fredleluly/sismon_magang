@@ -1631,6 +1631,7 @@ img {
   padding: 36px;
   border: 1px solid rgba(226, 232, 240, 0.6);
   box-shadow: var(--shadow-card);
+  margin-top: 24px;
   animation: slideUp 0.5s ease 0.2s both;
 }
 .profile-info-card h3 {
