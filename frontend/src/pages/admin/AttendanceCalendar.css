@@ -428,6 +428,11 @@
   color: #b91c1c;
 }
 
+.status-libur {
+  background: #fef9c3;
+  color: #a16207;
+}
+
 .status-hari-libur {
   background: #fef3c7;
   color: #d97706;
@@ -769,7 +774,7 @@
   }
 
   .summary-stats {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
     margin-top: 18px;
     padding-top: 18px;
@@ -802,7 +807,7 @@
   }
 
   .summary-stats {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(1, 1fr);
     gap: 12px;
   }
 
@@ -988,7 +993,7 @@
   }
 
   .summary-stats {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 10px;
   }
 
