@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 interface AdminSidebarProps {
   onLogout: () => void;
@@ -9,6 +10,13 @@ interface AdminSidebarProps {
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ onLogout, isOpen, onClose }) => {
   const location = useLocation();
+  const { user } = useAuth();
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('User data in sidebar:', user);
+    console.log('User role:', user?.role);
+  }, [user]);
 
   const menuItems = [
     {
@@ -88,6 +96,16 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ onLogout, isOpen, onClose }
       ),
     },
     {
+      path: '/admin/manajemen-penilaian',
+      label: 'Manajemen Penilaian',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 5v14M5 12h14" />
+          <circle cx="12" cy="12" r="10" />
+        </svg>
+      ),
+    },
+    {
       path: '/admin/ranking',
       label: 'Ranking',
       icon: (
@@ -133,22 +151,31 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ onLogout, isOpen, onClose }
           <div className="brand-text">
             <span className="brand-name">PLN ICON+</span>
             <span className="brand-sub">Admin Panel</span>
+            <span style={{ fontSize: '10px', color: '#94a3b8', marginTop: '4px', display: 'block' }}>
+              Role: {user?.role || 'loading...'}
+            </span>
           </div>
         </div>
         <nav className="sidebar-menu">
-          {menuItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`menu-item${location.pathname === item.path ? ' active' : ''}`}
-              onClick={() => {
-                if (window.innerWidth <= 768) onClose();
-              }}
-            >
-              {item.icon}
-              {item.label}
-            </Link>
-          ))}
+          {menuItems.map((item) => {
+            // Jika path adalah manajemen-penilaian, hanya tampilkan untuk superadmin
+            if (item.path === '/admin/manajemen-penilaian' && user?.role !== 'superadmin') {
+              return null;
+            }
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`menu-item${location.pathname === item.path ? ' active' : ''}`}
+                onClick={() => {
+                  if (window.innerWidth <= 768) onClose();
+                }}
+              >
+                {item.icon}
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
         <div className="sidebar-footer">
           <a className="menu-item" onClick={onLogout}>

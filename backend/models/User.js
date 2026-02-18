@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
   username: { type: String, unique: true, sparse: true, trim: true, lowercase: true },
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true, minlength: 6 },
-  role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  role: { type: String, enum: ['user', 'admin', 'superadmin'], default: 'user' },
   instansi: { type: String, default: '' },
   jabatan: { type: String, default: '' },
   status: { type: String, enum: ['Aktif', 'Nonaktif'], default: 'Aktif' },

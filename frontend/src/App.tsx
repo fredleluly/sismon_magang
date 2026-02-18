@@ -21,12 +21,13 @@ import KelolaKeluhan from './pages/admin/KelolaKeluhan';
 import AttendanceCalendar from './pages/admin/AttendanceCalendar';
 import TargetSection from './pages/admin/TargetSection';
 import PenilaianPerforma from './pages/admin/PenilaianPerforma';
+import ManajemenPenilaian from './pages/admin/ManajemenPenilaian';
 import Ranking from './pages/admin/Ranking';
 import Rekapitulasi from './pages/admin/Rekapitulasi';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  role?: 'admin' | 'user';
+  role?: 'admin' | 'user' | 'superadmin' | ('admin' | 'superadmin')[];
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
@@ -47,8 +48,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (role && user?.role !== role) {
-    return <Navigate to={user?.role === 'admin' ? '/admin' : '/dashboard'} replace />;
+  if (role) {
+    const allowedRoles = Array.isArray(role) ? role : [role];
+    if (!allowedRoles.includes(user?.role as any)) {
+      return <Navigate to={user?.role === 'user' ? '/dashboard' : '/admin'} replace />;
+    }
   }
 
   return <>{children}</>;
@@ -77,7 +81,7 @@ const AppRoutes: React.FC = () => {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute role="admin">
+          <ProtectedRoute role={['admin', 'superadmin']}>
             <AdminLayout />
           </ProtectedRoute>
         }
@@ -90,6 +94,7 @@ const AppRoutes: React.FC = () => {
         <Route path="absensi" element={<AttendanceCalendar />} />
         <Route path="target-section" element={<TargetSection />} />
         <Route path="penilaian" element={<PenilaianPerforma />} />
+        <Route path="manajemen-penilaian" element={<ManajemenPenilaian />} />
         <Route path="ranking" element={<Ranking />} />
         <Route path="rekapitulasi" element={<Rekapitulasi />} />
       </Route>

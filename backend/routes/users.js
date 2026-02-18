@@ -121,4 +121,42 @@ router.delete('/:id', auth, adminOnly, async (req, res) => {
   }
 });
 
+// PATCH /api/users/:id/role — superadmin update user role
+router.patch('/:id/role', auth, async (req, res) => {
+  try {
+    // Only superadmin can update roles
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({ success: false, message: 'Hanya superadmin yang dapat mengubah role user.' });
+    }
+
+    const { role } = req.body;
+    if (!role) {
+      return res.status(400).json({ success: false, message: 'Role harus diberikan.' });
+    }
+
+    const validRoles = ['user', 'admin', 'superadmin'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ success: false, message: `Role harus salah satu dari: ${validRoles.join(', ')}` });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { role },
+      { new: true, runValidators: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
+    }
+
+    res.json({ 
+      success: true, 
+      message: `Role user berhasil diubah menjadi ${role}.`,
+      data: user.toJSON()
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;

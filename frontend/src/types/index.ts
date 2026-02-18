@@ -3,7 +3,7 @@ export interface User {
   _id: string;
   name: string;
   email: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'superadmin';
   instansi?: string;
   jabatan?: string;
   status?: string;
