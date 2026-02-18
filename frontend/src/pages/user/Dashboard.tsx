@@ -100,6 +100,13 @@ const Dashboard: React.FC = () => {
   const bukuRef = useRef<HTMLDivElement>(null);
   const bundleRef = useRef<HTMLDivElement>(null);
 
+  // Percentage change states
+  const [percentChange, setPercentChange] = useState<{
+    berkas: number | null;
+    buku: number | null;
+    bundle: number | null;
+  }>({ berkas: null, buku: null, bundle: null });
+
   // Recap helper functions
   const toDateString = (date: Date): string => {
     const year = date.getFullYear();
@@ -332,9 +339,43 @@ const Dashboard: React.FC = () => {
       const range = getDashboardDateRange();
       if (!range.from || !range.to) {
         // Load default data if no date range
-        DashboardAPI.getUser().then((res) => {
-          if (res && res.success) setData(res.data);
-        });
+        const res = await DashboardAPI.getUser();
+        if (res && res.success) {
+          setData(res.data);
+          // Compute % from weeklyProgress (this week vs last week)
+          const wp = res.data.weeklyProgress || [];
+          if (wp.length > 0) {
+            const now = new Date();
+            const thisWeekStart = new Date(now);
+            thisWeekStart.setDate(now.getDate() - now.getDay());
+            const lastWeekStart = new Date(thisWeekStart);
+            lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+
+            let twBerkas = 0, twBuku = 0, twBundle = 0;
+            let lwBerkas = 0, lwBuku = 0, lwBundle = 0;
+
+            wp.forEach((d) => {
+              const date = new Date(d._id);
+              if (date >= thisWeekStart) {
+                twBerkas += d.berkas || 0;
+                twBuku += d.buku || 0;
+                twBundle += d.bundle || 0;
+              } else if (date >= lastWeekStart && date < thisWeekStart) {
+                lwBerkas += d.berkas || 0;
+                lwBuku += d.buku || 0;
+                lwBundle += d.bundle || 0;
+              }
+            });
+
+            setPercentChange({
+              berkas: lwBerkas > 0 ? Math.round(((twBerkas - lwBerkas) / lwBerkas) * 100) : (twBerkas > 0 ? 100 : 0),
+              buku: lwBuku > 0 ? Math.round(((twBuku - lwBuku) / lwBuku) * 100) : (twBuku > 0 ? 100 : 0),
+              bundle: lwBundle > 0 ? Math.round(((twBundle - lwBundle) / lwBundle) * 100) : (twBundle > 0 ? 100 : 0),
+            });
+          } else {
+            setPercentChange({ berkas: 0, buku: 0, bundle: 0 });
+          }
+        }
         return;
       }
 
@@ -389,6 +430,33 @@ const Dashboard: React.FC = () => {
         };
 
         setData(aggregatedData);
+
+        // Fetch previous period for % comparison
+        const fromDate = new Date(range.from);
+        const toDate = new Date(range.to);
+        const periodMs = toDate.getTime() - fromDate.getTime();
+        const prevFrom = new Date(fromDate.getTime() - periodMs - 86400000);
+        const prevTo = new Date(fromDate.getTime() - 86400000);
+
+        try {
+          const prevRes = await WorkLogAPI.getAll(
+            `from=${toDateString(prevFrom)}&to=${toDateString(prevTo)}&status=Selesai&limit=1000`,
+          );
+          if (prevRes && prevRes.success) {
+            const prevWorks = prevRes.data || [];
+            const prevBerkas = prevWorks.reduce((s, w) => s + (w.berkas || 0), 0);
+            const prevBuku = prevWorks.reduce((s, w) => s + (w.buku || 0), 0);
+            const prevBundle = prevWorks.reduce((s, w) => s + (w.bundle || 0), 0);
+
+            setPercentChange({
+              berkas: prevBerkas > 0 ? Math.round(((totalBerkas - prevBerkas) / prevBerkas) * 100) : (totalBerkas > 0 ? 100 : 0),
+              buku: prevBuku > 0 ? Math.round(((totalBuku - prevBuku) / prevBuku) * 100) : (totalBuku > 0 ? 100 : 0),
+              bundle: prevBundle > 0 ? Math.round(((totalBundle - prevBundle) / prevBundle) * 100) : (totalBundle > 0 ? 100 : 0),
+            });
+          }
+        } catch {
+          setPercentChange({ berkas: 0, buku: 0, bundle: 0 });
+        }
       }
     } catch (error) {
       console.error("Error loading dashboard data:", error);
@@ -1052,18 +1120,23 @@ const Dashboard: React.FC = () => {
             <div className="stat-value" ref={berkasRef}>
               0
             </div>
-            <div className="stat-change">
+            <div className="stat-change" style={{ color: percentChange.berkas !== null && percentChange.berkas < 0 ? 'var(--accent-red)' : 'var(--accent-green)' }}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
+                style={{ transform: percentChange.berkas !== null && percentChange.berkas < 0 ? 'rotate(180deg)' : 'none' }}
               >
                 <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
                 <polyline points="17 6 23 6 23 12" />
               </svg>
-              <span>+12% dari minggu lalu</span>
+              <span>
+                {percentChange.berkas !== null
+                  ? `${percentChange.berkas >= 0 ? '+' : ''}${percentChange.berkas}% dari periode sebelumnya`
+                  : 'Memuat...'}
+              </span>
             </div>
           </div>
           <div className="stat-icon">
@@ -1085,18 +1158,23 @@ const Dashboard: React.FC = () => {
             <div className="stat-value" ref={bukuRef}>
               0
             </div>
-            <div className="stat-change">
+            <div className="stat-change" style={{ color: percentChange.buku !== null && percentChange.buku < 0 ? 'var(--accent-red)' : 'var(--accent-green)' }}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
+                style={{ transform: percentChange.buku !== null && percentChange.buku < 0 ? 'rotate(180deg)' : 'none' }}
               >
                 <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
                 <polyline points="17 6 23 6 23 12" />
               </svg>
-              <span>+8% dari minggu lalu</span>
+              <span>
+                {percentChange.buku !== null
+                  ? `${percentChange.buku >= 0 ? '+' : ''}${percentChange.buku}% dari periode sebelumnya`
+                  : 'Memuat...'}
+              </span>
             </div>
           </div>
           <div className="stat-icon">
@@ -1117,18 +1195,23 @@ const Dashboard: React.FC = () => {
             <div className="stat-value" ref={bundleRef}>
               0
             </div>
-            <div className="stat-change">
+            <div className="stat-change" style={{ color: percentChange.bundle !== null && percentChange.bundle < 0 ? 'var(--accent-red)' : 'var(--accent-green)' }}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
+                style={{ transform: percentChange.bundle !== null && percentChange.bundle < 0 ? 'rotate(180deg)' : 'none' }}
               >
                 <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
                 <polyline points="17 6 23 6 23 12" />
               </svg>
-              <span>+15% dari minggu lalu</span>
+              <span>
+                {percentChange.bundle !== null
+                  ? `${percentChange.bundle >= 0 ? '+' : ''}${percentChange.bundle}% dari periode sebelumnya`
+                  : 'Memuat...'}
+              </span>
             </div>
           </div>
           <div className="stat-icon">
