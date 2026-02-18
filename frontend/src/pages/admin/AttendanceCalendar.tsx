@@ -234,8 +234,8 @@ const AttendanceCalendar: React.FC = () => {
             ? editingAtt.tanggal
             : toDateStr(new Date(editingAtt.tanggal));
 
-        // For Hari Libur, follow backend convention
-        if (editStatus === "Hari Libur") {
+        // For Hari Libur or Libur, follow backend convention
+        if (editStatus === "Hari Libur" || editStatus === "Libur") {
           res = await AttendanceAPI.adminSetStatus(
             targetUserId,
             tanggal,
@@ -724,7 +724,7 @@ const AttendanceCalendar: React.FC = () => {
                   : att.userId?.instansi || "-",
               tanggal: new Date(att.tanggal).toLocaleDateString("id-ID", {
                 day: "numeric",
-                month: "long",
+                month: "long",  
                 year: "numeric",
               }),
               jamMasuk: att.jamMasuk || "-",
@@ -1625,6 +1625,18 @@ const AttendanceCalendar: React.FC = () => {
                 }
               </div>
             </div>
+            <div className="stat-box">
+              <div className="stat-label">Total Libur</div>
+              <div className="stat-value" style={{ color: "#d97706" }}>
+                {
+                  displayData.filter((a) => {
+                    const s = getStatusWithLate(a);
+                    const sl = (s || "").toLowerCase();
+                    return sl === "libur" || sl === "hari libur";
+                  }).length
+                }
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1883,6 +1895,7 @@ const AttendanceCalendar: React.FC = () => {
                     <option value="Izin">📋 Izin</option>
                     <option value="Sakit">🏥 Sakit</option>
                     <option value="Alpha">❌ Alpa</option>
+                    <option value="Libur">🏖️ Libur</option>
                     <option value="Hari Libur">🎉 Hari Libur</option>
                     <option value="Belum Absen">⏳ Belum Absen</option>
                   </select>

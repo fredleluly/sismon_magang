@@ -401,6 +401,7 @@ router.put("/:id/status", auth, adminOnly, async (req, res) => {
       "Izin",
       "Sakit",
       "Alpha",
+      "Libur",
       "Hari Libur",
       "Belum Absen",
     ];
@@ -481,6 +482,7 @@ router.post("/admin/set-status", auth, adminOnly, async (req, res) => {
       "Izin",
       "Sakit",
       "Alpha",
+      "Libur",
       "Hari Libur",
       "Belum Absen",
     ];
