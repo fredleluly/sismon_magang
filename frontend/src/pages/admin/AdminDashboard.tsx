@@ -919,6 +919,24 @@ const AdminDashboard: React.FC = () => {
       <div className="admin-stats-grid">
         <div className="admin-stat-card">
           <div className="stat-info">
+            <div className="stat-label">Kehadiran Hari Ini</div>
+            <div
+              className="stat-value"
+              ref={(el) =>
+                el &&
+                attendanceList &&
+                animateCounter(el, attendanceList.length)
+              }
+            >
+              0
+            </div>
+            <div className="stat-change">
+              dari {data?.totalPeserta || 0} peserta
+            </div>
+          </div>
+        </div>
+        <div className="admin-stat-card">
+          <div className="stat-info">
             <div className="stat-label">Total Sortir</div>
             <div
               className="stat-value"
