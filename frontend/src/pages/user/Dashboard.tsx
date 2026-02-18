@@ -9,7 +9,7 @@ import type {
   WeeklyProgress,
   WorkDistribution,
 } from "../../types";
-import * as XLSX from "xlsx";
+import { exportExcel } from '../../utils/excelExport';
 
 Chart.register(...registerables);
 
@@ -609,14 +609,14 @@ const Dashboard: React.FC = () => {
           "Desember",
         ][currentDate.getMonth()];
         dateRangeStr = `${monthName} ${currentDate.getFullYear()}`;
-        filename = `Recap-Pekerjaan-${monthName}-${currentDate.getFullYear()}.xlsx`;
+        filename = `Recap-Pekerjaan-${monthName}-${currentDate.getFullYear()}`;
       } else if (recapFilterType === "custom") {
         if (!recapDateRangeStart || !recapDateRangeEnd) {
           showToast("Pilih rentang tanggal terlebih dahulu", "error");
           return;
         }
         dateRangeStr = `${recapDateRangeStart} sampai ${recapDateRangeEnd}`;
-        filename = `Recap-Pekerjaan-${recapDateRangeStart}-sampai-${recapDateRangeEnd}.xlsx`;
+        filename = `Recap-Pekerjaan-${recapDateRangeStart}-sampai-${recapDateRangeEnd}`;
       }
 
       if (recapData.length === 0) {
@@ -624,53 +624,49 @@ const Dashboard: React.FC = () => {
         return;
       }
 
-      const wsData: any[] = [
-        ["RECAP PEKERJAAN"],
-        [dateRangeStr],
-        [`Total Job Desk: ${recapData.length}`],
-        [],
-        ["No", "Job Desk", "Berkas", "Buku", "Bundle", "Total"],
-      ];
-
-      recapData.forEach((recap, index) => {
-        wsData.push([
-          index + 1,
-          recap.jobDesk,
-          recap.berkas,
-          recap.buku,
-          recap.bundle,
-          recap.total,
-        ]);
-      });
-
       const totalBerkas = recapData.reduce((sum, item) => sum + item.berkas, 0);
       const totalBuku = recapData.reduce((sum, item) => sum + item.buku, 0);
       const totalBundle = recapData.reduce((sum, item) => sum + item.bundle, 0);
       const grandTotal = totalBerkas + totalBuku + totalBundle;
 
-      wsData.push([]);
-      wsData.push([
-        "",
-        "TOTAL",
-        totalBerkas,
-        totalBuku,
-        totalBundle,
-        grandTotal,
-      ]);
-
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Recap");
-      ws["!cols"] = [
-        { wch: 5 },
-        { wch: 20 },
-        { wch: 10 },
-        { wch: 10 },
-        { wch: 10 },
-        { wch: 10 },
-      ];
-
-      XLSX.writeFile(wb, filename);
+      await exportExcel({
+        fileName: filename,
+        companyName: 'SISMON Magang',
+        sheets: [{
+          sheetName: 'Recap',
+          title: 'RECAP PEKERJAAN',
+          subtitle: dateRangeStr,
+          infoLines: [
+            `Total Job Desk: ${recapData.length} jenis`,
+            `Grand Total: ${grandTotal} item`,
+          ],
+          columns: [
+            { header: 'No', key: 'no', width: 6, type: 'number' },
+            { header: 'Job Desk', key: 'jobDesk', width: 22 },
+            { header: 'Berkas', key: 'berkas', width: 12, type: 'number' },
+            { header: 'Buku', key: 'buku', width: 12, type: 'number' },
+            { header: 'Bundle', key: 'bundle', width: 12, type: 'number' },
+            { header: 'Total', key: 'total', width: 12, type: 'number' },
+          ],
+          data: recapData.map((recap, index) => ({
+            no: index + 1,
+            jobDesk: recap.jobDesk,
+            berkas: recap.berkas,
+            buku: recap.buku,
+            bundle: recap.bundle,
+            total: recap.total,
+          })),
+          summaryRow: {
+            no: '',
+            jobDesk: '',
+            berkas: totalBerkas,
+            buku: totalBuku,
+            bundle: totalBundle,
+            total: grandTotal,
+          },
+          summaryLabel: 'TOTAL',
+        }],
+      });
       showToast("Excel berhasil diunduh!", "success");
     } catch (error) {
       console.error("Error downloading Excel:", error);
