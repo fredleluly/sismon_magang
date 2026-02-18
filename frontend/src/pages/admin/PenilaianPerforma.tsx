@@ -141,7 +141,7 @@ const PenilaianPerforma: React.FC = () => {
   };
 
   const doSave = async (status: 'Draft' | 'Final') => {
-    if (!selectedUser || !calculation) return;
+    if (!selectedUser || !calculation || saving) return;
     setSaving(true);
     const res = await PerformanceAPI.save({
       userId: selectedUser._id,
@@ -153,20 +153,23 @@ const PenilaianPerforma: React.FC = () => {
       status,
     });
 
-    if (res && res.success) {
-      showToast(res.message || 'Berhasil disimpan!', 'success');
-      loadEvaluations();
-      // Reset form
-      setSelectedUser(null);
-      setSearchQuery('');
-      setCalculation(null);
-      setKuantitas(0);
-      setKualitas(0);
-      setLaporan(false);
-    } else {
-      showToast(res?.message || 'Gagal menyimpan', 'error');
+    try {
+      if (res && res.success) {
+        showToast(res.message || 'Berhasil disimpan!', 'success');
+        loadEvaluations();
+        // Reset form
+        setSelectedUser(null);
+        setSearchQuery('');
+        setCalculation(null);
+        setKuantitas(0);
+        setKualitas(0);
+        setLaporan(false);
+      } else {
+        showToast(res?.message || 'Gagal menyimpan', 'error');
+      }
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const handleSave = (status: 'Draft' | 'Final') => {
@@ -256,7 +259,7 @@ const PenilaianPerforma: React.FC = () => {
             ))}
           </select>
         </div>
-        <div className="filter-group" style={{ marginLeft: 'auto' }}>
+        <div className="filter-group ml-auto">
           <label>&nbsp;</label>
           <button 
             className="btn btn-danger-outline" 
@@ -443,12 +446,12 @@ const PenilaianPerforma: React.FC = () => {
           <h2>Daftar Penilaian — {MONTHS[bulan - 1]} {tahun}</h2>
           <p>{evaluations.length} penilaian</p>
         </div>
-        <div className="eval-table-wrap" style={{ maxHeight: '500px', overflowY: 'auto' }}>
+        <div className="eval-table-wrap max-h-[500px] overflow-y-auto">
           {evaluations.length === 0 ? (
             <div className="eval-empty">Belum ada penilaian untuk periode ini.</div>
           ) : (
             <table className="eval-table">
-              <thead style={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: 'white' }}>
+              <thead className="sticky top-0 z-[1] bg-white">
                 <tr>
                   <th>Nama</th>
                   <th>Absen</th>
@@ -507,18 +510,10 @@ const PenilaianPerforma: React.FC = () => {
       {/* Confirm Modal */}
       {/* Confirm Modal (Portal) */}
       {confirmModal.show && ReactDOM.createPortal(
-        <div className="modal-overlay active" style={{ zIndex: 9999 }}>
-          <div className="modal-card" style={{ maxWidth: '400px', textAlign: 'center' }}>
-            {/* No Header for simple confirm, or maybe just close button */}
-            <div className="modal-body" style={{ padding: '32px 24px 24px' }}>
-              <div className={`confirm-icon-wrap ${confirmModal.type}`} style={{ 
-                margin: '0 auto 16px', 
-                width: 64, height: 64, 
-                borderRadius: '50%', 
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: confirmModal.type === 'danger' ? '#fee2e2' : '#dcfce7',
-                color: confirmModal.type === 'danger' ? '#ef4444' : '#22c55e'
-              }}>
+        <div className="modal-overlay active z-[9999]" onClick={(e) => { if (e.target === e.currentTarget) closeConfirm(); }}>
+          <div className="modal-card max-w-[400px] text-center">
+            <div className="modal-body pt-8 px-6 pb-6">
+              <div className={`mx-auto mb-4 w-16 h-16 rounded-full flex items-center justify-center ${confirmModal.type === 'danger' ? 'bg-red-100 text-red-500' : 'bg-green-100 text-green-500'}`}>
                 {confirmModal.type === 'danger' ? (
                   <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -531,25 +526,23 @@ const PenilaianPerforma: React.FC = () => {
                 )}
               </div>
               
-              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: '#1e293b' }}>
+              <h3 className="text-lg font-bold mb-2 text-gray-800">
                 {confirmModal.title}
               </h3>
-              <p style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.5 }}>
+              <p className="text-sm text-gray-500 mb-6 leading-relaxed">
                 {confirmModal.message}
               </p>
 
-              <div style={{ display: 'flex', gap: 12 }}>
+              <div className="flex gap-3">
                 <button 
-                  className="btn-outline" 
+                  className="btn-outline flex-1 justify-center" 
                   onClick={closeConfirm}
-                  style={{ flex: 1, justifyContent: 'center' }}
                 >
                   Batal
                 </button>
                 <button 
-                  className={`btn ${confirmModal.type === 'danger' ? 'btn-danger' : 'btn-primary'}`} 
+                  className={`btn flex-1 justify-center ${confirmModal.type === 'danger' ? 'btn-danger' : 'btn-primary'}`} 
                   onClick={confirmModal.onConfirm}
-                  style={{ flex: 1, justifyContent: 'center' }}
                 >
                   {confirmModal.confirmText}
                 </button>

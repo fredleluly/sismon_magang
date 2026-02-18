@@ -142,9 +142,9 @@ const Ranking: React.FC = () => {
               <h2>Daftar Lengkap — {MONTHS[bulan - 1]} {tahun}</h2>
               <span className="rank-count">{rankings.length} peserta</span>
             </div>
-            <div className="rank-table-wrap" style={{ maxHeight: '500px', overflowY: 'auto' }}>
+            <div className="rank-table-wrap max-h-[500px] overflow-y-auto">
               <table className="rank-table">
-                <thead style={{ position: 'sticky', top: 0, zIndex: 1, backgroundColor: 'white' }}>
+                <thead className="sticky top-0 z-[1] bg-white">
                   <tr>
                     <th className="th-rank">Rank</th>
                     <th>Nama</th>

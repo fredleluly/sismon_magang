@@ -44,42 +44,42 @@ const KelolaKeluhan: React.FC = () => {
         <div className="keluhan-stat"><div className="ks-header"><span className="ks-label">Diproses</span></div><div className="ks-value">{diproses}</div></div>
         <div className="keluhan-stat"><div className="ks-header"><span className="ks-label">Selesai</span></div><div className="ks-value">{selesai}</div></div>
       </div>
-      <div className="filter-card"><div className="filter-row" style={{display:'flex',gap:12,flexWrap:'wrap'}}>
-        <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari laporan..." style={{flex:1,minWidth:200,padding:'10px 16px',border:'1px solid var(--gray-200)',borderRadius:'var(--radius-md)',fontSize:13}} />
-        <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} style={{padding:'10px 16px',border:'1px solid var(--gray-200)',borderRadius:'var(--radius-md)',fontSize:13}}><option value="">Semua Status</option><option>Menunggu</option><option>Diproses</option><option>Selesai</option></select>
-        <select value={prioFilter} onChange={e=>setPrioFilter(e.target.value)} style={{padding:'10px 16px',border:'1px solid var(--gray-200)',borderRadius:'var(--radius-md)',fontSize:13}}><option value="">Semua Prioritas</option><option>High</option><option>Medium</option><option>Low</option></select>
+      <div className="filter-card"><div className="filter-row flex gap-3 flex-wrap">
+        <input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari laporan..." className="flex-1 min-w-[200px] px-4 py-2.5 border border-gray-200 rounded-lg text-[13px]" />
+        <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} className="px-4 py-2.5 border border-gray-200 rounded-lg text-[13px]"><option value="">Semua Status</option><option>Menunggu</option><option>Diproses</option><option>Selesai</option></select>
+        <select value={prioFilter} onChange={e=>setPrioFilter(e.target.value)} className="px-4 py-2.5 border border-gray-200 rounded-lg text-[13px]"><option value="">Semua Prioritas</option><option>High</option><option>Medium</option><option>Low</option></select>
       </div></div>
-      <div className="keluhan-list-card" style={{marginTop:20}}>
-        <h3>Daftar Keluhan</h3><p style={{fontSize:13,color:'var(--gray-500)',marginBottom:16}}>Menampilkan {filtered.length} dari {all.length} laporan</p>
-        <div className="keluhan-scroll-container" style={{ maxHeight: '500px', overflowY: 'auto', paddingRight: '5px' }}>
+      <div className="keluhan-list-card mt-5">
+        <h3>Daftar Keluhan</h3><p className="text-[13px] text-gray-500 mb-4">Menampilkan {filtered.length} dari {all.length} laporan</p>
+        <div className="keluhan-scroll-container max-h-[500px] overflow-y-auto pr-1">
           {filtered.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 40, color: 'var(--gray-400)' }}>Tidak ada laporan ditemukan</div>
+            <div className="text-center p-10 text-gray-400">Tidak ada laporan ditemukan</div>
           ) : (
             filtered.map((k, i) => {
               const date = k.createdAt ? new Date(k.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
               const userName = (k.userId as any)?.name || 'Unknown';
               const prioClass = k.prioritas === 'High' ? 'high' : k.prioritas === 'Medium' ? 'medium' : 'low';
-              const statusStyle = k.status === 'Menunggu' ? { background: '#fef3c7', color: '#d97706' } : k.status === 'Diproses' ? { background: 'var(--primary-50)', color: 'var(--primary-600)' } : { background: '#e6f9f0', color: '#059669' };
+              const statusCls = k.status === 'Menunggu' ? 'bg-amber-100 text-amber-600' : k.status === 'Diproses' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-100 text-emerald-600';
               return (
-                <div key={k._id} style={{ padding: 20, border: '1px solid var(--gray-200)', borderRadius: 'var(--radius-md)', marginBottom: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--gray-800)' }}>{k.judul || 'Tanpa Judul'}</span>
-                    <span style={{ fontSize: 12, color: 'var(--gray-400)' }}>{date}</span>
+                <div key={k._id} className="p-5 border border-gray-200 rounded-lg mb-3">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[15px] font-semibold text-gray-800">{k.judul || 'Tanpa Judul'}</span>
+                    <span className="text-xs text-gray-400">{date}</span>
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 4 }}>
+                  <div className="text-[13px] text-gray-500 mb-1">
                     <strong>{userName}</strong>
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 12 }}>{(k.deskripsi || '').substring(0, 120)}</div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <span style={{ display: 'inline-flex', padding: '3px 12px', borderRadius: 'var(--radius-full)', fontSize: 11, fontWeight: 600, ...statusStyle }}>{k.status}</span>
+                  <div className="text-[13px] text-gray-500 mb-3">{(k.deskripsi || '').substring(0, 120)}</div>
+                  <div className="flex gap-2 items-center flex-wrap">
+                    <span className={`inline-flex px-3 py-0.5 rounded-full text-[11px] font-semibold ${statusCls}`}>{k.status}</span>
                     <span className={`priority-badge ${prioClass}`}>{k.prioritas}</span>
                     <span className="category-badge">{k.kategori}</span>
                     {k.status !== 'Selesai' && (
-                      <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                        <button className="btn-outline" style={{ padding: '5px 14px', fontSize: 11 }} onClick={() => updateStatus(k._id, 'Diproses')}>
+                      <div className="ml-auto flex gap-1.5">
+                        <button className="btn-outline px-3.5 py-1 text-[11px]" onClick={() => updateStatus(k._id, 'Diproses')}>
                           Proses
                         </button>
-                        <button className="btn btn-primary" style={{ padding: '5px 14px', fontSize: 11 }} onClick={() => updateStatus(k._id, 'Selesai')}>
+                        <button className="btn btn-primary px-3.5 py-1 text-[11px]" onClick={() => updateStatus(k._id, 'Selesai')}>
                           Selesai
                         </button>
                       </div>

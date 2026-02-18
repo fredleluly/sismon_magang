@@ -7,6 +7,8 @@ const TargetSection = require('../models/TargetSection');
 const User = require('../models/User');
 const { auth, adminOnly } = require('../middleware/auth');
 
+const DEBUG = process.env.NODE_ENV === 'development';
+
 // ===== Helper: get working days in a month (excluding weekends + holidays) =====
 async function getWorkingDays(bulan, tahun) {
   const startDate = new Date(tahun, bulan - 1, 1);
@@ -39,11 +41,11 @@ async function calculateAbsen(userId, bulan, tahun) {
   const workingDays = await getWorkingDays(bulan, tahun);
   const totalWorkingDays = workingDays.length;
 
-  console.log(`[ABSEN DEBUG] User: ${userId}, Bulan: ${bulan}/${tahun}`);
-  console.log(`[ABSEN DEBUG] Total working days: ${totalWorkingDays}`);
+  if (DEBUG) console.log(`[ABSEN DEBUG] User: ${userId}, Bulan: ${bulan}/${tahun}`);
+  if (DEBUG) console.log(`[ABSEN DEBUG] Total working days: ${totalWorkingDays}`);
 
   if (totalWorkingDays === 0) {
-    console.log('[ABSEN DEBUG] No working days, returning 0');
+    if (DEBUG) console.log('[ABSEN DEBUG] No working days, returning 0');
     return 0;
   }
 
@@ -53,7 +55,7 @@ async function calculateAbsen(userId, bulan, tahun) {
     tanggal: { $gte: startDate, $lte: endDate }
   });
 
-  console.log(`[ABSEN DEBUG] Found ${attendanceRecords.length} attendance records`);
+  if (DEBUG) console.log(`[ABSEN DEBUG] Found ${attendanceRecords.length} attendance records`);
 
   // Calculate points per day
   let totalPoints = 0;
@@ -71,17 +73,17 @@ async function calculateAbsen(userId, bulan, tahun) {
         points = 30;
         totalPoints += 30;
       }
-      console.log(`[ABSEN DEBUG] ${recordDate} - Status: ${record.status}, Points: ${points}`);
+      if (DEBUG) console.log(`[ABSEN DEBUG] ${recordDate} - Status: ${record.status}, Points: ${points}`);
     } else {
-      console.log(`[ABSEN DEBUG] ${recordDate} - NOT a working day (weekend/holiday)`);
+      if (DEBUG) console.log(`[ABSEN DEBUG] ${recordDate} - NOT a working day (weekend/holiday)`);
     }
   }
 
   const avgPoints = totalPoints / totalWorkingDays;
   const absen = Math.min(parseFloat(avgPoints.toFixed(2)), 35);
   
-  console.log(`[ABSEN DEBUG] Total points: ${totalPoints}, Avg: ${avgPoints}, Final absen: ${absen}%`);
-  console.log('[ABSEN DEBUG] ==================');
+  if (DEBUG) console.log(`[ABSEN DEBUG] Total points: ${totalPoints}, Avg: ${avgPoints}, Final absen: ${absen}%`);
+  if (DEBUG) console.log('[ABSEN DEBUG] ==================');
   
   return absen;
 }
@@ -324,7 +326,7 @@ router.delete('/delete-all-finals/:bulan/:tahun', auth, adminOnly, async (req, r
       status: 'Final' 
     });
 
-    console.log(`[DELETE ALL FINALS] Deleted ${result.deletedCount} finalized evaluations for ${bulan}/${tahun}`);
+    if (DEBUG) console.log(`[DELETE ALL FINALS] Deleted ${result.deletedCount} finalized evaluations for ${bulan}/${tahun}`);
 
     res.json({ 
       success: true, 
