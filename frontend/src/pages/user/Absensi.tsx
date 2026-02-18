@@ -544,7 +544,7 @@ const Absensi: React.FC = () => {
     if (faceDetection.ready && cameraActive && videoRef.current) {
       faceDetection.startDetection(videoRef.current);
     }
-  }, [faceDetection.ready, cameraActive]);
+  }, [faceDetection.ready, faceDetection.startDetection, cameraActive]);
 
   return (
     <>

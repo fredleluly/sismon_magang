@@ -644,9 +644,7 @@ const AdminDashboard: React.FC = () => {
 
   if (!data)
     return (
-      <div
-        style={{ textAlign: "center", padding: 60, color: "var(--gray-400)" }}
-      >
+      <div className="text-center p-16 text-gray-400">
         Memuat dashboard...
       </div>
     );
@@ -752,31 +750,18 @@ const AdminDashboard: React.FC = () => {
 
                 {isSelectingDateRange && (
                   <div className="dashboard-date-popup">
-                    <div style={{ marginBottom: 12 }}>
-                      <p
-                        style={{
-                          fontSize: 12,
-                          color: "var(--gray-500)",
-                          marginBottom: 4,
-                        }}
-                      >
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-500 mb-1">
                         {isSelectingStart
                           ? "Pilih Tanggal Awal"
                           : "Pilih Tanggal Akhir"}
                       </p>
-                      <div style={{ fontSize: 14, fontWeight: 600 }}>
+                      <div className="text-sm font-semibold">
                         {dateRangeStart || "-"} s/d {dateRangeEnd || "-"}
                       </div>
                     </div>
 
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 12,
-                      }}
-                    >
+                    <div className="flex justify-between items-center mb-3">
                       <button
                         onClick={() =>
                           setDatePickerMonth(
@@ -786,7 +771,7 @@ const AdminDashboard: React.FC = () => {
                             ),
                           )
                         }
-                        style={{ padding: 4 }}
+                        className="p-1"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -802,7 +787,7 @@ const AdminDashboard: React.FC = () => {
                           <polyline points="15 18 9 12 15 6"></polyline>
                         </svg>
                       </button>
-                      <span style={{ fontSize: 14, fontWeight: 600 }}>
+                      <span className="text-sm font-semibold">
                         {datePickerMonth.toLocaleDateString("id-ID", {
                           month: "long",
                           year: "numeric",
@@ -817,7 +802,7 @@ const AdminDashboard: React.FC = () => {
                             ),
                           )
                         }
-                        style={{ padding: 4 }}
+                        className="p-1"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -835,23 +820,11 @@ const AdminDashboard: React.FC = () => {
                       </button>
                     </div>
 
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(7, 1fr)",
-                        gap: 2,
-                        marginBottom: 8,
-                      }}
-                    >
+                    <div className="grid grid-cols-7 gap-0.5 mb-2">
                       {["M", "S", "S", "R", "K", "J", "S"].map((d) => (
                         <div
                           key={d}
-                          style={{
-                            fontSize: 11,
-                            textAlign: "center",
-                            color: "var(--gray-400)",
-                            padding: 4,
-                          }}
+                          className="text-[11px] text-center text-gray-400 p-1"
                         >
                           {d}
                         </div>
@@ -904,19 +877,13 @@ const AdminDashboard: React.FC = () => {
                                 }
                               }
                             }}
-                            style={{
-                              padding: 6,
-                              textAlign: "center",
-                              fontSize: 13,
-                              cursor: "pointer",
-                              borderRadius: 4,
-                              background: isSelected
-                                ? "var(--primary-500)"
+                            className={`p-1.5 text-center text-[13px] cursor-pointer rounded ${
+                              isSelected
+                                ? 'bg-primary-500 text-white'
                                 : inRange
-                                  ? "var(--primary-50)"
-                                  : "transparent",
-                              color: isSelected ? "white" : "inherit",
-                            }}
+                                  ? 'bg-primary-50'
+                                  : 'hover:bg-gray-100'
+                            }`}
                           >
                             {d}
                           </div>
@@ -1040,7 +1007,7 @@ const AdminDashboard: React.FC = () => {
             <h3>Kategori Arsip</h3>
             <p>Total tiap kategori berkas, buku, dan bundle</p>
           </div>
-          <div className="chart-canvas-wrapper" style={{ height: 220 }}>
+          <div className="chart-canvas-wrapper h-[220px]">
             <canvas ref={donutRef} />
           </div>
           <div className="donut-legend">
@@ -1056,34 +1023,21 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
       </div>
-      <div style={{ marginBottom: 28 }}>
+      <div className="mb-7">
         <div className="chart-card">
           <div className="chart-header">
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginBottom: 4,
-              }}
-            >
-              <span style={{ fontSize: 20 }}>🏆</span>
+            <div className="flex items-center gap-2.5 mb-1">
+              <span className="text-xl">🏆</span>
               <h3>Top 3 Peserta Terbaik</h3>
             </div>
             <p>Berdasarkan penilaian performa bulan ini</p>
           </div>
           {rankings.length === 0 ? (
-            <p
-              style={{
-                textAlign: "center",
-                color: "var(--gray-400)",
-                padding: 30,
-              }}
-            >
+            <p className="text-center text-gray-400 p-8">
               Belum ada data ranking
             </p>
           ) : (
-            <div className="podium-section" style={{ marginBottom: 0 }}>
+            <div className="podium-section mb-0">
               {rankings.length >= 2 && (
                 <div className="podium-card podium-2">
                   <div className="podium-medal">🥈</div>
@@ -1154,11 +1108,11 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
         {attendanceList.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 24, color: "#94a3b8" }}>
+          <div className="text-center p-6 text-slate-400">
             Belum ada peserta yang absen hari ini
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div className="flex flex-col gap-2">
             {attendanceList.map((r: any, i: number) => {
               const name = r.userId?.name || "Unknown";
               const initials = name
@@ -1170,52 +1124,23 @@ const AdminDashboard: React.FC = () => {
               return (
                 <div
                   key={r._id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "10px 14px",
-                    background: "#f8fafc",
-                    borderRadius: 10,
-                    border: "1px solid #f1f5f9",
-                  }}
+                  className="flex items-center justify-between px-3.5 py-2.5 bg-slate-50 rounded-[10px] border border-slate-100"
                 >
-                  <div
-                    style={{ display: "flex", alignItems: "center", gap: 10 }}
-                  >
-                    <div
-                      style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: "50%",
-                        background: "linear-gradient(135deg,#93c5fd,#dbeafe)",
-                        color: "#1e293b",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 12,
-                        fontWeight: 700,
-                      }}
-                    >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-300 to-blue-100 text-slate-800 flex items-center justify-center text-xs font-bold">
                       {initials}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>
+                      <div className="font-semibold text-[13px]">
                         {name}
                       </div>
-                      <div style={{ fontSize: 11, color: "#94a3b8" }}>
+                      <div className="text-[11px] text-slate-400">
                         {r.userId?.instansi || "-"}
                       </div>
                     </div>
                   </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div
-                      style={{
-                        fontWeight: 700,
-                        fontSize: 14,
-                        color: "#0a6599",
-                      }}
-                    >
+                  <div className="text-right">
+                    <div className="font-bold text-sm text-[#0a6599]">
                       {r.jamMasuk || "-"}
                     </div>
                   </div>
@@ -1234,13 +1159,7 @@ const AdminDashboard: React.FC = () => {
         </div>
         <div className="activity-feed">
           {ra.length === 0 ? (
-            <p
-              style={{
-                textAlign: "center",
-                color: "var(--gray-400)",
-                padding: 30,
-              }}
-            >
+            <p className="text-center text-gray-400 p-8">
               Belum ada aktivitas
             </p>
           ) : (

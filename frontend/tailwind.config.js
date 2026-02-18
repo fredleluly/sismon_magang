@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./src/**/*.{js,jsx,ts,tsx}"],
+  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
       colors: {
@@ -89,6 +89,9 @@ export default {
         slideInLeft: "slideInLeft 0.5s ease both",
         fadeOut: "fadeOut 0.4s ease 3s forwards",
         glowPulse: "glowPulse 2s ease-in-out infinite",
+        pageEnter: "pageEnter 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards",
+        bounceIn: "bounceIn 0.5s ease both",
+        spin: "spin 0.8s linear infinite",
       },
       keyframes: {
         fadeIn: {
@@ -126,6 +129,16 @@ export default {
         glowPulse: {
           "0%, 100%": { boxShadow: "0 0 5px rgba(0, 212, 255, 0.2)" },
           "50%": { boxShadow: "0 0 20px rgba(0, 212, 255, 0.4)" },
+        },
+        pageEnter: {
+          from: { opacity: "0", transform: "translateY(16px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        bounceIn: {
+          "0%": { opacity: "0", transform: "scale(0.3)" },
+          "50%": { transform: "scale(1.05)" },
+          "70%": { transform: "scale(0.9)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
         },
       },
     },

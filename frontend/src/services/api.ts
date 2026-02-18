@@ -15,24 +15,48 @@ if (envUrl && !envUrl.endsWith('/api')) {
 const API_BASE = envUrl || '/api';
 
 // ===== TOKEN MANAGEMENT =====
+const TOKEN_KEY = 'pln_token';
+const TOKEN_TIMESTAMP_KEY = 'pln_token_ts';
+const MAX_TOKEN_AGE = 24 * 60 * 60 * 1000; // 24 hours
+
 export function getToken(): string | null {
-  return localStorage.getItem('pln_token');
+  const token = localStorage.getItem(TOKEN_KEY);
+  const timestamp = localStorage.getItem(TOKEN_TIMESTAMP_KEY);
+
+  if (token && timestamp) {
+    const age = Date.now() - parseInt(timestamp, 10);
+    if (age > MAX_TOKEN_AGE) {
+      removeToken();
+      return null;
+    }
+  }
+
+  return token;
 }
 
 export function setToken(token: string): void {
-  localStorage.setItem('pln_token', token);
+  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(TOKEN_TIMESTAMP_KEY, Date.now().toString());
 }
 
 export function removeToken(): void {
-  localStorage.removeItem('pln_token');
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(TOKEN_TIMESTAMP_KEY);
   localStorage.removeItem('pln_current_user');
 }
 
 // ===== HTTP HELPER =====
-async function apiRequest<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T> | null> {
+async function apiRequest<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
   const token = getToken();
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = {};
+
   if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  // Don't set Content-Type for FormData (browser handles multipart boundary)
+  const isFormData = options.body instanceof FormData;
+  if (!isFormData) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   try {
     const res = await fetch(`${API_BASE}${endpoint}`, {
@@ -53,7 +77,7 @@ async function apiRequest<T = unknown>(endpoint: string, options: RequestInit = 
     if (res.status === 401) {
       removeToken();
       window.location.href = '/login';
-      return null;
+      return { success: false, message: 'Session expired', data: {} as T };
     }
 
     return data;
@@ -65,7 +89,13 @@ async function apiRequest<T = unknown>(endpoint: string, options: RequestInit = 
 
 const API = {
   get: <T = unknown>(endpoint: string) => apiRequest<T>(endpoint),
-  post: <T = unknown>(endpoint: string, body?: unknown) => apiRequest<T>(endpoint, { method: 'POST', body: JSON.stringify(body) }),
+  post: <T = unknown>(endpoint: string, body?: unknown) => {
+    const isFormData = body instanceof FormData;
+    return apiRequest<T>(endpoint, {
+      method: 'POST',
+      body: isFormData ? body : JSON.stringify(body),
+    });
+  },
   put: <T = unknown>(endpoint: string, body?: unknown) => apiRequest<T>(endpoint, { method: 'PUT', body: JSON.stringify(body) }),
   delete: <T = unknown>(endpoint: string) => apiRequest<T>(endpoint, { method: 'DELETE' }),
 };

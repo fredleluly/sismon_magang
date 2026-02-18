@@ -34,9 +34,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: '#64748b' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ width: 40, height: 40, border: '3px solid #e2e8f0', borderTop: '3px solid #0a6599', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
+      <div className="flex justify-center items-center h-screen text-slate-500">
+        <div className="text-center">
+          <div className="w-10 h-10 border-[3px] border-slate-200 border-t-[#0a6599] rounded-full animate-spin mx-auto mb-3" />
           <p>Memuat...</p>
         </div>
       </div>

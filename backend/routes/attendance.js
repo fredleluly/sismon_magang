@@ -37,9 +37,18 @@ const upload = multer({
 });
 
 // Helper: Check if time is late
+// Helper: Format time consistently as HH:MM (24h, colon-separated)
+const formatTimeWIB = (date = new Date()) => {
+  const d = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+};
+
 const isLate = (timeStr, threshold = '08:00') => {
   try {
-    const [hours, minutes] = timeStr.split(':').map(Number);
+    const normalized = timeStr.replace('.', ':');
+    const [hours, minutes] = normalized.split(':').map(Number);
     const [thresholdHours, thresholdMinutes] = threshold.split(':').map(Number);
     const currentTime = hours * 60 + minutes;
     const thresholdTime = thresholdHours * 60 + thresholdMinutes;
@@ -97,10 +106,7 @@ router.post('/scan', auth, async (req, res) => {
     }
 
 const now = new Date();
-const jamMasuk = now.toLocaleTimeString('id-ID', { 
-  hour: '2-digit', 
-  minute: '2-digit',
-  timeZone: 'Asia/Jakarta'});
+const jamMasuk = formatTimeWIB(now);
 
     // Get late threshold (default 08:00)
     const lateThreshold = process.env.LATE_THRESHOLD || '08:00';
@@ -157,18 +163,10 @@ router.post('/photo-checkin', auth, upload.single('foto'), async (req, res) => {
 let jamMasuk;
 if (timestamp) {
   const userDate = new Date(timestamp);
-  jamMasuk = userDate.toLocaleTimeString('id-ID', { 
-    hour: '2-digit', 
-    minute: '2-digit',
-    timeZone: 'Asia/Jakarta'
-  });
+  jamMasuk = formatTimeWIB(userDate);
 } else {
   const now = new Date();
-  jamMasuk = now.toLocaleTimeString('id-ID', { 
-    hour: '2-digit', 
-    minute: '2-digit',
-    timeZone: 'Asia/Jakarta'
-  });
+  jamMasuk = formatTimeWIB(now);
 }
 
     // Get late threshold (default 08:00)
@@ -241,18 +239,10 @@ router.post('/photo-checkout', auth, upload.single('foto'), async (req, res) => 
 let jamKeluar;
 if (timestamp) {
   const userDate = new Date(timestamp);
-  jamKeluar = userDate.toLocaleTimeString('id-ID', { 
-    hour: '2-digit', 
-    minute: '2-digit',
-    timeZone: 'Asia/Jakarta'
-  });
+  jamKeluar = formatTimeWIB(userDate);
 } else {
   const now = new Date();
-  jamKeluar = now.toLocaleTimeString('id-ID', { 
-    hour: '2-digit', 
-    minute: '2-digit',
-    timeZone: 'Asia/Jakarta'
-  });
+  jamKeluar = formatTimeWIB(now);
 }
 
     const fotoPulangTimestamp = timestamp
@@ -527,11 +517,7 @@ router.put('/:id/checkout', auth, async (req, res) => {
     }
 
     const now = new Date();
-att.jamKeluar = now.toLocaleTimeString('id-ID', { 
-  hour: '2-digit', 
-  minute: '2-digit',
-  timeZone: 'Asia/Jakarta'
-});
+att.jamKeluar = formatTimeWIB(now);
     await att.save();
 
     res.json({ success: true, message: 'Berhasil clock out.', data: att });
