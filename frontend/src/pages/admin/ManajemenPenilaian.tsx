@@ -63,7 +63,37 @@ const ManajemenPenilaian: React.FC = () => {
   }, [loadEvaluations]);
 
   const handleDeleteClick = (evalId: string, userName: string) => {
-    setConfirmModal({ show: true, evaluationId: evalId, userName });
+    console.log("handleDeleteClick", evalId, userName);
+    // ensure state update happens even if called from nested handlers
+    setConfirmModal((prev) => ({
+      ...prev,
+      show: true,
+      evaluationId: evalId,
+      userName,
+    }));
+  };
+
+  // Immediate delete (fallback) - prompts with window.confirm then deletes
+  const handleDeleteImmediate = async (evalId: string, userName: string) => {
+    const ok = window.confirm(
+      `Hapus penilaian ${userName}? Ini akan mereset menjadi Draft.`,
+    );
+    if (!ok) return;
+    setDeleting(evalId);
+    try {
+      const res = await PerformanceAPI.delete(evalId);
+      if (res && res.success) {
+        showToast("Penilaian berhasil dihapus", "success");
+        setEvaluations((prev) => prev.filter((e) => e._id !== evalId));
+      } else {
+        showToast(res?.message || "Gagal menghapus penilaian", "error");
+      }
+    } catch (error) {
+      console.error(error);
+      showToast("Gagal menghapus penilaian", "error");
+    } finally {
+      setDeleting(null);
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -271,27 +301,74 @@ const ManajemenPenilaian: React.FC = () => {
           className="modal-overlay"
           onClick={() => setConfirmModal({ ...confirmModal, show: false })}
         >
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header danger">
-              <h3>Hapus Penilaian</h3>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 520 }}
+          >
+            <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+              <div
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 12,
+                  background: "#fff7ed",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#f97316"
+                  strokeWidth="1.5"
+                >
+                  <path d="M3 6h18"></path>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                  <path d="M10 11v6"></path>
+                  <path d="M14 11v6"></path>
+                  <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </div>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>
+                  Hapus Penilaian
+                </h3>
+                <p style={{ margin: "8px 0 0", color: "#475569" }}>
+                  Anda yakin ingin menghapus penilaian
+                  <strong style={{ marginLeft: 6 }}>
+                    {confirmModal.userName}
+                  </strong>
+                  ?
+                </p>
+                <p
+                  style={{ margin: "6px 0 0", color: "#64748b", fontSize: 13 }}
+                >
+                  Tindakan ini akan mereset penilaian menjadi{" "}
+                  <strong>Draft</strong>.
+                </p>
+              </div>
             </div>
-            <div className="modal-body">
-              <p>
-                Anda yakin ingin menghapus penilaian{" "}
-                <strong>{confirmModal.userName}</strong>?
-              </p>
-              <p className="text-muted">
-                Penilaian akan direset ke status Draft dan Admin dapat membuat
-                penilaian baru.
-              </p>
-            </div>
-            <div className="modal-footer">
+
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                marginTop: 20,
+                justifyContent: "flex-end",
+              }}
+            >
               <button
                 className="btn-secondary"
                 onClick={() =>
                   setConfirmModal({ ...confirmModal, show: false })
                 }
                 disabled={deleting !== null}
+                style={{ minWidth: 120 }}
               >
                 Batal
               </button>
@@ -299,6 +376,7 @@ const ManajemenPenilaian: React.FC = () => {
                 className="btn-danger"
                 onClick={handleConfirmDelete}
                 disabled={deleting !== null}
+                style={{ minWidth: 140 }}
               >
                 {deleting ? "Menghapus..." : "Hapus Penilaian"}
               </button>

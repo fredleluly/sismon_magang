@@ -211,7 +211,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 20000; /* raised so modal appears above other app layers */
   backdrop-filter: blur(4px);
 }
 
@@ -223,6 +223,7 @@
   width: 90%;
   overflow: hidden;
   animation: slideUp 0.3s ease;
+  z-index: 20001; /* ensure it sits above the overlay and other components */
 }
 
 @keyframes slideUp {
