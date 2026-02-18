@@ -3350,14 +3350,16 @@ img {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 255, 255, 0.535);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.9);
   padding: 12px 20px;
   border-radius: var(--radius-xl);
   border: 1px solid rgba(226, 232, 240, 0.8);
   box-shadow: var(--shadow-sm);
   margin-bottom: 24px;
-  flex-direction: row; /* Desktop tetap baris */
+  flex-direction: row; 
+  position: relative;
+  z-index: 50;
+  overflow: visible;
 }
 
 .dashboard-filter-left {
@@ -3411,7 +3413,7 @@ img {
 .dashboard-custom-date {
   flex: 1;
   position: relative; /* Menjadi jangkar untuk popup */
-  z-index: 100; /* Memberikan konteks penumpukan yang lebih tinggi */
+  z-index: 100; /* Konteks penumpukan lebih tinggi dari sibling */
 }
 
 .dashboard-custom-trigger {
@@ -3449,17 +3451,13 @@ img {
   background: white;
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg);
-  box-shadow: var(
-    --shadow-xl
-  ); /* Gunakan shadow yang lebih tegas agar terlihat di atas */
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.1);
   padding: 16px;
-
-  /* INI KUNCINYA: Pastikan z-index sangat tinggi */
   z-index: 9999 !important;
-
   width: 320px;
   animation: fadeInUp 0.2s ease;
-  pointer-events: auto; /* Memastikan bisa diklik */
+  pointer-events: auto;
+  isolation: isolate; /* Pastikan popup punya stacking context sendiri */
 }
 
 .admin-stats-grid {
@@ -3475,6 +3473,116 @@ img {
 @media (max-width: 1024px) {
   .admin-stats-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Dashboard filter bar - tablet (sama seperti mobile) */
+  .dashboard-filter-bar {
+    overflow: visible !important;
+    position: relative;
+    z-index: 50;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .dashboard-filter-group {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dashboard-filter-btn {
+    flex: 1;
+    text-align: center;
+    padding: 5px 12px;
+    font-size: 12px;
+    height: 36px;
+  }
+
+  .dashboard-month-export-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+  }
+
+  .dashboard-custom-trigger {
+    width: 100%;
+    min-width: 0;
+    height: 36px;
+    font-size: 12px;
+    padding: 0 10px;
+    flex: 1;
+  }
+
+  .month-picker-container,
+  .dashboard-custom-trigger {
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 0 12px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--gray-700);
+    transition: all var(--transition-base);
+    cursor: pointer;
+  }
+
+  .month-picker-container {
+    width: 100%;
+    justify-content: space-between;
+    height: 40px;
+    padding: 0 8px;
+    flex: 1;
+  }
+
+  .month-nav-btn {
+    padding: 2px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .month-nav-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .month-display {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .btn-export {
+    width: auto;
+    justify-content: center;
+    height: 36px;
+    font-size: 12px;
+    padding: 0 16px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .btn-export svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .dashboard-date-popup {
+    width: calc(100vw - 32px);
+    max-width: 300px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px;
+    z-index: 9999 !important;
+  }
+
+  .month-picker-container:hover {
+    border-color: var(--primary-300);
+    box-shadow: 0 0 0 3px rgba(26, 143, 201, 0.05);
   }
 }
 
@@ -3502,13 +3610,6 @@ img {
     position: relative;
     z-index: 50;
   }
-
-  /* .dashboard-filter-bar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    width: 100%;
-  } */
 
   .dashboard-filter-group {
     width: 100%;
@@ -3606,6 +3707,7 @@ img {
     left: 50%;
     transform: translateX(-50%);
     padding: 12px;
+    z-index: 9999 !important;
   }
 
   .rekap-filter-actions {
@@ -3768,11 +3870,10 @@ img {
   .dashboard-date-popup {
     width: calc(100vw - 32px);
     max-width: 300px;
-    /* right: 0; */
+    right: 0;
     left: 75%;
-    /* transform: translateX(-50%); */
     padding: 12px;
-    z-index: 999;
+    z-index: 9999 !important;
   }
 
   .rekap-filter-actions {
