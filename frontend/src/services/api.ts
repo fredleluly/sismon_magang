@@ -376,6 +376,7 @@ export const PerformanceAPI = {
       `/performance/ranking?bulan=${bulan}&tahun=${tahun}`,
     ),
   delete: (id: string) => API.delete(`/performance/${id}`),
+  resetToDraft: (id: string) => API.put(`/performance/${id}/reset-to-draft`, {}),
   deleteAllFinals: (bulan: number, tahun: number) =>
     API.delete(`/performance/delete-all-finals/${bulan}/${tahun}`),
 };

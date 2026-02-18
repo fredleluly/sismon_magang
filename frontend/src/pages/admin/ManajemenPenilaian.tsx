@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { PerformanceAPI } from "../../services/api";
 import { useToast } from "../../context/ToastContext";
 import type { PerformanceEvaluation, User } from "../../types";
@@ -73,7 +74,7 @@ const ManajemenPenilaian: React.FC = () => {
     }));
   };
 
-  // Immediate delete (fallback) - prompts with window.confirm then deletes
+  // Immediate delete (fallback) - prompts with window.confirm then resets to Draft
   const handleDeleteImmediate = async (evalId: string, userName: string) => {
     const ok = window.confirm(
       `Hapus penilaian ${userName}? Ini akan mereset menjadi Draft.`,
@@ -81,16 +82,16 @@ const ManajemenPenilaian: React.FC = () => {
     if (!ok) return;
     setDeleting(evalId);
     try {
-      const res = await PerformanceAPI.delete(evalId);
+      const res = await PerformanceAPI.resetToDraft(evalId);
       if (res && res.success) {
-        showToast("Penilaian berhasil dihapus", "success");
+        showToast("Penilaian berhasil direset ke Draft", "success");
         setEvaluations((prev) => prev.filter((e) => e._id !== evalId));
       } else {
-        showToast(res?.message || "Gagal menghapus penilaian", "error");
+        showToast(res?.message || "Gagal mereset penilaian", "error");
       }
     } catch (error) {
       console.error(error);
-      showToast("Gagal menghapus penilaian", "error");
+      showToast("Gagal mereset penilaian", "error");
     } finally {
       setDeleting(null);
     }
@@ -101,18 +102,18 @@ const ManajemenPenilaian: React.FC = () => {
     setDeleting(evalId);
 
     try {
-      const res = await PerformanceAPI.delete(evalId);
+      const res = await PerformanceAPI.resetToDraft(evalId);
 
       if (res && res.success) {
-        showToast("Penilaian berhasil dihapus", "success");
+        showToast("Penilaian berhasil direset ke Draft", "success");
         setEvaluations((prev) => prev.filter((e) => e._id !== evalId));
         setConfirmModal({ show: false, evaluationId: "", userName: "" });
       } else {
-        showToast(res?.message || "Gagal menghapus penilaian", "error");
+        showToast(res?.message || "Gagal mereset penilaian", "error");
       }
     } catch (error) {
       console.error(error);
-      showToast("Gagal menghapus penilaian", "error");
+      showToast("Gagal mereset penilaian", "error");
     } finally {
       setDeleting(null);
     }
@@ -252,14 +253,17 @@ const ManajemenPenilaian: React.FC = () => {
                       <td className="cell-center">
                         <button
                           className="btn-delete"
-                          onClick={() =>
-                            handleDeleteClick(
-                              evaluation._id,
-                              (user as any)?.name || "Unknown",
-                            )
-                          }
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const evalId = evaluation._id;
+                            const userName = (user as any)?.name || "Unknown";
+                            console.log("DELETE CLICKED", evalId, userName);
+                            handleDeleteClick(evalId, userName);
+                          }}
                           disabled={deleting === evaluation._id}
                           title="Hapus penilaian (reset ke Draft)"
+                          style={{ position: 'relative', zIndex: 100 }}
                         >
                           {deleting === evaluation._id ? (
                             <svg
@@ -295,29 +299,17 @@ const ManajemenPenilaian: React.FC = () => {
         )}
       </div>
 
-      {/* Confirmation Modal */}
-      {confirmModal.show && (
+      {createPortal(
         <div
-          className="modal-overlay"
+          className={`modal-overlay ${confirmModal.show ? 'active' : ''}`}
           onClick={() => setConfirmModal({ ...confirmModal, show: false })}
         >
           <div
-            className="modal-content"
+            className="modal-content reset-modal"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: 520 }}
           >
-            <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-              <div
-                style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 12,
-                  background: "#fff7ed",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+            <div className="modal-body-inner">
+              <div className="modal-icon-wrapper">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="32"
@@ -334,41 +326,29 @@ const ManajemenPenilaian: React.FC = () => {
                   <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
                 </svg>
               </div>
-              <div style={{ flex: 1 }}>
-                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>
-                  Hapus Penilaian
-                </h3>
-                <p style={{ margin: "8px 0 0", color: "#475569" }}>
-                  Anda yakin ingin menghapus penilaian
+              <div className="modal-text-content">
+                <h3 className="modal-title">Reset Penilaian ke Draft</h3>
+                <p className="modal-text">
+                  Anda yakin ingin mereset penilaian
                   <strong style={{ marginLeft: 6 }}>
                     {confirmModal.userName}
                   </strong>
                   ?
                 </p>
-                <p
-                  style={{ margin: "6px 0 0", color: "#64748b", fontSize: 13 }}
-                >
+                <p className="modal-subtext">
                   Tindakan ini akan mereset penilaian menjadi{" "}
                   <strong>Draft</strong>.
                 </p>
               </div>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                gap: 10,
-                marginTop: 20,
-                justifyContent: "flex-end",
-              }}
-            >
+            <div className="modal-actions">
               <button
                 className="btn-secondary"
                 onClick={() =>
                   setConfirmModal({ ...confirmModal, show: false })
                 }
                 disabled={deleting !== null}
-                style={{ minWidth: 120 }}
               >
                 Batal
               </button>
@@ -376,13 +356,13 @@ const ManajemenPenilaian: React.FC = () => {
                 className="btn-danger"
                 onClick={handleConfirmDelete}
                 disabled={deleting !== null}
-                style={{ minWidth: 140 }}
               >
-                {deleting ? "Menghapus..." : "Hapus Penilaian"}
+                {deleting ? "Menghapus..." : "Reset ke Draft"}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

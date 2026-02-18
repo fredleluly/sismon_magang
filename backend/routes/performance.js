@@ -299,13 +299,35 @@ router.get('/ranking', auth, adminOnly, async (req, res) => {
   }
 });
 
+// PUT /api/performance/:id/reset-to-draft — reset finalized evaluation back to Draft (superadmin)
+router.put('/:id/reset-to-draft', auth, adminOnly, async (req, res) => {
+  try {
+    const evaluation = await PerformanceEvaluation.findById(req.params.id);
+    if (!evaluation) {
+      return res.status(404).json({ success: false, message: 'Penilaian tidak ditemukan.' });
+    }
+    if (evaluation.status !== 'Final') {
+      return res.status(400).json({ success: false, message: 'Penilaian ini belum difinalisasi.' });
+    }
+
+    evaluation.status = 'Draft';
+    await evaluation.save();
+
+    if (DEBUG) console.log(`[RESET TO DRAFT] Evaluation ${req.params.id} reset from Final to Draft`);
+
+    res.json({ success: true, message: 'Penilaian berhasil direset ke Draft.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // DELETE /api/performance/:id — delete draft evaluation
 router.delete('/:id', auth, adminOnly, async (req, res) => {
   try {
     const evaluation = await PerformanceEvaluation.findById(req.params.id);
     if (!evaluation) return res.status(404).json({ success: false, message: 'Penilaian tidak ditemukan.' });
     if (evaluation.status === 'Final') {
-      return res.status(400).json({ success: false, message: 'Penilaian final tidak bisa dihapus.' });
+      return res.status(400).json({ success: false, message: 'Penilaian final tidak bisa dihapus. Gunakan reset ke Draft.' });
     }
     await PerformanceEvaluation.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'Penilaian draft berhasil dihapus.' });
