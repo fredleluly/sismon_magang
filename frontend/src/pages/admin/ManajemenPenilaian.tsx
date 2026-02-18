@@ -231,7 +231,7 @@ const ManajemenPenilaian: React.FC = () => {
                           disabled={deleting === evaluation._id}
                           title="Hapus penilaian (reset ke Draft)"
                         >
-                          {deleting === eval._id ? (
+                          {deleting === evaluation._id ? (
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               viewBox="0 0 24 24"
