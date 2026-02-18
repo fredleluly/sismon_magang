@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { AttendanceAPI, UsersAPI, getToken } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { Attendance, User } from '../../types';
@@ -47,7 +48,6 @@ const AttendanceCalendar: React.FC = () => {
   const [tempDateRangeEnd, setTempDateRangeEnd] = useState<string>('');
   const [isSelectingStart, setIsSelectingStart] = useState(true);
 
-
   const isLate = (jamMasuk: string | null | undefined): boolean => {
     if (!jamMasuk) return false;
     try {
@@ -56,7 +56,9 @@ const AttendanceCalendar: React.FC = () => {
       const [thresholdHours, thresholdMinutes] = lateThreshold.split(':').map(Number);
       if (isNaN(masukHours) || isNaN(masukMinutes) || isNaN(thresholdHours) || isNaN(thresholdMinutes)) return false;
       return masukHours * 60 + masukMinutes > thresholdHours * 60 + thresholdMinutes;
-    } catch { return false; }
+    } catch {
+      return false;
+    }
   };
 
   const getStatusWithLate = (att: Attendance): string => {
@@ -124,7 +126,6 @@ const AttendanceCalendar: React.FC = () => {
     const iv = setInterval(loadTodayStats, 30000);
     return () => clearInterval(iv);
   }, []);
-
 
   const handleViewPhoto = async (attendanceId: string, userName: string) => {
     try {
@@ -237,7 +238,6 @@ const AttendanceCalendar: React.FC = () => {
     }
   }, [attendanceData, filterMode, currentDate]);
 
-
   const getAttendanceForDay = (day: number): Attendance[] => {
     const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     const dateStr = toDateStr(targetDate);
@@ -254,14 +254,16 @@ const AttendanceCalendar: React.FC = () => {
 
   // Merge attendance data with all users — users without records get 'Belum Absen'
   const mergeUsersWithAttendance = (dayAttendance: Attendance[], dateStr: string): Attendance[] => {
-    const attendedUserIds = new Set(dayAttendance.map(a => {
-      if (typeof a.userId === 'string') return a.userId;
-      return a.userId?._id || '';
-    }));
+    const attendedUserIds = new Set(
+      dayAttendance.map((a) => {
+        if (typeof a.userId === 'string') return a.userId;
+        return a.userId?._id || '';
+      }),
+    );
 
     const belumAbsen: Attendance[] = allUsers
-      .filter(u => !attendedUserIds.has(u._id))
-      .map(u => ({
+      .filter((u) => !attendedUserIds.has(u._id))
+      .map((u) => ({
         _id: `belum-${u._id}`,
         userId: u as any,
         tanggal: dateStr,
@@ -278,11 +280,11 @@ const AttendanceCalendar: React.FC = () => {
     const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     const dateStr = toDateStr(targetDate);
     setSelectedDate(dateStr);
-    
+
     // Merge with all users to show Belum Absen
     const merged = mergeUsersWithAttendance(dayData, dateStr);
     setSelectedDayData(merged);
-    
+
     setFilterMode('harian');
     setFilterData(merged);
     setFilterLabel(targetDate.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
@@ -343,36 +345,38 @@ const AttendanceCalendar: React.FC = () => {
 
     const days = [];
     for (let i = 0; i < firstDay; i++) {
-        days.push(<div key={`empty-${i}`} className="calendar-cell empty"></div>);
+      days.push(<div key={`empty-${i}`} className="calendar-cell empty"></div>);
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
-        const inRange = isDateInRange(year, monthIndex, day);
-        const startEnd = isDateStartEnd(year, monthIndex, day);
-        const isStart = startEnd === 'start';
-        const isEnd = startEnd === 'end';
+      const inRange = isDateInRange(year, monthIndex, day);
+      const startEnd = isDateStartEnd(year, monthIndex, day);
+      const isStart = startEnd === 'start';
+      const isEnd = startEnd === 'end';
 
-        days.push(
-            <div
-                key={day}
-                className={`calendar-cell ${inRange ? 'in-range' : ''} ${isStart ? 'start-date' : ''} ${isEnd ? 'end-date' : ''}`}
-                onClick={() => handleCalendarDateClick(year, monthIndex, day)}
-            >
-                {day}
-            </div>
-        );
+      days.push(
+        <div key={day} className={`calendar-cell ${inRange ? 'in-range' : ''} ${isStart ? 'start-date' : ''} ${isEnd ? 'end-date' : ''}`} onClick={() => handleCalendarDateClick(year, monthIndex, day)}>
+          {day}
+        </div>,
+      );
     }
 
     return (
-        <div className="calendar-month-picker">
-            <div className="calendar-month-header">
-                <h3>{monthName} {year}</h3>
-            </div>
-            <div className="calendar-weekdays">
-                {['S','M','T','W','T','F','S'].map(d => <div key={d} className="calendar-weekday">{d}</div>)}
-            </div>
-            <div className="calendar-days">{days}</div>
+      <div className="calendar-month-picker">
+        <div className="calendar-month-header">
+          <h3>
+            {monthName} {year}
+          </h3>
         </div>
+        <div className="calendar-weekdays">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d) => (
+            <div key={d} className="calendar-weekday">
+              {d}
+            </div>
+          ))}
+        </div>
+        <div className="calendar-days">{days}</div>
+      </div>
     );
   };
   // -----------------------------------------------------
@@ -388,17 +392,21 @@ const AttendanceCalendar: React.FC = () => {
       endOfWeek.setDate(startOfWeek.getDate() + 6);
       const fromStr = toDateStr(startOfWeek);
       const toStr = toDateStr(endOfWeek);
-      setFilterData(data.filter((a) => {
-        const d = a.tanggal.toString().split('T')[0];
-        return d >= fromStr && d <= toStr;
-      }));
+      setFilterData(
+        data.filter((a) => {
+          const d = a.tanggal.toString().split('T')[0];
+          return d >= fromStr && d <= toStr;
+        }),
+      );
     } else if (filterMode === 'bulanan') {
       setFilterData(data);
     } else if (filterMode === 'custom' && customFrom && customTo) {
-      setFilterData(data.filter((a) => {
-        const d = a.tanggal.toString().split('T')[0];
-        return d >= customFrom && d <= customTo;
-      }));
+      setFilterData(
+        data.filter((a) => {
+          const d = a.tanggal.toString().split('T')[0];
+          return d >= customFrom && d <= customTo;
+        }),
+      );
     }
   };
 
@@ -465,23 +473,22 @@ const AttendanceCalendar: React.FC = () => {
 
     try {
       // Count status
-      const hadir = dataToExport.filter(a => a.status === 'Hadir').length;
-      const izin = dataToExport.filter(a => a.status === 'Izin').length;
-      const sakit = dataToExport.filter(a => a.status === 'Sakit').length;
-      const alpha = dataToExport.filter(a => a.status === 'Alpha' || a.status === 'Belum Absen').length;
+      const hadir = dataToExport.filter((a) => a.status === 'Hadir').length;
+      const izin = dataToExport.filter((a) => a.status === 'Izin').length;
+      const sakit = dataToExport.filter((a) => a.status === 'Sakit').length;
+      const alpha = dataToExport.filter((a) => a.status === 'Alpha' || a.status === 'Belum Absen').length;
 
       let filename = 'Kehadiran';
       if (filterMode === 'mingguan') {
-          // Calculate start and end of week for filename
-            const now = new Date();
-            const dayOfWeek = now.getDay();
-            const startOfWeek = new Date(now);
-            startOfWeek.setDate(now.getDate() - dayOfWeek);
-            const endOfWeek = new Date(startOfWeek);
-            endOfWeek.setDate(startOfWeek.getDate() + 6);
-            filename = `Kehadiran_Mingguan_${toDateStr(startOfWeek)}_sd_${toDateStr(endOfWeek)}`;
-      }
-      else if (filterMode === 'bulanan') filename = `Kehadiran_${monthNames[currentDate.getMonth()]}_${currentDate.getFullYear()}`;
+        // Calculate start and end of week for filename
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - dayOfWeek);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        filename = `Kehadiran_Mingguan_${toDateStr(startOfWeek)}_sd_${toDateStr(endOfWeek)}`;
+      } else if (filterMode === 'bulanan') filename = `Kehadiran_${monthNames[currentDate.getMonth()]}_${currentDate.getFullYear()}`;
       else if (filterMode === 'custom' && customFrom && customTo) filename = `Kehadiran_${customFrom}_sd_${customTo}`;
       else if (filterMode === 'harian' && selectedDayData.length > 0) {
         filename = `Kehadiran_${selectedDayData[0]?.tanggal.toString().split('T')[0]}`;
@@ -490,34 +497,32 @@ const AttendanceCalendar: React.FC = () => {
       await exportExcel({
         fileName: filename,
         companyName: 'SISMON Magang',
-        sheets: [{
-          sheetName: 'Kehadiran',
-          title: 'DATA KEHADIRAN',
-          subtitle: 'Laporan Kehadiran Peserta Magang',
-          infoLines: [
-            `Filter: ${filterLabel || 'Semua'}`,
-            `Total Data: ${dataToExport.length} peserta`,
-            `Hadir: ${hadir} | Izin: ${izin} | Sakit: ${sakit} | Alpha: ${alpha}`,
-          ],
-          columns: [
-            { header: 'No', key: 'no', width: 6, type: 'number' },
-            { header: 'Nama', key: 'nama', width: 24 },
-            { header: 'Institusi', key: 'instansi', width: 24 },
-            { header: 'Tanggal', key: 'tanggal', width: 22, type: 'date' },
-            { header: 'Jam Masuk', key: 'jamMasuk', width: 14 },
-            { header: 'Jam Keluar', key: 'jamKeluar', width: 14 },
-            { header: 'Status', key: 'status', width: 14 },
-          ],
-          data: dataToExport.map((att, index) => ({
-            no: index + 1,
-            nama: typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown',
-            instansi: typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-',
-            tanggal: new Date(att.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
-            jamMasuk: att.jamMasuk || '-',
-            jamKeluar: att.jamKeluar || '-',
-            status: att.status,
-          })),
-        }],
+        sheets: [
+          {
+            sheetName: 'Kehadiran',
+            title: 'DATA KEHADIRAN',
+            subtitle: 'Laporan Kehadiran Peserta Magang',
+            infoLines: [`Filter: ${filterLabel || 'Semua'}`, `Total Data: ${dataToExport.length} peserta`, `Hadir: ${hadir} | Izin: ${izin} | Sakit: ${sakit} | Alpha: ${alpha}`],
+            columns: [
+              { header: 'No', key: 'no', width: 6, type: 'number' },
+              { header: 'Nama', key: 'nama', width: 24 },
+              { header: 'Institusi', key: 'instansi', width: 24 },
+              { header: 'Tanggal', key: 'tanggal', width: 22, type: 'date' },
+              { header: 'Jam Masuk', key: 'jamMasuk', width: 14 },
+              { header: 'Jam Keluar', key: 'jamKeluar', width: 14 },
+              { header: 'Status', key: 'status', width: 14 },
+            ],
+            data: dataToExport.map((att, index) => ({
+              no: index + 1,
+              nama: typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown',
+              instansi: typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-',
+              tanggal: new Date(att.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+              jamMasuk: att.jamMasuk || '-',
+              jamKeluar: att.jamKeluar || '-',
+              status: att.status,
+            })),
+          },
+        ],
       });
       showToast('Excel berhasil diunduh!', 'success');
     } catch (error) {
@@ -536,7 +541,7 @@ const AttendanceCalendar: React.FC = () => {
 
   const confirmBulkHoliday = async () => {
     setShowHolidayConfirm(false);
-    
+
     setHolidayLoading(true);
     try {
       const res = await AttendanceAPI.bulkHoliday(selectedDate);
@@ -684,14 +689,11 @@ const AttendanceCalendar: React.FC = () => {
             ))}
             {days.map((day) => {
               const count = getAttendanceCount(day);
-              const isSelected =
-                selectedDayData.length > 0 &&
-                selectedDayData[0]?.tanggal.toString().split('T')[0] ===
-                  `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              const isSelected = selectedDayData.length > 0 && selectedDayData[0]?.tanggal.toString().split('T')[0] === `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
               const dayOfWeek = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).getDay();
               const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
               const dayAtt = getAttendanceForDay(day);
-              const isHoliday = dayAtt.length > 0 && dayAtt.every(a => a.status === 'Hari Libur');
+              const isHoliday = dayAtt.length > 0 && dayAtt.every((a) => a.status === 'Hari Libur');
               return (
                 <div key={day} className={`calendar-day ${count > 0 ? 'has-data' : ''} ${isSelected ? 'selected' : ''} ${isWeekend || isHoliday ? 'is-holiday' : ''}`} onClick={() => handleDayClick(day)} title={`${count} orang absen`}>
                   <div className="day-number">{day}</div>
@@ -713,215 +715,210 @@ const AttendanceCalendar: React.FC = () => {
             <div className="work-filter-left">
               <div className="filter-buttons">
                 {(['harian', 'mingguan', 'bulanan', 'custom'] as FilterMode[]).map((mode) => (
-                    <button
-                        key={mode}
-                        className={`filter-btn ${filterMode === mode ? 'active' : ''}`}
-                        onClick={() => {
-                            setFilterMode(mode);
-                            if (mode === 'harian') {
-                                setFilterData([]);
-                                setFilterLabel('');
-                                // Optionally do nothing else, user clicks calendar
-                            } else if (mode === 'custom') {
-                                if (!isSelectingDateRange) setIsSelectingStart(true);
-                            } else if (mode === 'mingguan') {
-                                // Manual trigger via button
-                            } else if (mode === 'bulanan') {
-                                // Trigger monthly filter directly
-                                setTimeout(() => handleApplyFilter(), 0);
-                            }
-                        }}
-                    >
-                        {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                    </button>
+                  <button
+                    key={mode}
+                    className={`filter-btn ${filterMode === mode ? 'active' : ''}`}
+                    onClick={() => {
+                      setFilterMode(mode);
+                      if (mode === 'harian') {
+                        setFilterData([]);
+                        setFilterLabel('');
+                        // Optionally do nothing else, user clicks calendar
+                      } else if (mode === 'custom') {
+                        if (!isSelectingDateRange) setIsSelectingStart(true);
+                      } else if (mode === 'mingguan') {
+                        // Manual trigger via button
+                      } else if (mode === 'bulanan') {
+                        // Trigger monthly filter directly
+                        setTimeout(() => handleApplyFilter(), 0);
+                      }
+                    }}
+                  >
+                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                  </button>
                 ))}
               </div>
 
-               {/* Dynamic Filter Input */}
-               {filterMode === 'bulanan' && (
-                    <div className="month-picker-container">
-                        <button onClick={handlePreviousMonth} className="month-nav-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                        </button>
-                        <span className="month-display">
-                            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-                        </span>
-                        <button onClick={handleNextMonth} className="month-nav-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        </button>
-                    </div>
-                )}
+              {/* Dynamic Filter Input */}
+              {filterMode === 'bulanan' && (
+                <div className="month-picker-container">
+                  <button onClick={handlePreviousMonth} className="month-nav-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                  </button>
+                  <span className="month-display">
+                    {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+                  </span>
+                  <button onClick={handleNextMonth} className="month-nav-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </button>
+                </div>
+              )}
 
-                {filterMode === 'custom' && (
-                    <div className="custom-date-range-container">
-                        <button
-                        className="custom-date-range-toggle"
-                        onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
-                        >
-                        {customFrom && customTo
-                            ? `${customFrom} - ${customTo}`
-                            : 'Pilih Rentang Tanggal'}
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            style={{
-                            width: '16px',
-                            height: '16px',
-                            transform: isSelectingDateRange ? 'rotate(180deg)' : 'rotate(0deg)',
-                            transition: 'transform 0.2s',
-                            }}
-                        >
-                            <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                        </button>
-
-                        {isSelectingDateRange && (
-                        <div className="custom-date-picker-dropdown">
-                            <div className="custom-date-picker-header">
-                            <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>←</button>
-                            <span>Pilih Rentang Tanggal</span>
-                            <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>→</button>
-                            </div>
-
-                            <div className="custom-calendars-container">
-                            {renderCalendarMonth(0)}
-                            {renderCalendarMonth(1)}
-                            </div>
-
-                            <div className="custom-date-range-info">
-                            {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
-                            {tempDateRangeStart && tempDateRangeEnd && (
-                                <p>{tempDateRangeStart} sampai {tempDateRangeEnd}</p>
-                            )}
-                            </div>
-
-                            <div className="custom-date-picker-footer">
-                                <button
-                                    className="custom-date-apply-btn"
-                                    onClick={() => {
-                                        if (tempDateRangeStart && tempDateRangeEnd) {
-                                            setCustomFrom(tempDateRangeStart);
-                                            setCustomTo(tempDateRangeEnd);
-                                            setIsSelectingDateRange(false);
-                                            setIsSelectingStart(true);
-                                            // Apply filter logic
-                                            setTimeout(() => handleApplyFilter(), 0);
-                                        } else {
-                                            showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
-                                        }
-                                    }}
-                                >
-                                    Terapkan
-                                </button>
-                                <button
-                                    className="custom-date-cancel-btn"
-                                    onClick={() => {
-                                        setIsSelectingDateRange(false);
-                                        setTempDateRangeStart('');
-                                        setTempDateRangeEnd('');
-                                        setIsSelectingStart(true);
-                                    }}
-                                >
-                                    Batal
-                                </button>
-                            </div>
-                        </div>
-                        )}
-                    </div>
-                )}
-
-                {filterMode === 'mingguan' && (
-                     <button
-                        className="btn-apply-filter"
-                        onClick={handleApplyFilter}
-                        disabled={filterLoading}
+              {filterMode === 'custom' && (
+                <div className="custom-date-range-container">
+                  <button className="custom-date-range-toggle" onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}>
+                    {customFrom && customTo ? `${customFrom} - ${customTo}` : 'Pilih Rentang Tanggal'}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      style={{
+                        width: '16px',
+                        height: '16px',
+                        transform: isSelectingDateRange ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s',
+                      }}
                     >
-                        {filterLoading ? 'Memuat...' : 'Terapkan Filter'}
-                    </button>
-                )}
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+
+                  {isSelectingDateRange && (
+                    <div className="custom-date-picker-dropdown">
+                      <div className="custom-date-picker-header">
+                        <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>
+                          ←
+                        </button>
+                        <span>Pilih Rentang Tanggal</span>
+                        <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>
+                          →
+                        </button>
+                      </div>
+
+                      <div className="custom-calendars-container">
+                        {renderCalendarMonth(0)}
+                        {renderCalendarMonth(1)}
+                      </div>
+
+                      <div className="custom-date-range-info">
+                        {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
+                        {tempDateRangeStart && tempDateRangeEnd && (
+                          <p>
+                            {tempDateRangeStart} sampai {tempDateRangeEnd}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="custom-date-picker-footer">
+                        <button
+                          className="custom-date-apply-btn"
+                          onClick={() => {
+                            if (tempDateRangeStart && tempDateRangeEnd) {
+                              setCustomFrom(tempDateRangeStart);
+                              setCustomTo(tempDateRangeEnd);
+                              setIsSelectingDateRange(false);
+                              setIsSelectingStart(true);
+                              // Apply filter logic
+                              setTimeout(() => handleApplyFilter(), 0);
+                            } else {
+                              showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
+                            }
+                          }}
+                        >
+                          Terapkan
+                        </button>
+                        <button
+                          className="custom-date-cancel-btn"
+                          onClick={() => {
+                            setIsSelectingDateRange(false);
+                            setTempDateRangeStart('');
+                            setTempDateRangeEnd('');
+                            setIsSelectingStart(true);
+                          }}
+                        >
+                          Batal
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {filterMode === 'mingguan' && (
+                <button className="btn-apply-filter" onClick={handleApplyFilter} disabled={filterLoading}>
+                  {filterLoading ? 'Memuat...' : 'Terapkan Filter'}
+                </button>
+              )}
             </div>
 
             {/* Action Buttons (Right Aligned) */}
             <div className="rekap-filter-actions">
-                 {/* Holiday Buttons */}
-                 {filterMode === 'harian' && selectedDate && (
-                    <>
-                        {selectedDayData.some(a => a.status === 'Hari Libur') ? (
-                            <button
-                                onClick={handleCancelHoliday}
-                                disabled={holidayLoading}
-                                style={{
-                                    padding: '8px 16px',
-                                    background: '#ef4444',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: 8,
-                                    cursor: holidayLoading ? 'not-allowed' : 'pointer',
-                                    fontSize: 13,
-                                    fontWeight: 600,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 8,
-                                    opacity: holidayLoading ? 0.7 : 1,
-                                }}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M3 6h18"></path>
-                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                                </svg>
-                                {holidayLoading ? '...' : 'Batal Libur'}
-                            </button>
-                        ) : (
-                            <button
-                                onClick={handleBulkHoliday}
-                                disabled={holidayLoading}
-                                style={{
-                                    padding: '8px 16px',
-                                    background: '#f59e0b',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: 8,
-                                    cursor: holidayLoading ? 'not-allowed' : 'pointer',
-                                    fontSize: 13,
-                                    fontWeight: 600,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 8,
-                                    opacity: holidayLoading ? 0.7 : 1,
-                                }}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                                </svg>
-                                {holidayLoading ? '...' : 'Set Libur'}
-                            </button>
-                        )}
-                    </>
-                )}
+              {/* Holiday Buttons */}
+              {filterMode === 'harian' && selectedDate && (
+                <>
+                  {selectedDayData.some((a) => a.status === 'Hari Libur') ? (
+                    <button
+                      onClick={handleCancelHoliday}
+                      disabled={holidayLoading}
+                      style={{
+                        padding: '8px 16px',
+                        background: '#ef4444',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: holidayLoading ? 'not-allowed' : 'pointer',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        opacity: holidayLoading ? 0.7 : 1,
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                      </svg>
+                      {holidayLoading ? '...' : 'Batal Libur'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleBulkHoliday}
+                      disabled={holidayLoading}
+                      style={{
+                        padding: '8px 16px',
+                        background: '#f59e0b',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 8,
+                        cursor: holidayLoading ? 'not-allowed' : 'pointer',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        opacity: holidayLoading ? 0.7 : 1,
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                      </svg>
+                      {holidayLoading ? '...' : 'Set Libur'}
+                    </button>
+                  )}
+                </>
+              )}
 
-                <button
-                    className="btn-export"
-                    onClick={handleExportExcel}
-                    disabled={displayData.length === 0}
-                >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
-                    Export Excel
-                </button>
+              <button className="btn-export" onClick={handleExportExcel} disabled={displayData.length === 0}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Export Excel
+              </button>
             </div>
           </div>
-
-
 
           {displayData.length === 0 ? (
             <div className="no-selection">
@@ -935,96 +932,91 @@ const AttendanceCalendar: React.FC = () => {
               </div>
 
               <div className="attendance-table-wrapper">
-              <table className="attendance-table">
-                <thead>
-                  <tr>
-                    <th>No</th>
-                    <th>Nama</th>
-                    <th>Institusi</th>
-                    {filterMode !== 'harian' && <th>Tanggal</th>}
-                    <th>Jam Masuk</th>
-                    <th>Jam Keluar</th>
-                    <th>Status</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {displayData.map((att, i) => (
-                    <tr key={att._id}>
-                      <td>{i + 1}</td>
-                      <td className="name-cell">{typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown'}</td>
-                      <td>{typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-'}</td>
-                      {filterMode !== 'harian' && (
-                        <td style={{ fontSize: 12 }}>{new Date(att.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
-                      )}
-                      <td className="time-cell">{att.jamMasuk || '-'}</td>
-                      <td>
-                        <div className="reason-container">
-                          <span className="time-cell">{att.jamKeluar || '-'}</span>
-                          {att.keterangan && (
-                            <div className="reason-badge">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="16" x2="12" y2="12"></line>
-                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                              </svg>
-                              Info
-                              <div className="reason-tooltip">
-                                <strong>Alasan Pulang Cepat:</strong><br/>
-                                {att.keterangan}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`status-badge status-${(isThresholdLoaded ? getStatusWithLate(att) : att.status || '').toLowerCase().replace(/\s+/g, '-')}`}>{isThresholdLoaded ? getStatusWithLate(att) : att.status}</span>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {att.fotoAbsensi ? (
-                            <button
-                              onClick={() => handleViewPhoto(att._id, typeof att.userId === 'string' ? 'User' : att.userId?.name || 'User')}
-                              title="Lihat Foto Masuk"
-                              style={{ background: 'none', border: '1px solid var(--gray-300)', borderRadius: 4, padding: 4, cursor: 'pointer', color: 'var(--primary-600)' }}
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                              </svg>
-                            </button>
-                          ) : (
-                            <span style={{ width: 26 }}></span>
-                          )}
-                          {att.fotoPulang ? (
-                            <button
-                              onClick={() => handleViewPhotoPulang(att._id, typeof att.userId === 'string' ? 'User' : att.userId?.name || 'User')}
-                              title="Lihat Foto Pulang"
-                              style={{ background: 'none', border: '1px solid #fcd34d', borderRadius: 4, padding: 4, cursor: 'pointer', color: '#d97706' }}
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                <polyline points="16 17 21 12 16 7"></polyline>
-                                <line x1="21" y1="12" x2="9" y2="12"></line>
-                              </svg>
-                            </button>
-                          ) : null}
-                          <button
-                            onClick={() => openEditStatus(att)}
-                            title="Edit Status"
-                            style={{ background: 'none', border: '1px solid var(--gray-300)', borderRadius: 4, padding: 4, cursor: 'pointer', color: '#f59e0b' }}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M12 20h9"></path>
-                              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
+                <table className="attendance-table">
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>Nama</th>
+                      <th>Institusi</th>
+                      {filterMode !== 'harian' && <th>Tanggal</th>}
+                      <th>Jam Masuk</th>
+                      <th>Jam Keluar</th>
+                      <th>Status</th>
+                      <th>Aksi</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {displayData.map((att, i) => (
+                      <tr key={att._id}>
+                        <td>{i + 1}</td>
+                        <td className="name-cell">{typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown'}</td>
+                        <td>{typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-'}</td>
+                        {filterMode !== 'harian' && <td style={{ fontSize: 12 }}>{new Date(att.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>}
+                        <td className="time-cell">{att.jamMasuk || '-'}</td>
+                        <td>
+                          <div className="reason-container">
+                            <span className="time-cell">{att.jamKeluar || '-'}</span>
+                            {att.keterangan && (
+                              <div className="reason-badge">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <circle cx="12" cy="12" r="10"></circle>
+                                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                Info
+                                <div className="reason-tooltip">
+                                  <strong>Alasan Pulang Cepat:</strong>
+                                  <br />
+                                  {att.keterangan}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`status-badge status-${(isThresholdLoaded ? getStatusWithLate(att) : att.status || '').toLowerCase().replace(/\s+/g, '-')}`}>{isThresholdLoaded ? getStatusWithLate(att) : att.status}</span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {att.fotoAbsensi ? (
+                              <button
+                                onClick={() => handleViewPhoto(att._id, typeof att.userId === 'string' ? 'User' : att.userId?.name || 'User')}
+                                title="Lihat Foto Masuk"
+                                style={{ background: 'none', border: '1px solid var(--gray-300)', borderRadius: 4, padding: 4, cursor: 'pointer', color: 'var(--primary-600)' }}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                  <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                              </button>
+                            ) : (
+                              <span style={{ width: 26 }}></span>
+                            )}
+                            {att.fotoPulang ? (
+                              <button
+                                onClick={() => handleViewPhotoPulang(att._id, typeof att.userId === 'string' ? 'User' : att.userId?.name || 'User')}
+                                title="Lihat Foto Pulang"
+                                style={{ background: 'none', border: '1px solid #fcd34d', borderRadius: 4, padding: 4, cursor: 'pointer', color: '#d97706' }}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                  <polyline points="16 17 21 12 16 7"></polyline>
+                                  <line x1="21" y1="12" x2="9" y2="12"></line>
+                                </svg>
+                              </button>
+                            ) : null}
+                            <button onClick={() => openEditStatus(att)} title="Edit Status" style={{ background: 'none', border: '1px solid var(--gray-300)', borderRadius: 4, padding: 4, cursor: 'pointer', color: '#f59e0b' }}>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
@@ -1032,17 +1024,17 @@ const AttendanceCalendar: React.FC = () => {
           <div className="summary-stats">
             <div className="stat-box">
               <div className="stat-label">Total Hadir</div>
-              <div className="stat-value">
-                {displayData.filter((a) => (a.status || '').toLowerCase() === 'hadir').length}
-              </div>
+              <div className="stat-value">{displayData.filter((a) => (a.status || '').toLowerCase() === 'hadir').length}</div>
             </div>
             <div className="stat-box">
               <div className="stat-label">Total Telat</div>
               <div className="stat-value" style={{ color: '#ea580c' }}>
-                {displayData.filter((a) => {
-                  const s = isThresholdLoaded ? getStatusWithLate(a) : a.status;
-                  return (s || '').toLowerCase() === 'telat';
-                }).length}
+                {
+                  displayData.filter((a) => {
+                    const s = isThresholdLoaded ? getStatusWithLate(a) : a.status;
+                    return (s || '').toLowerCase() === 'telat';
+                  }).length
+                }
               </div>
             </div>
             <div className="stat-box">
@@ -1052,254 +1044,344 @@ const AttendanceCalendar: React.FC = () => {
             <div className="stat-box">
               <div className="stat-label">Total Alpa</div>
               <div className="stat-value">
-                {displayData.filter((a) => {
-                  const s = (a.status || '').toLowerCase();
-                  return s === 'alpha' || s === 'alpa';
-                }).length}
+                {
+                  displayData.filter((a) => {
+                    const s = (a.status || '').toLowerCase();
+                    return s === 'alpha' || s === 'alpa';
+                  }).length
+                }
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {editingAtt && (
-        <div
-          className="modal-overlay active"
-          style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
-          onClick={closeEdit}
-        >
-          <div
-            style={{ background: 'white', borderRadius: 16, width: '100%', maxWidth: 440, boxShadow: '0 25px 60px rgba(0,0,0,0.3)', overflow: 'hidden', animation: 'slideUp 0.3s ease' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
-                  </svg>
+      {editingAtt &&
+        ReactDOM.createPortal(
+          <div className="edit-kehadiran-overlay" onClick={closeEdit}>
+            <div className="edit-kehadiran-modal" onClick={(e) => e.stopPropagation()}>
+              {/* Header */}
+              <div className="edit-kehadiran-modal-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div className="header-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 20h9"></path>
+                      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
+                    </svg>
+                  </div>
+                  <div className="header-info">
+                    <h3>Edit Kehadiran</h3>
+                    <p>Ubah status kehadiran peserta</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'white' }}>Edit Kehadiran</h3>
-                  <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>Ubah status kehadiran peserta</p>
-                </div>
-              </div>
-              <button
-                onClick={closeEdit}
-                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 16, transition: 'background 0.2s' }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.3)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.15)')}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* User Info */}
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 16, fontWeight: 700 }}>
-                  {(typeof editingAtt.userId === 'string' ? 'U' : editingAtt.userId?.name?.charAt(0) || 'U').toUpperCase()}
-                </div>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: '#1e293b' }}>{typeof editingAtt.userId === 'string' ? 'Unknown' : editingAtt.userId?.name}</div>
-                  <div style={{ fontSize: 12, color: '#94a3b8' }}>{typeof editingAtt.userId === 'string' ? '-' : editingAtt.userId?.instansi || '-'}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Form */}
-            <div style={{ padding: '20px 24px' }}>
-              <div style={{ marginBottom: 18 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 8 }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                  Jam Masuk
-                </label>
-                <input
-                  type="time"
-                  value={editJamMasuk}
-                  onChange={(e) => setEditJamMasuk(e.target.value)}
-                  style={{ width: '100%', padding: '11px 14px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box', transition: 'border-color 0.2s', outline: 'none' }}
-                  onFocus={(e) => (e.target.style.borderColor = '#667eea')}
-                  onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
-                />
-              </div>
-
-              <div style={{ marginBottom: 18 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 8 }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                  Jam Keluar
-                </label>
-                <input
-                  type="time"
-                  value={editJamKeluar}
-                  onChange={(e) => setEditJamKeluar(e.target.value)}
-                  style={{ width: '100%', padding: '11px 14px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box', transition: 'border-color 0.2s', outline: 'none' }}
-                  onFocus={(e) => (e.target.style.borderColor = '#667eea')}
-                  onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
-                />
-              </div>
-
-              <div style={{ marginBottom: 24 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 8 }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
-                  Status Kehadiran
-                </label>
-                <select
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                  style={{ width: '100%', padding: '11px 14px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box', background: 'white', transition: 'border-color 0.2s', outline: 'none', cursor: 'pointer' }}
-                  onFocus={(e) => (e.target.style.borderColor = '#667eea')}
-                  onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+                <button
+                  onClick={closeEdit}
+                  style={{
+                    background: 'rgba(255,255,255,0.15)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: 32,
+                    height: 32,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: 16,
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.3)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.15)')}
                 >
-                  <option value="Hadir">✅ Hadir</option>
-                  <option value="Telat">⏰ Telat</option>
-                  <option value="Izin">📋 Izin</option>
-                  <option value="Sakit">🏥 Sakit</option>
-                  <option value="Alpha">❌ Alpa</option>
-                  <option value="Hari Libur">🎉 Hari Libur</option>
-                  <option value="Belum Absen">⏳ Belum Absen</option>
-                </select>
+                  ✕
+                </button>
+              </div>
+
+              {/* User Info */}
+              <div className="user-info">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontSize: 16,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {(typeof editingAtt.userId === 'string' ? 'U' : editingAtt.userId?.name?.charAt(0) || 'U').toUpperCase()}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: '#1e293b' }}>{typeof editingAtt.userId === 'string' ? 'Unknown' : editingAtt.userId?.name}</div>
+                    <div style={{ fontSize: 12, color: '#94a3b8' }}>{typeof editingAtt.userId === 'string' ? '-' : editingAtt.userId?.instansi || '-'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Form */}
+              <div className="form-body">
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 8 }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    Jam Masuk
+                  </label>
+                  <input
+                    type="time"
+                    value={editJamMasuk}
+                    onChange={(e) => setEditJamMasuk(e.target.value)}
+                    style={{ width: '100%', padding: '11px 14px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box', transition: 'border-color 0.2s', outline: 'none' }}
+                    onFocus={(e) => (e.target.style.borderColor = '#667eea')}
+                    onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+                  />
+                </div>
+
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 8 }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    Jam Keluar
+                  </label>
+                  <input
+                    type="time"
+                    value={editJamKeluar}
+                    onChange={(e) => setEditJamKeluar(e.target.value)}
+                    style={{ width: '100%', padding: '11px 14px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box', transition: 'border-color 0.2s', outline: 'none' }}
+                    onFocus={(e) => (e.target.style.borderColor = '#667eea')}
+                    onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+                  />
+                </div>
+
+                <div style={{ marginBottom: 24 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 8 }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="8.5" cy="7" r="4"></circle>
+                      <polyline points="17 11 19 13 23 9"></polyline>
+                    </svg>
+                    Status Kehadiran
+                  </label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '11px 14px',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: 10,
+                      fontSize: 14,
+                      fontFamily: 'inherit',
+                      boxSizing: 'border-box',
+                      background: 'white',
+                      transition: 'border-color 0.2s',
+                      outline: 'none',
+                      cursor: 'pointer',
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = '#667eea')}
+                    onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+                  >
+                    <option value="Hadir">✅ Hadir</option>
+                    <option value="Telat">⏰ Telat</option>
+                    <option value="Izin">📋 Izin</option>
+                    <option value="Sakit">🏥 Sakit</option>
+                    <option value="Alpha">❌ Alpa</option>
+                    <option value="Hari Libur">🎉 Hari Libur</option>
+                    <option value="Belum Absen">⏳ Belum Absen</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="modal-actions">
+                <button
+                  onClick={closeEdit}
+                  style={{ flex: 1, padding: '11px 14px', background: 'white', border: '2px solid #e2e8f0', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#64748b', transition: 'all 0.2s' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#cbd5e1';
+                    e.currentTarget.style.background = '#f8fafc';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#e2e8f0';
+                    e.currentTarget.style.background = 'white';
+                  }}
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleSaveStatus}
+                  style={{
+                    flex: 1,
+                    padding: '11px 14px',
+                    background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    boxShadow: '0 4px 12px rgba(34,197,94,0.3)',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(34,197,94,0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(34,197,94,0.3)';
+                  }}
+                >
+                  💾 Simpan Perubahan
+                </button>
               </div>
             </div>
+          </div>,
+          document.body,
+        )}
 
-            {/* Footer */}
-            <div style={{ padding: '16px 24px', background: '#f8fafc', borderTop: '1px solid #f1f5f9', display: 'flex', gap: 10 }}>
-              <button
-                onClick={closeEdit}
-                style={{ flex: 1, padding: '11px 14px', background: 'white', border: '2px solid #e2e8f0', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#64748b', transition: 'all 0.2s' }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = 'white'; }}
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleSaveStatus}
-                style={{ flex: 1, padding: '11px 14px', background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)', color: 'white', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 600, boxShadow: '0 4px 12px rgba(34,197,94,0.3)', transition: 'all 0.2s' }}
-                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(34,197,94,0.4)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(34,197,94,0.3)'; }}
-              >
-                💾 Simpan Perubahan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {viewingPhoto && (
-        <div
-          className="modal-overlay active"
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
-          onClick={() => { setViewingPhoto(null); setViewingPhotoName(''); }}
-        >
+      {viewingPhoto &&
+        ReactDOM.createPortal(
           <div
-            style={{ background: 'white', borderRadius: 12, padding: 20, maxWidth: 500, width: '90%', boxShadow: '0 10px 40px rgba(0,0,0,0.3)', position: 'relative' }}
-            onClick={(e) => e.stopPropagation()}
+            className="modal-overlay active"
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}
+            onClick={() => {
+              setViewingPhoto(null);
+              setViewingPhotoName('');
+            }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1e293b' }}>Foto Absensi - {viewingPhotoName}</h3>
-              <button
-                onClick={() => { setViewingPhoto(null); setViewingPhotoName(''); }}
-                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#64748b' }}
-              >
-                ✕
-              </button>
+            <div style={{ background: 'white', borderRadius: 12, padding: 20, maxWidth: 500, width: '90%', boxShadow: '0 10px 40px rgba(0,0,0,0.3)', position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1e293b' }}>Foto Absensi - {viewingPhotoName}</h3>
+                <button
+                  onClick={() => {
+                    setViewingPhoto(null);
+                    setViewingPhotoName('');
+                  }}
+                  style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#64748b' }}
+                >
+                  ✕
+                </button>
+              </div>
+              <img src={viewingPhoto} alt={`Foto absensi ${viewingPhotoName}`} style={{ width: '100%', borderRadius: 8, maxHeight: '60vh', objectFit: 'contain' }} />
             </div>
-            <img
-              src={viewingPhoto}
-              alt={`Foto absensi ${viewingPhotoName}`}
-              style={{ width: '100%', borderRadius: 8, maxHeight: '60vh', objectFit: 'contain' }}
-            />
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
 
       {/* Holiday Confirmation Modal */}
-      {showHolidayConfirm && (
-        <div
-          className="modal-overlay active"
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
-          onClick={() => setShowHolidayConfirm(false)}
-        >
+      {showHolidayConfirm &&
+        ReactDOM.createPortal(
           <div
-            style={{ background: 'white', borderRadius: 12, padding: 24, maxWidth: 420, width: '90%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)', textAlign: 'center' }}
-            onClick={(e) => e.stopPropagation()}
+            className="modal-overlay active"
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}
+            onClick={() => setShowHolidayConfirm(false)}
           >
-            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-              </svg>
+            <div style={{ background: 'white', borderRadius: 12, padding: 24, maxWidth: 420, width: '90%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+              <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+              </div>
+              <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 700, color: '#1e293b' }}>Tandai Hari Libur?</h3>
+              <p style={{ margin: '0 0 20px', fontSize: 14, color: '#64748b', lineHeight: 1.5 }}>
+                Semua peserta akan ditandai <strong style={{ color: '#f59e0b' }}>Hari Libur</strong> pada tanggal:
+                <br />
+                <strong style={{ color: '#1e293b' }}>{selectedDate ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''}</strong>
+              </p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => setShowHolidayConfirm(false)} style={{ flex: 1, padding: '10px 14px', background: '#e2e8f0', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#475569' }}>
+                  Batal
+                </button>
+                <button
+                  onClick={confirmBulkHoliday}
+                  disabled={holidayLoading}
+                  style={{
+                    flex: 1,
+                    padding: '10px 14px',
+                    background: '#f59e0b',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: holidayLoading ? 'not-allowed' : 'pointer',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    opacity: holidayLoading ? 0.7 : 1,
+                  }}
+                >
+                  {holidayLoading ? 'Memproses...' : 'Ya, Tandai'}
+                </button>
+              </div>
             </div>
-            <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 700, color: '#1e293b' }}>Tandai Hari Libur?</h3>
-            <p style={{ margin: '0 0 20px', fontSize: 14, color: '#64748b', lineHeight: 1.5 }}>
-              Semua peserta akan ditandai <strong style={{ color: '#f59e0b' }}>Hari Libur</strong> pada tanggal:<br />
-              <strong style={{ color: '#1e293b' }}>{selectedDate ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''}</strong>
-            </p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={() => setShowHolidayConfirm(false)}
-                style={{ flex: 1, padding: '10px 14px', background: '#e2e8f0', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#475569' }}
-              >
-                Batal
-              </button>
-              <button
-                onClick={confirmBulkHoliday}
-                disabled={holidayLoading}
-                style={{ flex: 1, padding: '10px 14px', background: '#f59e0b', color: 'white', border: 'none', borderRadius: 8, cursor: holidayLoading ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 600, opacity: holidayLoading ? 0.7 : 1 }}
-              >
-                {holidayLoading ? 'Memproses...' : 'Ya, Tandai'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
 
       {/* Cancel Holiday Confirmation Modal */}
-      {showCancelHolidayConfirm && (
-        <div
-          className="modal-overlay active"
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
-          onClick={() => setShowCancelHolidayConfirm(false)}
-        >
+      {showCancelHolidayConfirm &&
+        ReactDOM.createPortal(
           <div
-            style={{ background: 'white', borderRadius: 12, padding: 24, maxWidth: 420, width: '90%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)', textAlign: 'center' }}
-            onClick={(e) => e.stopPropagation()}
+            className="modal-overlay active"
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}
+            onClick={() => setShowCancelHolidayConfirm(false)}
           >
-            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 6h18"></path>
-                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-              </svg>
+            <div style={{ background: 'white', borderRadius: 12, padding: 24, maxWidth: 420, width: '90%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+              <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18"></path>
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                </svg>
+              </div>
+              <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 700, color: '#1e293b' }}>Batalkan Hari Libur?</h3>
+              <p style={{ margin: '0 0 20px', fontSize: 14, color: '#64748b', lineHeight: 1.5 }}>
+                Status <strong style={{ color: '#ef4444' }}>Hari Libur</strong> akan dihapus pada tanggal:
+                <br />
+                <strong style={{ color: '#1e293b' }}>{selectedDate ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''}</strong>
+                <br />
+                Peserta akan kembali menjadi "Belum Absen".
+              </p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  onClick={() => setShowCancelHolidayConfirm(false)}
+                  style={{ flex: 1, padding: '10px 14px', background: '#e2e8f0', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#475569' }}
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={confirmCancelHoliday}
+                  disabled={holidayLoading}
+                  style={{
+                    flex: 1,
+                    padding: '10px 14px',
+                    background: '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: holidayLoading ? 'not-allowed' : 'pointer',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    opacity: holidayLoading ? 0.7 : 1,
+                  }}
+                >
+                  {holidayLoading ? 'Memproses...' : 'Ya, Batalkan'}
+                </button>
+              </div>
             </div>
-            <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 700, color: '#1e293b' }}>Batalkan Hari Libur?</h3>
-            <p style={{ margin: '0 0 20px', fontSize: 14, color: '#64748b', lineHeight: 1.5 }}>
-              Status <strong style={{ color: '#ef4444' }}>Hari Libur</strong> akan dihapus pada tanggal:<br />
-              <strong style={{ color: '#1e293b' }}>{selectedDate ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''}</strong><br />
-              Peserta akan kembali menjadi "Belum Absen".
-            </p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={() => setShowCancelHolidayConfirm(false)}
-                style={{ flex: 1, padding: '10px 14px', background: '#e2e8f0', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#475569' }}
-              >
-                Batal
-              </button>
-              <button
-                onClick={confirmCancelHoliday}
-                disabled={holidayLoading}
-                style={{ flex: 1, padding: '10px 14px', background: '#ef4444', color: 'white', border: 'none', borderRadius: 8, cursor: holidayLoading ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 600, opacity: holidayLoading ? 0.7 : 1 }}
-              >
-                {holidayLoading ? 'Memproses...' : 'Ya, Batalkan'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
