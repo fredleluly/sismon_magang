@@ -378,8 +378,17 @@ const LogAktivitas: React.FC = () => {
           <div className="pth-left"><h3>Aktivitas Terbaru</h3></div>
           <div className="peserta-search"><input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari aktivitas..." /></div>
         </div>
-        <div className="table-container">
+        <div className="log-table-header-wrapper">
           <table className="log-table">
+            <colgroup>
+              <col style={{ width: '15%' }} />
+              <col style={{ width: '12%' }} />
+              <col style={{ width: '20%' }} />
+              <col style={{ width: '23%' }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '10%' }} />
+            </colgroup>
             <thead>
               <tr>
                 <th>Nama Peserta</th>
@@ -391,6 +400,19 @@ const LogAktivitas: React.FC = () => {
                 <th>Bundle</th>
               </tr>
             </thead>
+          </table>
+        </div>
+        <div className="table-container">
+          <table className="log-table">
+            <colgroup>
+              <col style={{ width: '15%' }} />
+              <col style={{ width: '12%' }} />
+              <col style={{ width: '20%' }} />
+              <col style={{ width: '23%' }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '10%' }} />
+            </colgroup>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
