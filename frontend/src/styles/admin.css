@@ -1502,8 +1502,12 @@ img {
 }
 .log-table {
   width: 100%;
-  border-collapse: collapse;
-  min-width: 900px;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+.log-table-header-wrapper {
+  overflow: hidden;
 }
 .log-table thead th {
   text-align: left;
@@ -1515,9 +1519,6 @@ img {
   padding: 14px 16px;
   border-bottom: 2px solid var(--gray-100);
   background: var(--gray-50);
-  position: sticky;
-  top: 0;
-  z-index: 2;
 }
 .log-table tbody td {
   padding: 16px;
@@ -1536,7 +1537,6 @@ img {
 }
 
 .log-table tbody tr {
-  animation: fadeInUp 0.3s ease both;
   transition: background-color var(--transition-fast);
 }
 .log-table tbody tr:hover {
