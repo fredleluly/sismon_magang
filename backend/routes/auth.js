@@ -15,7 +15,7 @@ function generateToken(user) {
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, instansi } = req.body;
+    const { name, email, password, instansi, username } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: 'Nama, email, dan password wajib diisi.' });
@@ -26,7 +26,14 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email sudah terdaftar.' });
     }
 
-    const user = await User.create({ name, email, password, instansi, role: 'user' });
+    if (username) {
+      const existingUsername = await User.findOne({ username: username.trim().toLowerCase() });
+      if (existingUsername) {
+        return res.status(400).json({ success: false, message: 'Username sudah digunakan.' });
+      }
+    }
+
+    const user = await User.create({ name, email, password, instansi, username: username ? username.trim().toLowerCase() : undefined, role: 'user' });
     const token = generateToken(user);
 
     res.status(201).json({
@@ -45,17 +52,24 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Email dan password wajib diisi.' });
+      return res.status(400).json({ success: false, message: 'Email/username dan password wajib diisi.' });
     }
 
-    const user = await User.findOne({ email });
+    // Support login by email or name
+    const identifier = email.trim();
+    const user = await User.findOne({
+      $or: [
+        { email: identifier.toLowerCase() },
+        { name: new RegExp(`^${identifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
+      ]
+    });
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Email atau password salah.' });
+      return res.status(401).json({ success: false, message: 'Email/username atau password salah.' });
     }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Email atau password salah.' });
+      return res.status(401).json({ success: false, message: 'Email/username atau password salah.' });
     }
 
     const token = generateToken(user);
@@ -78,7 +92,7 @@ router.get('/me', auth, async (req, res) => {
 // PUT /api/auth/profile — update own profile
 router.put('/profile', auth, async (req, res) => {
   try {
-    const { name, email, instansi, jabatan, password } = req.body;
+    const { name, email, instansi, jabatan, password, username } = req.body;
     const user = req.user;
 
     if (name) user.name = name;
@@ -86,6 +100,7 @@ router.put('/profile', auth, async (req, res) => {
     if (instansi) user.instansi = instansi;
     if (jabatan) user.jabatan = jabatan;
     if (password) user.password = password;
+    if (username !== undefined) user.username = username ? username.trim().toLowerCase() : '';
 
     await user.save();
     res.json({ success: true, message: 'Profil berhasil diperbarui.', data: user.toJSON() });
