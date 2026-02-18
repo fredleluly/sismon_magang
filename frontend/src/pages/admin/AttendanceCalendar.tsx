@@ -1582,39 +1582,47 @@ const AttendanceCalendar: React.FC = () => {
             <div className="stat-box">
               <div className="stat-label">Total Hadir</div>
               <div className="stat-value">
-                {displayData.filter((a) => {
-                  const s = getStatusWithLate(a);
-                  const sl = (s || "").toLowerCase();
-                  return sl === "hadir" || sl === "telat";
-                }).length}
+                {
+                  displayData.filter((a) => {
+                    const s = getStatusWithLate(a);
+                    const sl = (s || "").toLowerCase();
+                    return sl === "hadir" || sl === "telat";
+                  }).length
+                }
               </div>
             </div>
             <div className="stat-box">
               <div className="stat-label">Total Telat</div>
               <div className="stat-value" style={{ color: "#ea580c" }}>
-                {displayData.filter((a) => {
+                {
+                  displayData.filter((a) => {
                     const s = getStatusWithLate(a);
                     return (s || "").toLowerCase() === "telat";
-                  }).length}
+                  }).length
+                }
               </div>
             </div>
             <div className="stat-box">
               <div className="stat-label">Total Izin</div>
               <div className="stat-value">
-                {displayData.filter((a) => {
-                  const s = getStatusWithLate(a);
-                  return (s || "").toLowerCase() === "izin";
-                }).length}
+                {
+                  displayData.filter((a) => {
+                    const s = getStatusWithLate(a);
+                    return (s || "").toLowerCase() === "izin";
+                  }).length
+                }
               </div>
             </div>
             <div className="stat-box">
               <div className="stat-label">Total Alpa</div>
               <div className="stat-value">
-                {displayData.filter((a) => {
-                  const s = getStatusWithLate(a);
-                  const sl = (s || "").toLowerCase();
-                  return sl === "alpha" || sl === "alpa";
-                }).length}
+                {
+                  displayData.filter((a) => {
+                    const s = getStatusWithLate(a);
+                    const sl = (s || "").toLowerCase();
+                    return sl === "alpha" || sl === "alpa";
+                  }).length
+                }
               </div>
             </div>
           </div>
