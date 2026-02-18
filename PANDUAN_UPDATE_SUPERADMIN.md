@@ -9,34 +9,37 @@ Ada 3 cara untuk mengupdate role user menjadi `superadmin`:
 ### Langkah-langkah:
 
 1. **Buka terminal di folder backend**
+
    ```bash
    cd backend
    ```
 
 2. **Jalankan script update-superadmin.js dengan email user**
+
    ```bash
    node update-superadmin.js admin@example.com
    ```
 
 3. **Output yang akan Anda lihat:**
+
    ```
    📲 Menghubungkan ke database...
    ✅ Database connected
-   
+
    🔍 Mencari user dengan email: admin@example.com
-   
+
    ℹ️  User ditemukan:
       Nama: Admin User
       Email: admin@example.com
       Role sebelumnya: admin
-   
+
    ✅ Role berhasil diupdate menjadi: superadmin
-   
+
    📝 User sekarang dapat mengakses:
       • Dashboard
       • Manajemen Penilaian
       • Semua fitur admin lainnya
-   
+
    ✅ Script selesai
    ```
 
@@ -49,15 +52,17 @@ Ada 3 cara untuk mengupdate role user menjadi `superadmin`:
 Jika Anda memiliki akses MongoDB langsung:
 
 ### MongoDB Command:
+
 ```javascript
 // Di MongoDB Shell atau compass
 db.users.updateOne(
   { email: "admin@example.com" },
-  { $set: { role: "superadmin" } }
-)
+  { $set: { role: "superadmin" } },
+);
 ```
 
 ### Contoh MongoDB Compass:
+
 1. Buka MongoDB Compass
 2. Connect ke database `sismon_magang`
 3. Buka collection `users`
@@ -76,6 +81,7 @@ PATCH /api/users/:userId/role
 ```
 
 ### Request:
+
 ```bash
 curl -X PATCH http://localhost:5173/api/users/USER_ID/role \
   -H "Authorization: Bearer TOKEN_SUPERADMIN" \
@@ -93,17 +99,18 @@ Jika ingin menambah superadmin saat seeding, edit `seed.js`:
 // File: backend/seed.js
 const users = [
   {
-    name: 'Super Admin',
-    email: 'superadmin@pln.com',
-    password: 'Password123',
-    role: 'superadmin',  // <-- Add this
-    instansi: 'PLN'
+    name: "Super Admin",
+    email: "superadmin@pln.com",
+    password: "Password123",
+    role: "superadmin", // <-- Add this
+    instansi: "PLN",
   },
   // ... users lainnya
 ];
 ```
 
 Kemudian jalankan:
+
 ```bash
 node seed.js
 ```
@@ -116,6 +123,7 @@ node seed.js
 2. **Cara 3:** Refresh page, menu "Manajemen Penilaian" seharusnya muncul
 
 ### Di Browser Console:
+
 ```javascript
 // Akan menampilkan:
 // User role: superadmin
@@ -126,16 +134,19 @@ node seed.js
 ## **Troubleshooting**
 
 **Masalah:** Menu "Manajemen Penilaian" masih tidak muncul setelah update
+
 - [ ] Pastikan sudah logout dan login ulang
 - [ ] Clear browser cache (Ctrl+Shift+Del atau Cmd+Shift+Delete)
 - [ ] Hard refresh page (Ctrl+F5 atau Cmd+Shift+R)
 - [ ] Cek di browser console apakah `User role: superadmin` muncul
 
 **Masalah:** Script error "MONGODB_URI tidak ditemukan"
+
 - [ ] Pastikan file `.env` sudah ada dan berisi `MONGODB_URI`
 - [ ] Pastikan MongoDB service running
 
 **Masalah:** User tidak ditemukan
+
 - [ ] Pastikan email user benar (case sensitive bisa tergantung DB)
 - [ ] Contoh: `node update-superadmin.js superadmin@example.com`
 

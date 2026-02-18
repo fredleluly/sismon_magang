@@ -3,7 +3,7 @@ export interface User {
   _id: string;
   name: string;
   email: string;
-  role: 'admin' | 'user' | 'superadmin';
+  role: "admin" | "user" | "superadmin";
   instansi?: string;
   jabatan?: string;
   status?: string;
@@ -23,7 +23,7 @@ export interface WorkLog {
   berkas: number;
   buku: number;
   bundle: number;
-  status: 'Draft' | 'Selesai';
+  status: "Draft" | "Selesai";
   createdAt: string;
 }
 
@@ -42,7 +42,15 @@ export interface Attendance {
   tanggal: string;
   jamMasuk?: string;
   jamKeluar?: string;
-  status: 'Hadir' | 'Telat' | 'Izin' | 'Alpha' | 'Sakit' | 'Tidak Hadir' | 'Hari Libur' | 'Belum Absen';
+  status:
+    | "Hadir"
+    | "Telat"
+    | "Izin"
+    | "Alpha"
+    | "Sakit"
+    | "Tidak Hadir"
+    | "Hari Libur"
+    | "Belum Absen";
   fotoAbsensi?: string;
   fotoUrl?: string;
   fotoTimestamp?: string;
@@ -61,9 +69,9 @@ export interface Complaint {
   userId?: User;
   judul: string;
   kategori: string;
-  prioritas: 'Low' | 'Medium' | 'High';
+  prioritas: "Low" | "Medium" | "High";
   deskripsi: string;
-  status: 'Menunggu' | 'Diproses' | 'Selesai';
+  status: "Menunggu" | "Diproses" | "Selesai";
   createdAt: string;
 }
 
@@ -111,7 +119,7 @@ export interface AdminDashboard {
   totalBerkas: number;
   totalBuku: number;
   totalBundle: number;
-  
+
   // New specific stats
   totalSortir: number;
   totalSteples: number;
@@ -143,7 +151,7 @@ export interface WorkStats {
 }
 
 // ===== TOAST =====
-export type ToastType = 'success' | 'error' | 'info';
+export type ToastType = "success" | "error" | "info";
 export interface Toast {
   id: string;
   message: string;
@@ -168,7 +176,7 @@ export interface PerformanceEvaluation {
   kualitas: number;
   laporan: boolean;
   hasil: number;
-  status: 'Draft' | 'Final';
+  status: "Draft" | "Final";
   createdAt?: string;
   updatedAt?: string;
 }
