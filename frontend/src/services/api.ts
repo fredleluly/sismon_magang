@@ -203,6 +203,13 @@ export const UsersAPI = {
   delete: (id: string) => API.delete(`/users/${id}`),
   resetPassword: (id: string, newPassword: string) =>
     API.put(`/users/${id}/reset-password`, { newPassword }),
+  // Superadmin only
+  getAdmins: () => API.get<User[]>("/users/admins/list"),
+  createAdmin: (data: Partial<User & { password: string }>) =>
+    API.post<User>("/users/admins", data),
+  updateAdmin: (id: string, data: Partial<User>) =>
+    API.put<User>(`/users/admins/${id}`, data),
+  deleteAdmin: (id: string) => API.delete(`/users/admins/${id}`),
 };
 
 // ===== WORK LOGS API =====

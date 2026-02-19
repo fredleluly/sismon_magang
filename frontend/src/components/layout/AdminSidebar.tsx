@@ -78,6 +78,26 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       ),
     },
     {
+      path: "/admin/data-admin",
+      label: "Data Admin",
+      superadminOnly: true,
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          <circle cx="12" cy="12" r="10" strokeDasharray="4 4" />
+        </svg>
+      ),
+    },
+    {
       path: "/admin/log",
       label: "Log Aktivitas",
       icon: (
@@ -238,6 +258,10 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </div>
         <nav className="sidebar-menu">
           {menuItems.map((item) => {
+            // Jika superadminOnly, hanya tampilkan untuk superadmin
+            if (item.superadminOnly && user?.role !== "superadmin") {
+              return null;
+            }
             // Jika path adalah manajemen-penilaian, hanya tampilkan untuk superadmin
             if (
               item.path === "/admin/manajemen-penilaian" &&

@@ -45,4 +45,14 @@ const adminOnly = (req, res, next) => {
   next();
 };
 
-module.exports = { auth, adminOnly };
+// Superadmin-only middleware
+const superadminOnly = (req, res, next) => {
+  if (req.user.role !== "superadmin") {
+    return res
+      .status(403)
+      .json({ success: false, message: "Akses ditolak. Hanya superadmin." });
+  }
+  next();
+};
+
+module.exports = { auth, adminOnly, superadminOnly };

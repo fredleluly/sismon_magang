@@ -1,12 +1,14 @@
 const router = require("express").Router();
 const User = require("../models/User");
 const WorkLog = require("../models/WorkLog");
-const { auth, adminOnly } = require("../middleware/auth");
+const { auth, adminOnly, superadminOnly } = require("../middleware/auth");
 
 // GET /api/users — list all users (admin) or get own data (user)
 router.get("/", auth, async (req, res) => {
   try {
-    if (req.user.role === "admin") {
+    // Allow both admin and superadmin to view all users
+    if (req.user.role === "admin" || req.user.role === "superadmin") {
+      // Exclude superadmin from the list, only show user role (not admin or superadmin)
       const users = await User.find({ role: "user" }).sort({ createdAt: -1 });
 
       // Enrich with work stats
@@ -43,7 +45,119 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
-// GET /api/users/:id
+// ===== ADMIN ROUTES (Superadmin only) - MUST BE BEFORE /:id =====
+// GET /api/users/admins/list — list all admins
+router.get("/admins/list", auth, superadminOnly, async (req, res) => {
+  try {
+    const admins = await User.find({ role: "admin" }).sort({ createdAt: -1 });
+    res.json({ success: true, data: admins.map(u => u.toJSON()) });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/users/admins — create new admin
+router.post("/admins", auth, superadminOnly, async (req, res) => {
+  try {
+    const { name, email, password, username } = req.body;
+    if (!name || !email)
+      return res
+        .status(400)
+        .json({ success: false, message: "Nama dan email wajib diisi." });
+
+    if (username) {
+      const existingUsername = await User.findOne({ username: username.trim().toLowerCase() });
+      if (existingUsername)
+        return res
+          .status(400)
+          .json({ success: false, message: "Username sudah digunakan." });
+    }
+
+    const existing = await User.findOne({ email });
+    if (existing)
+      return res
+        .status(400)
+        .json({ success: false, message: "Email sudah terdaftar." });
+
+    const user = await User.create({
+      name,
+      email,
+      password: password || "admin123",
+      role: "admin",
+      status: "Aktif",
+      username: username ? username.trim().toLowerCase() : undefined,
+    });
+
+    res
+      .status(201)
+      .json({
+        success: true,
+        message: "Admin berhasil ditambahkan.",
+        data: user.toJSON(),
+      });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// PUT /api/users/admins/:id — update admin
+router.put("/admins/:id", auth, superadminOnly, async (req, res) => {
+  try {
+    const { name, email, username } = req.body;
+    const user = await User.findOne({ _id: req.params.id, role: "admin" });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "Admin tidak ditemukan." });
+
+    if (email && email !== user.email) {
+      const existing = await User.findOne({ email });
+      if (existing)
+        return res
+          .status(400)
+          .json({ success: false, message: "Email sudah terdaftar." });
+    }
+
+    if (username && username !== user.username) {
+      const existingUsername = await User.findOne({ username: username.trim().toLowerCase() });
+      if (existingUsername)
+        return res
+          .status(400)
+          .json({ success: false, message: "Username sudah digunakan." });
+    }
+
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (username !== undefined) user.username = username ? username.trim().toLowerCase() : '';
+
+    await user.save();
+    res.json({
+      success: true,
+      message: "Data admin berhasil diupdate.",
+      data: user.toJSON(),
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// DELETE /api/users/admins/:id — delete admin
+router.delete("/admins/:id", auth, superadminOnly, async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.params.id, role: "admin" });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "Admin tidak ditemukan." });
+
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: "Admin berhasil dihapus." });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/users/:id — MUST BE AFTER specific routes
 router.get("/:id", auth, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -52,8 +166,8 @@ router.get("/:id", auth, async (req, res) => {
         .status(404)
         .json({ success: false, message: "User tidak ditemukan." });
 
-    // Only admin can view other users
-    if (req.user.role !== "admin" && req.userId.toString() !== req.params.id) {
+    // Only admin or superadmin can view other users
+    if (req.user.role !== "admin" && req.user.role !== "superadmin" && req.userId.toString() !== req.params.id) {
       return res
         .status(403)
         .json({ success: false, message: "Akses ditolak." });
@@ -89,7 +203,7 @@ router.get("/:id", auth, async (req, res) => {
 // POST /api/users — admin create user
 router.post("/", auth, adminOnly, async (req, res) => {
   try {
-    const { name, email, password, instansi, status, username } = req.body;
+    const { name, email, password, instansi, status, username, role } = req.body;
     if (!name || !email)
       return res
         .status(400)
@@ -109,13 +223,19 @@ router.post("/", auth, adminOnly, async (req, res) => {
         .status(400)
         .json({ success: false, message: "Email sudah terdaftar." });
 
+    // Only superadmin can create admin, default role is user
+    let userRole = "user";
+    if (role === "admin" && req.user.role === "superadmin") {
+      userRole = "admin";
+    }
+
     const user = await User.create({
       name,
       email,
       password: password || "magang123",
       instansi,
       status: status || "Aktif",
-      role: "user",
+      role: userRole,
       username: username ? username.trim().toLowerCase() : undefined,
     });
 
@@ -123,7 +243,7 @@ router.post("/", auth, adminOnly, async (req, res) => {
       .status(201)
       .json({
         success: true,
-        message: "Peserta berhasil ditambahkan.",
+        message: userRole === "admin" ? "Admin berhasil ditambahkan." : "Peserta berhasil ditambahkan.",
         data: user.toJSON(),
       });
   } catch (err) {

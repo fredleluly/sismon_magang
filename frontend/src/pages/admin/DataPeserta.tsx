@@ -2,15 +2,17 @@ import React, { useEffect, useState, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { UsersAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 import type { User } from '../../types';
 
 const DataPeserta: React.FC = () => {
   const { showToast } = useToast();
+  const { user } = useAuth();
   const [peserta, setPeserta] = useState<User[]>([]);
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif' });
+  const [form, setForm] = useState({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif', role: 'user' });
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: string | null }>({ show: false, id: null });
   const [resetPassword, setResetPassword] = useState<{ show: boolean; id: string | null; name: string }>({ show: false, id: null, name: '' });
@@ -56,14 +58,14 @@ const DataPeserta: React.FC = () => {
 
   const openAdd = () => {
     setEditingId(null);
-    setForm({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif' });
+    setForm({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif', role: 'user' });
     setModal(true);
   };
   const openEdit = (id: string) => {
     const p = peserta.find((x) => x._id === id);
     if (!p) return;
     setEditingId(id);
-    setForm({ name: p.name, email: p.email, username: p.username || '', instansi: p.instansi || '', password: '', status: p.status || 'Aktif' });
+    setForm({ name: p.name, email: p.email, username: p.username || '', instansi: p.instansi || '', password: '', status: p.status || 'Aktif', role: p.role || 'user' });
     setModal(true);
   };
 
@@ -300,6 +302,15 @@ const DataPeserta: React.FC = () => {
                   <label>Instansi</label>
                   <input type="text" value={form.instansi} onChange={(e) => setForm({ ...form, instansi: e.target.value })} placeholder="Universitas" />
                 </div>
+                {!editingId && user?.role === 'superadmin' && (
+                  <div className="form-group">
+                    <label>Role</label>
+                    <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} style={{ width: '100%', padding: '12px 16px', background: 'var(--gray-50)', border: '2px solid var(--gray-200)', borderRadius: 'var(--radius-md)', fontSize: '14px' }}>
+                      <option value="user">User (Peserta Magang)</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                )}
                 {!editingId && (
                   <div className="form-group">
                     <label>Password</label>
