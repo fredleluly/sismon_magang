@@ -178,7 +178,9 @@ const DataPeserta: React.FC = () => {
                       </div>
                     </div>
                   </td>
-                  <td>{p.username || '-'}</td>
+                  <td>
+                    <span className="data-highlight username">{p.username || '-'}</span>
+                  </td>
                   <td>
                     <span className="data-highlight">{(p.totalBerkas || 0).toLocaleString()}</span>
                   </td>

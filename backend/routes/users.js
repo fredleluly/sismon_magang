@@ -249,4 +249,54 @@ router.patch("/:id/role", auth, async (req, res) => {
   }
 });
 
+// Auto-generate username for users without username
+router.post("/migrate-usernames", auth, adminOnly, async (req, res) => {
+  try {
+    // Find all users without username
+    const usersWithoutUsername = await User.find({ 
+      $or: [
+        { username: { $exists: false } },
+        { username: null },
+        { username: "" }
+      ]
+    });
+    
+    let updated = 0;
+    let skipped = 0;
+    
+    for (const user of usersWithoutUsername) {
+      // Generate username from name: lowercase, remove spaces, remove special chars
+      let baseUsername = user.name
+        .toLowerCase()
+        .replace(/\s+/g, "")
+        .replace(/[^a-z0-9]/g, "");
+      
+      if (!baseUsername) {
+        baseUsername = user.email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "");
+      }
+      
+      let username = baseUsername;
+      let counter = 1;
+      
+      // Check uniqueness and append number if needed
+      while (await User.findOne({ username, _id: { $ne: user._id } })) {
+        username = `${baseUsername}${counter}`;
+        counter++;
+      }
+      
+      user.username = username;
+      await user.save();
+      updated++;
+    }
+    
+    res.json({
+      success: true,
+      message: `Migrasi selesai. ${updated} user diupdate, ${skipped} diskip.`,
+      data: { updated, skipped, total: usersWithoutUsername.length }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;
