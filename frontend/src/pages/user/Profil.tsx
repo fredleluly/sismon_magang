@@ -24,7 +24,7 @@ const Profil: React.FC = () => {
     if (user) {
       setEmail(user.email);
       setInstansi(user.instansi || "");
-      setUsername(user.name.toLowerCase().replace(/\s/g, ""));
+      setUsername(user.username || user.name.toLowerCase().replace(/\s/g, ""));
     }
     WorkLogAPI.getMyStats().then((res) => {
       if (res && res.success) setStats(res.data);
@@ -85,6 +85,7 @@ const Profil: React.FC = () => {
           <div className="profile-avatar-area">
             <div className="profile-avatar">{initials}</div>
             <div className="profile-name">{user.name}</div>
+            <div className="profile-username">@{user.username || user.name.toLowerCase().replace(/\s/g, "")}</div>
             <div className="profile-role">Peserta Magang</div>
             <div className="profile-badges">
               <span className="badge-aktif">Aktif</span>

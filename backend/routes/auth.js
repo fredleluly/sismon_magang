@@ -15,15 +15,10 @@ function generateToken(user) {
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, instansi, username } = req.body;
+    const { name, email, password, instansi, status, username } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: 'Nama, email, dan password wajib diisi.' });
-    }
-
-    const existing = await User.findOne({ email });
-    if (existing) {
-      return res.status(400).json({ success: false, message: 'Email sudah terdaftar.' });
     }
 
     if (username) {
@@ -33,7 +28,20 @@ router.post('/register', async (req, res) => {
       }
     }
 
-    const user = await User.create({ name, email, password, instansi, username: username ? username.trim().toLowerCase() : undefined, role: 'user' });
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'Email sudah terdaftar.' });
+    }
+
+    const user = await User.create({
+      name,
+      email,
+      password: password || "magang123",
+      instansi,
+      status: status || "Aktif",
+      role: "user",
+      username: username ? username.trim().toLowerCase() : undefined,
+    });
     const token = generateToken(user);
 
     res.status(201).json({
@@ -49,25 +57,41 @@ router.post('/register', async (req, res) => {
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    console.log('Login request body:', req.body);
+    const { identifier, password } = req.body;
 
-    if (!email || !password) {
+    if (!identifier || !password) {
       return res.status(400).json({ success: false, message: 'Email/username dan password wajib diisi.' });
     }
 
-    // Support login by email or name
-    const identifier = email.trim();
-    const user = await User.findOne({
-      $or: [
-        { email: identifier.toLowerCase() },
-        { name: new RegExp(`^${identifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
-      ]
-    });
+    // Support login by email, username, or name
+    const searchId = identifier.trim();
+    const isEmail = searchId.includes('@');
+    
+    let user;
+    if (isEmail) {
+      user = await User.findOne({ email: searchId.toLowerCase() });
+      console.log('Search by email:', searchId.toLowerCase(), 'Found:', !!user);
+    } else {
+      // Try username first, then name
+      user = await User.findOne({ username: searchId.toLowerCase() });
+      console.log('Search by username:', searchId.toLowerCase(), 'Found:', !!user);
+      if (!user) {
+        user = await User.findOne({
+          name: new RegExp(`^${searchId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')
+        });
+        console.log('Search by name fallback:', searchId, 'Found:', !!user);
+      }
+    }
+    
     if (!user) {
+      console.log('User not found for identifier:', identifier);
       return res.status(401).json({ success: false, message: 'Email/username atau password salah.' });
     }
 
+    console.log('User found:', user.email, 'Username:', user.username);
     const isMatch = await user.comparePassword(password);
+    console.log('Password match:', isMatch);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Email/username atau password salah.' });
     }

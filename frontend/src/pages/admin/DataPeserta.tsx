@@ -10,7 +10,7 @@ const DataPeserta: React.FC = () => {
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', email: '', instansi: '', password: '', status: 'Aktif' });
+  const [form, setForm] = useState({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif' });
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: string | null }>({ show: false, id: null });
   const [resetPassword, setResetPassword] = useState<{ show: boolean; id: string | null; name: string }>({ show: false, id: null, name: '' });
@@ -52,18 +52,18 @@ const DataPeserta: React.FC = () => {
 
 
 
-  const filtered = peserta.filter((p) => (p.name || '').toLowerCase().includes(search.toLowerCase()) || (p.instansi || '').toLowerCase().includes(search.toLowerCase()));
+  const filtered = peserta.filter((p) => (p.name || '').toLowerCase().includes(search.toLowerCase()) || (p.username || '').toLowerCase().includes(search.toLowerCase()));
 
   const openAdd = () => {
     setEditingId(null);
-    setForm({ name: '', email: '', instansi: '', password: '', status: 'Aktif' });
+    setForm({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif' });
     setModal(true);
   };
   const openEdit = (id: string) => {
     const p = peserta.find((x) => x._id === id);
     if (!p) return;
     setEditingId(id);
-    setForm({ name: p.name, email: p.email, instansi: p.instansi || '', password: '', status: p.status || 'Aktif' });
+    setForm({ name: p.name, email: p.email, username: p.username || '', instansi: p.instansi || '', password: '', status: p.status || 'Aktif' });
     setModal(true);
   };
 
@@ -98,9 +98,9 @@ const DataPeserta: React.FC = () => {
     }
     let res;
     if (editingId) {
-      res = await UsersAPI.update(editingId, { name: form.name, email: form.email, instansi: form.instansi, status: form.status });
+      res = await UsersAPI.update(editingId, { name: form.name, email: form.email, username: form.username, instansi: form.instansi, status: form.status });
     } else {
-      res = await UsersAPI.create({ name: form.name, email: form.email, instansi: form.instansi, password: form.password || 'magang123' } as any);
+      res = await UsersAPI.create({ name: form.name, email: form.email, username: form.username, instansi: form.instansi, password: form.password || 'magang123' } as any);
     }
     if (res && res.success) {
       showToast(res.message || 'Berhasil', 'success');
@@ -143,7 +143,7 @@ const DataPeserta: React.FC = () => {
             <h3>Daftar Peserta Magang</h3>
           </div>
           <div className="peserta-search">
-            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari nama atau instansi..." />
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari nama atau username..." />
           </div>
         </div>
         <div className="peserta-table-wrapper">
@@ -151,7 +151,7 @@ const DataPeserta: React.FC = () => {
           <thead>
             <tr>
               <th>Nama</th>
-              <th>Instansi</th>
+              <th>Username</th>
               <th>Berkas</th>
               <th>Buku</th>
               <th>Bundle</th>
@@ -178,7 +178,7 @@ const DataPeserta: React.FC = () => {
                       </div>
                     </div>
                   </td>
-                  <td>{p.instansi || '-'}</td>
+                  <td>{p.username || '-'}</td>
                   <td>
                     <span className="data-highlight">{(p.totalBerkas || 0).toLocaleString()}</span>
                   </td>
@@ -208,7 +208,8 @@ const DataPeserta: React.FC = () => {
               );
             })}
           </tbody>
-            {deleteConfirm.show &&
+          </table>
+          {deleteConfirm.show &&
               ReactDOM.createPortal(
                 <div className="modal-overlay active">
                   <div className="modal-card modal-delete-confirm">
@@ -266,7 +267,6 @@ const DataPeserta: React.FC = () => {
                 </div>,
                 document.body
               )}
-        </table>
         </div>
       </div>
       {modal &&
@@ -289,6 +289,10 @@ const DataPeserta: React.FC = () => {
                 <div className="form-group">
                   <label>Email</label>
                   <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@example.com" />
+                </div>
+                <div className="form-group">
+                  <label>Username</label>
+                  <input type="text" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="Username untuk login" />
                 </div>
                 <div className="form-group">
                   <label>Instansi</label>

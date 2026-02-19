@@ -128,9 +128,9 @@ const API = {
 
 // ===== AUTH API =====
 export const AuthAPI = {
-  async login(email: string, password: string) {
+  async login(identifier: string, password: string) {
     const res = await API.post<{ token: string; user: User }>("/auth/login", {
-      email,
+      identifier,
       password,
     });
     if (res && res.success) {

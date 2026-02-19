@@ -3,6 +3,7 @@ export interface User {
   _id: string;
   name: string;
   email: string;
+  username?: string;
   role: "admin" | "user" | "superadmin";
   instansi?: string;
   jabatan?: string;

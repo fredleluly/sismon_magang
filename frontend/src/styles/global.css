@@ -1570,6 +1570,12 @@ img {
   color: var(--gray-900);
   margin-top: 12px;
 }
+.profile-card .profile-username {
+  font-size: 14px;
+  color: var(--primary-blue);
+  font-weight: 500;
+  margin-top: 4px;
+}
 .profile-card .profile-role {
   font-size: 13px;
   color: var(--gray-500);
