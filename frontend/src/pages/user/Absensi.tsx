@@ -74,7 +74,7 @@ const Absensi: React.FC = () => {
     }
   }, []);
 
-  // Load late threshold
+  // Load late threshold (and refresh periodically for live sync with admin changes)
   useEffect(() => {
     const loadThreshold = async () => {
       try {
@@ -91,6 +91,8 @@ const Absensi: React.FC = () => {
       }
     };
     loadThreshold();
+    const iv = setInterval(loadThreshold, 30000);
+    return () => clearInterval(iv);
   }, []);
 
   useEffect(() => {

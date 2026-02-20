@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const Attendance = require("../models/Attendance");
 const QRCode = require("../models/QRCode");
+const LateThreshold = require("../models/LateThreshold");
 const { auth, adminOnly } = require("../middleware/auth");
 const multer = require("multer");
 const path = require("path");
@@ -128,8 +129,9 @@ router.post("/scan", auth, async (req, res) => {
     const now = new Date();
     const jamMasuk = formatTimeWIB(now);
 
-    // Get late threshold (default 08:00)
-    const lateThreshold = process.env.LATE_THRESHOLD || "08:00";
+    // Get late threshold for today (per-day from DB, or default)
+    const todayThresholdDoc = await LateThreshold.findOne({ tanggal: today });
+    const lateThreshold = todayThresholdDoc ? todayThresholdDoc.threshold : (process.env.LATE_THRESHOLD || "08:00");
 
     // Determine status based on time
     const status = isLate(jamMasuk, lateThreshold) ? "Telat" : "Hadir";
@@ -205,8 +207,9 @@ router.post("/photo-checkin", auth, upload.single("foto"), async (req, res) => {
       jamMasuk = formatTimeWIB(now);
     }
 
-    // Get late threshold (default 08:00)
-    const lateThreshold = process.env.LATE_THRESHOLD || "08:00";
+    // Get late threshold for today (per-day from DB, or default)
+    const todayThresholdDoc2 = await LateThreshold.findOne({ tanggal: today });
+    const lateThreshold = todayThresholdDoc2 ? todayThresholdDoc2.threshold : (process.env.LATE_THRESHOLD || "08:00");
     const status = isLate(jamMasuk, lateThreshold) ? "Telat" : "Hadir";
 
     const fotoTimestamp = timestamp
@@ -401,7 +404,6 @@ router.put("/:id/status", auth, adminOnly, async (req, res) => {
       "Izin",
       "Sakit",
       "Alpha",
-      "Libur",
       "Hari Libur",
       "Belum Absen",
     ];
@@ -486,19 +488,18 @@ router.post("/admin/set-status", auth, adminOnly, async (req, res) => {
       "Hari Libur",
       "Belum Absen",
     ];
-    if (!status || !allowed.includes(status))
+    if (!allowed.includes(status))
       return res
         .status(400)
         .json({ success: false, message: "Status tidak valid." });
 
-    const dateStr = new Date(tanggal).toISOString().split("T")[0];
-    const targetDate = new Date(dateStr);
+    const dateStr = tanggal.split("T")[0];
+    const targetDate = new Date(dateStr + "T00:00:00");
 
-    // Find existing attendance for that user & date
     let att = await Attendance.findOne({
       userId,
       tanggal: {
-        $gte: new Date(dateStr),
+        $gte: new Date(dateStr + "T00:00:00"),
         $lt: new Date(dateStr + "T23:59:59"),
       },
     });
@@ -659,17 +660,41 @@ router.get("/today", auth, adminOnly, async (req, res) => {
   }
 });
 
-// GET /api/attendance/settings/late-threshold — get late threshold
+// GET /api/attendance/settings/late-threshold — get late threshold (returns today's per-day threshold if set, else default)
 router.get("/settings/late-threshold", auth, async (req, res) => {
   try {
-    const threshold = process.env.LATE_THRESHOLD || "08:00";
-    res.json({ success: true, data: { lateThreshold: threshold } });
+    const defaultThreshold = process.env.LATE_THRESHOLD || "08:00";
+    const today = new Date().toISOString().split("T")[0];
+    const todayDoc = await LateThreshold.findOne({ tanggal: today });
+    if (todayDoc) {
+      res.json({
+        success: true,
+        data: {
+          lateThreshold: todayDoc.threshold,
+          isCustom: true,
+          alasan: todayDoc.alasan || "",
+          tanggal: today,
+          defaultThreshold,
+        },
+      });
+    } else {
+      res.json({
+        success: true,
+        data: {
+          lateThreshold: defaultThreshold,
+          isCustom: false,
+          alasan: "",
+          tanggal: today,
+          defaultThreshold,
+        },
+      });
+    }
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// POST /api/attendance/settings/late-threshold — set late threshold (admin only)
+// POST /api/attendance/settings/late-threshold — set default late threshold (admin only)
 router.post("/settings/late-threshold", auth, adminOnly, async (req, res) => {
   try {
     const { threshold } = req.body;
@@ -684,8 +709,68 @@ router.post("/settings/late-threshold", auth, adminOnly, async (req, res) => {
     process.env.LATE_THRESHOLD = threshold;
     res.json({
       success: true,
-      message: "Late threshold berhasil diubah",
+      message: "Late threshold default berhasil diubah",
       data: { lateThreshold: threshold },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/attendance/settings/today-threshold — set today's late threshold (admin only)
+router.post("/settings/today-threshold", auth, adminOnly, async (req, res) => {
+  try {
+    const { threshold, alasan } = req.body;
+    if (!threshold || !/^\d{2}:\d{2}$/.test(threshold)) {
+      return res.status(400).json({
+        success: false,
+        message: "Format threshold harus HH:MM (contoh: 08:30)",
+      });
+    }
+    const today = new Date().toISOString().split("T")[0];
+    const existing = await LateThreshold.findOne({ tanggal: today });
+    if (existing) {
+      existing.threshold = threshold;
+      existing.alasan = alasan || "";
+      await existing.save();
+      return res.json({
+        success: true,
+        message: `Jam telat hari ini berhasil diubah ke ${threshold}`,
+        data: existing,
+      });
+    }
+    const newDoc = await LateThreshold.create({
+      tanggal: today,
+      threshold,
+      alasan: alasan || "",
+    });
+    res.json({
+      success: true,
+      message: `Jam telat hari ini berhasil diatur ke ${threshold}`,
+      data: newDoc,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// DELETE /api/attendance/settings/today-threshold — reset today's threshold back to default (admin only)
+router.delete("/settings/today-threshold", auth, adminOnly, async (req, res) => {
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    const deleted = await LateThreshold.findOneAndDelete({ tanggal: today });
+    const defaultThreshold = process.env.LATE_THRESHOLD || "08:00";
+    if (!deleted) {
+      return res.json({
+        success: true,
+        message: "Jam telat hari ini sudah menggunakan default",
+        data: { lateThreshold: defaultThreshold },
+      });
+    }
+    res.json({
+      success: true,
+      message: `Jam telat hari ini dikembalikan ke default (${defaultThreshold})`,
+      data: { lateThreshold: defaultThreshold },
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

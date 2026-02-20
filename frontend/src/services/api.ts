@@ -287,11 +287,18 @@ export const AttendanceAPI = {
     API.put<Attendance>(`/attendance/${id}`, data),
   getToday: () => API.get<Attendance[]>("/attendance/today"),
   getLateThreshold: () =>
-    API.get<{ lateThreshold: string }>("/attendance/settings/late-threshold"),
+    API.get<{ lateThreshold: string; isCustom: boolean; alasan: string; tanggal: string; defaultThreshold: string }>("/attendance/settings/late-threshold"),
   setLateThreshold: (threshold: string) =>
     API.post<{ lateThreshold: string }>("/attendance/settings/late-threshold", {
       threshold,
     }),
+  setTodayThreshold: (threshold: string, alasan?: string) =>
+    API.post<any>("/attendance/settings/today-threshold", {
+      threshold,
+      alasan,
+    }),
+  resetTodayThreshold: () =>
+    API.delete<any>("/attendance/settings/today-threshold"),
   updateStatus: (
     id: string,
     status: string,

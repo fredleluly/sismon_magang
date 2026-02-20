@@ -39,8 +39,16 @@ const AttendanceCalendar: React.FC = () => {
   const [totalPeserta, setTotalPeserta] = useState(0);
   const [todayAttendanceCount, setTodayAttendanceCount] = useState(0);
   const [lateThreshold, setLateThreshold] = useState<string>("08:00");
-  const [isEditingThreshold, setIsEditingThreshold] = useState(false);
+  const [defaultThreshold, setDefaultThreshold] = useState<string>("08:00");
+  const [isCustomThreshold, setIsCustomThreshold] = useState(false);
+  const [thresholdAlasan, setThresholdAlasan] = useState<string>("");
   const [isThresholdLoaded, setIsThresholdLoaded] = useState(false);
+
+  // Modal state for editing today's threshold
+  const [showThresholdModal, setShowThresholdModal] = useState(false);
+  const [modalThresholdTime, setModalThresholdTime] = useState<string>("08:00");
+  const [modalThresholdAlasan, setModalThresholdAlasan] = useState<string>("");
+  const [thresholdSaving, setThresholdSaving] = useState(false);
 
   // Custom Date Picker State (from Rekapitulasi)
   const [datePickerMonth, setDatePickerMonth] = useState(new Date());
@@ -121,13 +129,44 @@ const AttendanceCalendar: React.FC = () => {
   };
 
   const handleSaveThreshold = async () => {
-    const res = await AttendanceAPI.setLateThreshold(lateThreshold);
-    if (res && res.success) {
-      localStorage.setItem("lateThreshold", lateThreshold);
-      showToast("Jam telat berhasil diatur ke " + lateThreshold, "success");
-      setIsEditingThreshold(false);
-    } else {
-      showToast(res?.message || "Gagal menyimpan", "error");
+    setThresholdSaving(true);
+    try {
+      const res = await AttendanceAPI.setTodayThreshold(modalThresholdTime, modalThresholdAlasan);
+      if (res && res.success) {
+        setLateThreshold(modalThresholdTime);
+        setIsCustomThreshold(true);
+        setThresholdAlasan(modalThresholdAlasan);
+        localStorage.setItem("lateThreshold", modalThresholdTime);
+        showToast(res.message || "Jam telat hari ini berhasil diubah", "success");
+        setShowThresholdModal(false);
+      } else {
+        showToast(res?.message || "Gagal menyimpan", "error");
+      }
+    } catch {
+      showToast("Gagal menyimpan jam telat", "error");
+    } finally {
+      setThresholdSaving(false);
+    }
+  };
+
+  const handleResetThreshold = async () => {
+    setThresholdSaving(true);
+    try {
+      const res = await AttendanceAPI.resetTodayThreshold();
+      if (res && res.success) {
+        setLateThreshold(defaultThreshold);
+        setIsCustomThreshold(false);
+        setThresholdAlasan("");
+        localStorage.setItem("lateThreshold", defaultThreshold);
+        showToast("Jam telat dikembalikan ke default (" + defaultThreshold + ")", "success");
+        setShowThresholdModal(false);
+      } else {
+        showToast(res?.message || "Gagal mereset", "error");
+      }
+    } catch {
+      showToast("Gagal mereset jam telat", "error");
+    } finally {
+      setThresholdSaving(false);
     }
   };
 
@@ -137,6 +176,9 @@ const AttendanceCalendar: React.FC = () => {
       const res = await AttendanceAPI.getLateThreshold();
       if (res && res.success) {
         setLateThreshold(res.data.lateThreshold);
+        setDefaultThreshold(res.data.defaultThreshold || "08:00");
+        setIsCustomThreshold(res.data.isCustom || false);
+        setThresholdAlasan(res.data.alasan || "");
         localStorage.setItem("lateThreshold", res.data.lateThreshold);
       } else {
         const saved = localStorage.getItem("lateThreshold");
@@ -802,7 +844,17 @@ const AttendanceCalendar: React.FC = () => {
   };
 
   // Data to display in detail table - use filterData when filter is non-harian, selectedDayData for harian
-  const displayData = filterMode === "harian" ? selectedDayData : filterData;
+  // Sort by jamMasuk ascending (earliest first), entries without jamMasuk go to the bottom
+  const displayData = (filterMode === "harian" ? selectedDayData : filterData)
+    .slice()
+    .sort((a, b) => {
+      const timeA = a.jamMasuk ? a.jamMasuk.replace(".", ":") : null;
+      const timeB = b.jamMasuk ? b.jamMasuk.replace(".", ":") : null;
+      if (!timeA && !timeB) return 0;
+      if (!timeA) return 1;
+      if (!timeB) return -1;
+      return timeA.localeCompare(timeB);
+    });
 
   return (
     <div className="attendance-calendar-container">
@@ -905,82 +957,70 @@ const AttendanceCalendar: React.FC = () => {
                 margin: 0,
               }}
             >
-              Pengaturan Jam Telat
+              Pengaturan Jam Telat Hari Ini
             </h3>
+            <p style={{ fontSize: 11, color: "#94a3b8", margin: "4px 0 0" }}>
+              {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            </p>
           </div>
-          {!isEditingThreshold ? (
-            <div>
-              <div style={{ fontSize: 13, color: "#64748b", marginBottom: 8 }}>
-                Jam Batas Telat:
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "#0a6599" }}>
+                {lateThreshold}
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div
-                  style={{ fontSize: 24, fontWeight: 700, color: "#0a6599" }}
-                >
-                  {lateThreshold}
-                </div>
-                <button
-                  onClick={() => setIsEditingThreshold(true)}
-                  style={{
-                    padding: "6px 14px",
-                    background: "#e2e8f0",
-                    border: "none",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                    fontSize: 12,
-                    fontWeight: 600,
-                  }}
-                >
-                  Edit
-                </button>
-              </div>
+              {isCustomThreshold && (
+                <span style={{
+                  fontSize: 10,
+                  background: "#fef3c7",
+                  color: "#d97706",
+                  padding: "2px 8px",
+                  borderRadius: 10,
+                  fontWeight: 600,
+                }}>
+                  Diubah
+                </span>
+              )}
             </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <input
-                type="time"
-                value={lateThreshold}
-                onChange={(e) => setLateThreshold(e.target.value)}
-                style={{
-                  padding: "8px 10px",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: 6,
-                  fontSize: 14,
-                }}
-              />
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  onClick={handleSaveThreshold}
-                  style={{
-                    flex: 1,
-                    padding: "8px 12px",
-                    background: "#22c55e",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 6,
-                    fontSize: 12,
-                    fontWeight: 600,
-                  }}
-                >
-                  Simpan
-                </button>
-                <button
-                  onClick={() => setIsEditingThreshold(false)}
-                  style={{
-                    flex: 1,
-                    padding: "8px 12px",
-                    background: "#cbd5e1",
-                    border: "none",
-                    borderRadius: 6,
-                    fontSize: 12,
-                    fontWeight: 600,
-                  }}
-                >
-                  Batal
-                </button>
+            {isCustomThreshold && thresholdAlasan && (
+              <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8, display: "flex", alignItems: "center", gap: 4 }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                {thresholdAlasan}
               </div>
+            )}
+            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 10 }}>
+              Default: {defaultThreshold}
             </div>
-          )}
+            <button
+              onClick={() => {
+                setModalThresholdTime(lateThreshold);
+                setModalThresholdAlasan(thresholdAlasan);
+                setShowThresholdModal(true);
+              }}
+              style={{
+                padding: "8px 18px",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                color: "white",
+                border: "none",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontSize: 12,
+                fontWeight: 600,
+                width: "100%",
+                transition: "transform 0.2s, box-shadow 0.2s",
+                boxShadow: "0 2px 8px rgba(102,126,234,0.3)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(102,126,234,0.4)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 2px 8px rgba(102,126,234,0.3)";
+              }}
+            >
+              ✏️ Ubah Jam Telat Hari Ini
+            </button>
+          </div>
         </div>
       </div>
 
@@ -2310,6 +2350,228 @@ const AttendanceCalendar: React.FC = () => {
                   }}
                 >
                   {holidayLoading ? "Memproses..." : "Ya, Batalkan"}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {/* Modal Pengaturan Jam Telat Hari Ini */}
+      {showThresholdModal &&
+        ReactDOM.createPortal(
+          <div
+            className="modal-overlay active"
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 10000,
+            }}
+            onClick={() => setShowThresholdModal(false)}
+          >
+            <div
+              style={{
+                background: "white",
+                borderRadius: 16,
+                maxWidth: 440,
+                width: "90%",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+                overflow: "hidden",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div
+                style={{
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  padding: "20px 24px",
+                  color: "white",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>
+                    Ubah Jam Telat Hari Ini
+                  </h3>
+                  <p style={{ margin: "4px 0 0", fontSize: 12, opacity: 0.85 }}>
+                    {new Date().toLocaleDateString("id-ID", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowThresholdModal(false)}
+                  style={{
+                    background: "rgba(255,255,255,0.15)",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: 32,
+                    height: 32,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    fontSize: 16,
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div style={{ padding: "24px" }}>
+                <div style={{
+                  background: "#f0f9ff",
+                  border: "1px solid #bae6fd",
+                  borderRadius: 10,
+                  padding: "12px 16px",
+                  marginBottom: 20,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                  </svg>
+                  <div style={{ fontSize: 12, color: "#0369a1", lineHeight: 1.4 }}>
+                    Perubahan ini hanya berlaku untuk <strong>hari ini</strong>. Default jam telat: <strong>{defaultThreshold}</strong>
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{
+                    display: "block",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#475569",
+                    marginBottom: 8,
+                  }}>
+                    Jam Batas Telat
+                  </label>
+                  <input
+                    type="time"
+                    value={modalThresholdTime}
+                    onChange={(e) => setModalThresholdTime(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "11px 14px",
+                      border: "2px solid #e2e8f0",
+                      borderRadius: 10,
+                      fontSize: 16,
+                      fontFamily: "inherit",
+                      boxSizing: "border-box",
+                      transition: "border-color 0.2s",
+                      outline: "none",
+                      fontWeight: 600,
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = "#667eea")}
+                    onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")}
+                  />
+                </div>
+
+                <div style={{ marginBottom: 24 }}>
+                  <label style={{
+                    display: "block",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#475569",
+                    marginBottom: 8,
+                  }}>
+                    Alasan Perubahan <span style={{ color: "#94a3b8", fontWeight: 400 }}>(opsional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={modalThresholdAlasan}
+                    onChange={(e) => setModalThresholdAlasan(e.target.value)}
+                    placeholder="Contoh: Hujan deras, Banjir, Acara khusus..."
+                    style={{
+                      width: "100%",
+                      padding: "11px 14px",
+                      border: "2px solid #e2e8f0",
+                      borderRadius: 10,
+                      fontSize: 14,
+                      fontFamily: "inherit",
+                      boxSizing: "border-box",
+                      transition: "border-color 0.2s",
+                      outline: "none",
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = "#667eea")}
+                    onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")}
+                  />
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div style={{
+                padding: "0 24px 24px",
+                display: "flex",
+                gap: 10,
+              }}>
+                {isCustomThreshold && (
+                  <button
+                    onClick={handleResetThreshold}
+                    disabled={thresholdSaving}
+                    style={{
+                      padding: "11px 14px",
+                      background: "white",
+                      border: "2px solid #fecaca",
+                      borderRadius: 10,
+                      cursor: thresholdSaving ? "not-allowed" : "pointer",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#ef4444",
+                      transition: "all 0.2s",
+                      opacity: thresholdSaving ? 0.7 : 1,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Reset Default
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowThresholdModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: "11px 14px",
+                    background: "white",
+                    border: "2px solid #e2e8f0",
+                    borderRadius: 10,
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#64748b",
+                  }}
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleSaveThreshold}
+                  disabled={thresholdSaving}
+                  style={{
+                    flex: 1,
+                    padding: "11px 14px",
+                    background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 10,
+                    cursor: thresholdSaving ? "not-allowed" : "pointer",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    boxShadow: "0 4px 12px rgba(34,197,94,0.3)",
+                    opacity: thresholdSaving ? 0.7 : 1,
+                  }}
+                >
+                  {thresholdSaving ? "Menyimpan..." : "💾 Simpan"}
                 </button>
               </div>
             </div>
