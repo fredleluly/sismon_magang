@@ -4571,3 +4571,56 @@ img {
     gap: 10px;
   }
 }
+
+/* ===== KELUHAN FILTER INLINE STYLES ===== */
+.keluhan-search-input {
+  flex: 1;
+  min-width: 160px;
+  max-width: 240px;
+  padding: 10px 14px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--gray-700);
+  background: white;
+  transition: var(--transition-base);
+  outline: none;
+}
+
+.keluhan-search-input:focus {
+  border-color: var(--primary-400);
+  box-shadow: 0 0 0 3px rgba(10, 101, 153, 0.1);
+}
+
+.keluhan-search-input::placeholder {
+  color: var(--gray-400);
+}
+
+.keluhan-select-filter {
+  padding: 10px 14px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--gray-700);
+  background: white;
+  cursor: pointer;
+  transition: var(--transition-base);
+  outline: none;
+  min-width: 140px;
+}
+
+.keluhan-select-filter:focus {
+  border-color: var(--primary-400);
+  box-shadow: 0 0 0 3px rgba(10, 101, 153, 0.1);
+}
+
+@media (max-width: 768px) {
+  .keluhan-search-input {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .keluhan-select-filter {
+    width: 100%;
+  }
+}
