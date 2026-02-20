@@ -388,15 +388,7 @@ export async function exportExcel(options: ExportOptions): Promise<void> {
       to: { row: headerRowNum, column: totalCols },
     };
 
-    // ─── Freeze Panes ───────────────────────────────────────────
-    ws.views = [
-      {
-        state: 'frozen',
-        ySplit: headerRowNum,
-        xSplit: 0,
-        activeCell: `A${headerRowNum + 1}`,
-      },
-    ];
+    // No freeze panes
 
     // ─── Sheet Protection ───────────────────────────────────────
     ws.protect('', {
@@ -447,17 +439,23 @@ export async function exportRekapitulasiExcel(
   totalsRow: Record<string, PivotCell>,
   grandTotalAll: number,
   filterInfo?: string,
+  biayaData?: {
+    upahHarian: number;
+    getBiayaPerBerkas: (jobDesk: string) => number;
+  },
 ): Promise<void> {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'SISMON Magang';
   workbook.created = new Date();
 
-  const ws = workbook.addWorksheet('Rekapitulasi', {
-    views: [{ state: 'frozen', ySplit: 0, xSplit: 0 }],
-  });
-
   const subColCount = 4; // berkas,buku,bundle,total per jenis
   const totalCols = 2 + jenisList.length * subColCount + 1; // no + nama + jenis*4 + grandTotal
+
+  // ══════════════════════════════════════════════════════════════
+  // SHEET 1: Rekapitulasi Pekerjaan (Original - Blue theme)
+  // ══════════════════════════════════════════════════════════════
+  const ws = workbook.addWorksheet('Rekapitulasi');
+
   let currentRow = 1;
 
   // ─── Title ────────────────────────────────────────────────────
@@ -720,7 +718,7 @@ export async function exportRekapitulasiExcel(
   ws.getColumn(col).width = 14;
 
   // Freeze panes
-  ws.views = [{ state: 'frozen', ySplit: freezeRow, xSplit: 1 }];
+  // No freeze panes
 
   // Auto-filter on header row 2 (sub-headers)
   ws.autoFilter = {
@@ -744,6 +742,302 @@ export async function exportRekapitulasiExcel(
     fitToHeight: 0,
     paperSize: 9,
   };
+
+  // ══════════════════════════════════════════════════════════════
+  // SHEET 2: Rincian Biaya (Amber/Gold theme)
+  // ══════════════════════════════════════════════════════════════
+  if (biayaData && biayaData.upahHarian > 0) {
+    const AMBER = {
+      titleBg: '78350F',       // Dark amber
+      titleFont: 'FFFFFF',
+      subtitleBg: 'B45309',    // Medium amber
+      subtitleFont: 'FFFFFF',
+      headerBg: '92400E',      // Brown amber
+      headerLight: 'D97706',   // Lighter amber
+      headerSub: 'F59E0B',     // Amber
+      infoBg: 'FEF3C7',        // Light amber
+      infoFont: '92400E',
+      accentBg: '78350F',      // Dark accent for totals
+      zebraLight: 'FFFBEB',    // Very light amber
+      zebraDark: 'FEF3C7',     // Light amber
+      summaryBg: 'FDE68A',     // Amber summary
+      summaryFont: '78350F',
+      borderColor: 'F59E0B',
+      subtotalFont: 'B45309',
+    };
+
+    const formatRp = (v: number) => {
+      return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
+    };
+
+    const ws2 = workbook.addWorksheet('Rincian Biaya');
+
+    let cr = 1; // current row for sheet 2
+
+    // ─── Title ──────────────────────────────────────────────────
+    ws2.mergeCells(cr, 1, cr, totalCols);
+    const t2 = ws2.getCell(cr, 1);
+    t2.value = 'RINCIAN BIAYA PER BERKAS';
+    t2.font = { name: FONT_FAMILY, bold: true, size: 16, color: { argb: AMBER.titleFont } };
+    t2.fill = headerFill(AMBER.titleBg);
+    t2.alignment = { horizontal: 'center', vertical: 'middle' };
+    t2.border = fullBorder(AMBER.titleBg);
+    ws2.getRow(cr).height = 36;
+    cr++;
+
+    // Subtitle
+    ws2.mergeCells(cr, 1, cr, totalCols);
+    const s2 = ws2.getCell(cr, 1);
+    s2.value = 'Biaya = jumlah item x (Upah Harian / Target per section)';
+    s2.font = { name: FONT_FAMILY, size: 11, italic: true, color: { argb: AMBER.subtitleFont } };
+    s2.fill = headerFill(AMBER.subtitleBg);
+    s2.alignment = { horizontal: 'center', vertical: 'middle' };
+    s2.border = fullBorder(AMBER.subtitleBg);
+    ws2.getRow(cr).height = 24;
+    cr++;
+
+    // Info lines
+    const biayaGrandTotal = jenisList.reduce((sum, j) => sum + totalsRow[j].total * biayaData.getBiayaPerBerkas(j), 0);
+    const info2 = [
+      `Upah Harian: ${formatRp(biayaData.upahHarian)}`,
+      `Total Peserta: ${pivotRows.length}`,
+      `Total Biaya: ${formatRp(biayaGrandTotal)}`,
+    ];
+    if (filterInfo) info2.push(`Filter: ${filterInfo}`);
+    for (const info of info2) {
+      ws2.mergeCells(cr, 1, cr, totalCols);
+      const ic = ws2.getCell(cr, 1);
+      ic.value = info;
+      ic.font = { name: FONT_FAMILY, size: 10, bold: true, color: { argb: AMBER.infoFont } };
+      ic.fill = headerFill(AMBER.infoBg);
+      ic.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+      ic.border = fullBorder(AMBER.borderColor);
+      ws2.getRow(cr).height = 20;
+      cr++;
+    }
+
+    // Spacer
+    ws2.getRow(cr).height = 6;
+    cr++;
+
+    // ─── Header Row 1 (merged jenis) ───────────────────────────
+    const bh1 = cr;
+    ws2.getRow(bh1).height = 32;
+
+    // No
+    ws2.mergeCells(bh1, 1, bh1 + 1, 1);
+    const bNoCell = ws2.getCell(bh1, 1);
+    bNoCell.value = 'No';
+    bNoCell.font = headerFont(11);
+    bNoCell.fill = headerFill(AMBER.headerBg);
+    bNoCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    bNoCell.border = fullBorder(AMBER.titleFont);
+
+    // Nama Peserta
+    ws2.mergeCells(bh1, 2, bh1 + 1, 2);
+    const bNamaCell = ws2.getCell(bh1, 2);
+    bNamaCell.value = 'NAMA PESERTA';
+    bNamaCell.font = headerFont(11);
+    bNamaCell.fill = headerFill(AMBER.headerBg);
+    bNamaCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    bNamaCell.border = fullBorder(AMBER.titleFont);
+
+    let bc = 3;
+    jenisList.forEach((j) => {
+      ws2.mergeCells(bh1, bc, bh1, bc + subColCount - 1);
+      const cell = ws2.getCell(bh1, bc);
+      const rate = biayaData.getBiayaPerBerkas(j);
+      cell.value = rate > 0 ? `${j.toUpperCase()} (${formatRp(rate)}/item)` : j.toUpperCase();
+      cell.font = headerFont(10);
+      cell.fill = headerFill(AMBER.headerLight);
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.border = fullBorder(AMBER.titleFont);
+      bc += subColCount;
+    });
+
+    // Grand total
+    ws2.mergeCells(bh1, bc, bh1 + 1, bc);
+    const bGtCell = ws2.getCell(bh1, bc);
+    bGtCell.value = 'GRAND TOTAL';
+    bGtCell.font = headerFont(11);
+    bGtCell.fill = headerFill(AMBER.accentBg);
+    bGtCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    bGtCell.border = fullBorder(AMBER.titleFont);
+    cr++;
+
+    // ─── Header Row 2 (sub-columns) ────────────────────────────
+    ws2.getRow(cr).height = 24;
+    bc = 3;
+    jenisList.forEach(() => {
+      subHeaders.forEach((sh, si) => {
+        const cell = ws2.getCell(cr, bc + si);
+        cell.value = sh;
+        cell.font = headerFont(10);
+        cell.fill = headerFill(si === 3 ? AMBER.headerLight : AMBER.headerSub);
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = fullBorder(AMBER.titleFont);
+      });
+      bc += subColCount;
+    });
+    cr++;
+
+    const bFreezeRow = cr - 1;
+
+    // ─── Data Rows ──────────────────────────────────────────────
+    for (let i = 0; i < pivotRows.length; i++) {
+      const pr = pivotRows[i];
+      const isEven = i % 2 === 0;
+      const rowObj = ws2.getRow(cr);
+      const nameLines = Math.ceil(pr.userName.length / (namaColWidth - 2)) || 1;
+      rowObj.height = Math.max(22, Math.min(nameLines * 16, 60));
+
+      // No
+      const bnd = ws2.getCell(cr, 1);
+      bnd.value = i + 1;
+      bnd.font = bodyFont(10);
+      bnd.fill = headerFill(isEven ? AMBER.zebraLight : AMBER.zebraDark);
+      bnd.alignment = { horizontal: 'center', vertical: 'middle' };
+      bnd.border = fullBorder(AMBER.borderColor);
+
+      // Nama
+      const bnn = ws2.getCell(cr, 2);
+      bnn.value = pr.userName;
+      bnn.font = { ...bodyFont(10), bold: true };
+      bnn.fill = headerFill(isEven ? AMBER.zebraLight : AMBER.zebraDark);
+      bnn.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+      bnn.border = fullBorder(AMBER.borderColor);
+
+      bc = 3;
+      let rowBiayaTotal = 0;
+      jenisList.forEach((j) => {
+        const c = pr.cells[j] || { berkas: 0, buku: 0, bundle: 0, total: 0 };
+        const rate = biayaData.getBiayaPerBerkas(j);
+        const biayaValues = [c.berkas * rate, c.buku * rate, c.bundle * rate, (c.berkas + c.buku + c.bundle) * rate];
+        rowBiayaTotal += biayaValues[3];
+        biayaValues.forEach((v, vi) => {
+          const cell = ws2.getCell(cr, bc + vi);
+          cell.value = rate > 0 ? v : 0;
+          cell.font = bodyFont(9);
+          cell.fill = headerFill(isEven ? AMBER.zebraLight : AMBER.zebraDark);
+          cell.alignment = { horizontal: 'right', vertical: 'middle' };
+          cell.border = fullBorder(AMBER.borderColor);
+          cell.numFmt = '#,##0';
+          if (vi === 3 && v > 0) {
+            cell.font = { ...bodyFont(9), bold: true, color: { argb: AMBER.subtotalFont } };
+          }
+        });
+        bc += subColCount;
+      });
+
+      // Grand total
+      const bgt = ws2.getCell(cr, bc);
+      bgt.value = rowBiayaTotal;
+      bgt.font = { name: FONT_FAMILY, bold: true, size: 10, color: { argb: AMBER.titleFont } };
+      bgt.fill = headerFill(AMBER.accentBg);
+      bgt.alignment = { horizontal: 'right', vertical: 'middle' };
+      bgt.border = fullBorder(AMBER.borderColor);
+      bgt.numFmt = '#,##0';
+
+      cr++;
+    }
+
+    // ─── Summary Row ─────────────────────────────────────────────
+    const bSep = ws2.getRow(cr);
+    bSep.height = 4;
+    cr++;
+
+    const bSumRow = ws2.getRow(cr);
+    bSumRow.height = 30;
+
+    ws2.mergeCells(cr, 1, cr, 2);
+    const bTotLabel = ws2.getCell(cr, 1);
+    bTotLabel.value = 'TOTAL';
+    bTotLabel.font = { name: FONT_FAMILY, bold: true, size: 12, color: { argb: AMBER.summaryFont } };
+    bTotLabel.fill = headerFill(AMBER.summaryBg);
+    bTotLabel.alignment = { horizontal: 'center', vertical: 'middle' };
+    bTotLabel.border = {
+      top: { style: 'double', color: { argb: AMBER.headerLight } },
+      left: { style: 'thin', color: { argb: AMBER.borderColor } },
+      bottom: { style: 'double', color: { argb: AMBER.headerLight } },
+      right: { style: 'thin', color: { argb: AMBER.borderColor } },
+    };
+
+    bc = 3;
+    jenisList.forEach((j) => {
+      const t = totalsRow[j] || { berkas: 0, buku: 0, bundle: 0, total: 0 };
+      const rate = biayaData.getBiayaPerBerkas(j);
+      const biayaValues = [t.berkas * rate, t.buku * rate, t.bundle * rate, t.total * rate];
+      biayaValues.forEach((v, vi) => {
+        const cell = ws2.getCell(cr, bc + vi);
+        cell.value = rate > 0 ? v : 0;
+        cell.font = { name: FONT_FAMILY, bold: true, size: 10, color: { argb: AMBER.summaryFont } };
+        cell.fill = headerFill(AMBER.summaryBg);
+        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'double', color: { argb: AMBER.headerLight } },
+          left: { style: 'thin', color: { argb: AMBER.borderColor } },
+          bottom: { style: 'double', color: { argb: AMBER.headerLight } },
+          right: { style: 'thin', color: { argb: AMBER.borderColor } },
+        };
+        cell.numFmt = '#,##0';
+      });
+      bc += subColCount;
+    });
+
+    // Grand total summary
+    const bGtSum = ws2.getCell(cr, bc);
+    bGtSum.value = biayaGrandTotal;
+    bGtSum.font = { name: FONT_FAMILY, bold: true, size: 12, color: { argb: AMBER.titleFont } };
+    bGtSum.fill = headerFill(AMBER.titleBg);
+    bGtSum.alignment = { horizontal: 'right', vertical: 'middle' };
+    bGtSum.border = {
+      top: { style: 'double', color: { argb: AMBER.headerLight } },
+      left: { style: 'thin', color: { argb: AMBER.borderColor } },
+      bottom: { style: 'double', color: { argb: AMBER.headerLight } },
+      right: { style: 'thin', color: { argb: AMBER.borderColor } },
+    };
+    bGtSum.numFmt = '#,##0';
+    cr++;
+
+    // Footer
+    cr++;
+    ws2.mergeCells(cr, 1, cr, totalCols);
+    const bFooter = ws2.getCell(cr, 1);
+    bFooter.value = `Dicetak pada: ${dateStr}, ${timeStr} WIB`;
+    bFooter.font = { name: FONT_FAMILY, size: 9, italic: true, color: { argb: '7F8C8D' } };
+    bFooter.alignment = { horizontal: 'right', vertical: 'middle' };
+
+    // Column widths
+    ws2.getColumn(1).width = 6;
+    ws2.getColumn(2).width = namaColWidth;
+    bc = 3;
+    jenisList.forEach(() => {
+      for (let si = 0; si < subColCount; si++) {
+        ws2.getColumn(bc + si).width = si === 3 ? 14 : 12;
+      }
+      bc += subColCount;
+    });
+    ws2.getColumn(bc).width = 16;
+
+    // No freeze panes
+
+    // Protection
+    ws2.protect('', {
+      autoFilter: true,
+      sort: true,
+      selectLockedCells: true,
+      selectUnlockedCells: true,
+    });
+
+    // Print setup
+    ws2.pageSetup = {
+      orientation: 'landscape',
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 0,
+      paperSize: 9,
+    };
+  }
 
   // ─── Save ─────────────────────────────────────────────────────
   const timestamp = getTimestamp();

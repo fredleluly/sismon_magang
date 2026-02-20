@@ -3,7 +3,7 @@ import { QRCodeAPI, UsersAPI, getToken, AttendanceAPI } from '../../services/api
 import { useToast } from '../../context/ToastContext';
 import type { QRCode, Attendance } from '../../types';
 import QRCodeLib from 'qrcode';
-import * as XLSX from 'xlsx';
+import { exportExcel } from '../../utils/excelExport';
 import './QRCodeAdmin.css';
 
 const QRCodeAdmin: React.FC = () => {
@@ -54,7 +54,7 @@ const QRCodeAdmin: React.FC = () => {
       const res = await fetch('/api/attendance/today', { headers: { Authorization: 'Bearer ' + getToken() } });
       const d = await res.json();
       if (d.success) setAttendanceList(d.data || []);
-    } catch {}
+    } catch { }
   };
 
   // Calendar functions
@@ -236,45 +236,46 @@ const QRCodeAdmin: React.FC = () => {
     setLateThreshold('08:00');
   };
 
-  const downloadDayExcel = () => {
+  const downloadDayExcel = async () => {
     if (selectedDayData.length === 0) {
       showToast('Tidak ada data untuk diunduh', 'error');
       return;
     }
 
     try {
-      // Prepare data
       const selectedDate = new Date(selectedDayData[0]?.tanggal).toLocaleDateString('id-ID', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
       });
 
-      // Create worksheet data
-      const wsData: any[] = [['DATA KEHADIRAN'], [`Tanggal: ${selectedDate}`], [`Total Peserta: ${selectedDayData.length}`], [], ['No', 'Nama', 'Institusi', 'Jam Masuk', 'Status']];
+      const data = selectedDayData.map((att, index) => ({
+        no: index + 1,
+        nama: typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown',
+        instansi: typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-',
+        jamMasuk: att.jamMasuk || '-',
+        status: isThresholdLoaded ? getStatusWithLate(att) : att.status,
+      }));
 
-      // Add attendance records
-      selectedDayData.forEach((att, index) => {
-        const name = typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown';
-        const instansi = typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-';
-        const status = isThresholdLoaded ? getStatusWithLate(att) : att.status;
-        wsData.push([index + 1, name, instansi, att.jamMasuk || '-', status]);
-      });
-
-      // Create workbook and worksheet
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Kehadiran');
-
-      // Set column widths
-      ws['!cols'] = [{ wch: 5 }, { wch: 20 }, { wch: 20 }, { wch: 12 }, { wch: 12 }];
-
-      // Generate filename
       const dateStr = new Date(selectedDayData[0]?.tanggal).toISOString().split('T')[0];
-      const filename = `Kehadiran-${dateStr}.xlsx`;
 
-      // Download
-      XLSX.writeFile(wb, filename);
+      await exportExcel({
+        fileName: `Kehadiran_${dateStr}`,
+        sheets: [{
+          sheetName: 'Kehadiran',
+          title: 'DATA KEHADIRAN',
+          subtitle: `Tanggal: ${selectedDate}`,
+          infoLines: [`Total Peserta: ${selectedDayData.length}`],
+          columns: [
+            { header: 'No', key: 'no', type: 'number', width: 6 },
+            { header: 'Nama', key: 'nama', type: 'string', width: 22 },
+            { header: 'Institusi', key: 'instansi', type: 'string', width: 22 },
+            { header: 'Jam Masuk', key: 'jamMasuk', type: 'string', width: 12 },
+            { header: 'Status', key: 'status', type: 'string', width: 12 },
+          ],
+          data,
+        }],
+      });
       showToast('Excel berhasil diunduh!', 'success');
     } catch (error) {
       console.error('Error downloading Excel:', error);

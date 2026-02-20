@@ -1,9 +1,17 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { exportRekapitulasiExcel } from '../../utils/excelExport';
 import { useToast } from '../../context/ToastContext';
-import { UsersAPI, WorkLogAPI } from '../../services/api';
-import * as XLSX from 'xlsx';
-import type { User } from '../../types';
+import { UsersAPI, WorkLogAPI, TargetSectionAPI } from '../../services/api';
+import type { User, TargetSection } from '../../types';
+
+const formatRupiah = (value: number): string => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+};
 
 interface RecapRow {
   userId: string;
@@ -43,12 +51,16 @@ const Rekapitulasi: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Target & Upah Harian state for biaya calculation
+  const [targetData, setTargetData] = useState<TargetSection[]>([]);
+  const [upahHarian, setUpahHarian] = useState(0);
+
   // Filters
   const [filterType, setFilterType] = useState<'bulanan' | 'custom'>('bulanan');
   const [currentDate, setCurrentDate] = useState(new Date()); // For monthly view
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  
+
   // Custom Date Picker State
   const [isSelectingDateRange, setIsSelectingDateRange] = useState(false);
   const [datePickerMonth, setDatePickerMonth] = useState(new Date());
@@ -60,7 +72,7 @@ const Rekapitulasi: React.FC = () => {
   const [showUserFilter, setShowUserFilter] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
 
-  // Load users list
+  // Load users list and target data
   useEffect(() => {
     (async () => {
       const res = await UsersAPI.getAll();
@@ -69,7 +81,22 @@ const Rekapitulasi: React.FC = () => {
         setUsers(peserta);
       }
     })();
+    (async () => {
+      const [targetRes, upahRes] = await Promise.all([
+        TargetSectionAPI.getAll(),
+        TargetSectionAPI.getUpahHarian(),
+      ]);
+      if (targetRes && targetRes.success) setTargetData(targetRes.data || []);
+      if (upahRes && upahRes.success) setUpahHarian(upahRes.data.upahHarian || 0);
+    })();
   }, []);
+
+  // Helper: get biaya per berkas for a given job desk
+  const getBiayaPerBerkas = (jobDesk: string): number => {
+    const target = targetData.find((t) => t.jenis.toLowerCase() === jobDesk.toLowerCase());
+    if (!target || target.targetPerDay <= 0 || upahHarian <= 0) return 0;
+    return upahHarian / target.targetPerDay;
+  };
 
   // Close user filter dropdown on outside click
   useEffect(() => {
@@ -85,17 +112,17 @@ const Rekapitulasi: React.FC = () => {
   // Update dates when filter type changes or current month changes
   useEffect(() => {
     if (filterType === 'bulanan') {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-        const start = new Date(year, month, 1);
-        const end = new Date(year, month + 1, 0);
-        
-        // Format to YYYY-MM-DD
-        const startStr = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
-        const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
-        
-        setDateFrom(startStr);
-        setDateTo(endStr);
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const start = new Date(year, month, 1);
+      const end = new Date(year, month + 1, 0);
+
+      // Format to YYYY-MM-DD
+      const startStr = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
+      const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
+
+      setDateFrom(startStr);
+      setDateTo(endStr);
     }
   }, [filterType, currentDate]);
 
@@ -143,40 +170,40 @@ const Rekapitulasi: React.FC = () => {
     const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
     const firstDay = new Date(year, monthIndex, 1).getDay();
 
-    const monthName = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][monthIndex];
+    const monthName = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][monthIndex];
 
     const days = [];
     for (let i = 0; i < firstDay; i++) {
-        days.push(<div key={`empty-${i}`} className="calendar-cell empty"></div>);
+      days.push(<div key={`empty-${i}`} className="calendar-cell empty"></div>);
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
-        const inRange = isDateInRange(year, monthIndex, day);
-        const startEnd = isDateStartEnd(year, monthIndex, day);
-        const isStart = startEnd === 'start';
-        const isEnd = startEnd === 'end';
+      const inRange = isDateInRange(year, monthIndex, day);
+      const startEnd = isDateStartEnd(year, monthIndex, day);
+      const isStart = startEnd === 'start';
+      const isEnd = startEnd === 'end';
 
-        days.push(
-            <div
-                key={day}
-                className={`calendar-cell ${inRange ? 'in-range' : ''} ${isStart ? 'start-date' : ''} ${isEnd ? 'end-date' : ''}`}
-                onClick={() => handleCalendarDateClick(year, monthIndex, day)}
-            >
-                {day}
-            </div>
-        );
+      days.push(
+        <div
+          key={day}
+          className={`calendar-cell ${inRange ? 'in-range' : ''} ${isStart ? 'start-date' : ''} ${isEnd ? 'end-date' : ''}`}
+          onClick={() => handleCalendarDateClick(year, monthIndex, day)}
+        >
+          {day}
+        </div>
+      );
     }
 
     return (
-        <div className="calendar-month-picker">
-            <div className="calendar-month-header">
-                <h3>{monthName} {year}</h3>
-            </div>
-            <div className="calendar-weekdays">
-                {['S','M','T','W','T','F','S'].map(d => <div key={d} className="calendar-weekday">{d}</div>)}
-            </div>
-            <div className="calendar-days">{days}</div>
+      <div className="calendar-month-picker">
+        <div className="calendar-month-header">
+          <h3>{monthName} {year}</h3>
         </div>
+        <div className="calendar-weekdays">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <div key={d} className="calendar-weekday">{d}</div>)}
+        </div>
+        <div className="calendar-days">{days}</div>
+      </div>
     );
   };
 
@@ -275,76 +302,32 @@ const Rekapitulasi: React.FC = () => {
       return;
     }
 
-    // Build header rows
-    const headerRow1: string[] = ['TASK'];
-    const headerRow2: string[] = ['NAMA PESERTA'];
-    jenisList.forEach((j) => {
-      headerRow1.push(j.toUpperCase(), '', '', '');
-      headerRow2.push('BERKAS', 'BUKU', 'BUNDLE', 'TOTAL');
-    });
-    headerRow1.push('TOTAL');
-    headerRow2.push('');
-
-    // Build data rows
-    const dataRows: (string | number)[][] = [];
-    pivotRows.forEach((row) => {
-      const r: (string | number)[] = [row.userName];
-      jenisList.forEach((j) => {
-        const c = row.cells[j] || { berkas: 0, buku: 0, bundle: 0, total: 0 };
-        r.push(c.berkas, c.buku, c.bundle, c.total);
-      });
-      r.push(row.grandTotal);
-      dataRows.push(r);
-    });
-
-    // TOTAL row
-    const totalRow: (string | number)[] = ['TOTAL'];
-    jenisList.forEach((j) => {
-      totalRow.push(totalsRow[j].berkas, totalsRow[j].buku, totalsRow[j].bundle, totalsRow[j].total);
-    });
-    totalRow.push(grandTotalAll);
-    dataRows.push(totalRow);
-
-    const wsData = [headerRow1, headerRow2, ...dataRows];
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-    // Merge cells for header row 1 (jenis groups)
-    const merges: XLSX.Range[] = [];
-    let col = 1;
-    jenisList.forEach(() => {
-      merges.push({ s: { r: 0, c: col }, e: { r: 0, c: col + 3 } });
-      col += 4;
-    });
-    // Merge TASK cell (0,0) vertically with NAMA PESERTA
-    // Merge TOTAL header
-    merges.push({ s: { r: 0, c: col }, e: { r: 1, c: col } });
-    ws['!merges'] = merges;
-
-    // Auto-size columns
-    const colWidths = wsData[0].map((_, i) => ({
-      wch: Math.max(
-        ...wsData.map((r) => String(r[i] ?? '').length),
-        8
-      ) + 2,
-    }));
-    ws['!cols'] = colWidths;
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Rekapitulasi');
-
-    let filename = '';
+    // Build filter info string
+    let filterInfoStr = '';
     if (filterType === 'bulanan') {
-        const monthName = currentDate.toLocaleDateString('id-ID', { month: 'long' });
-        const year = currentDate.getFullYear();
-        filename = `Rekapitulasi_Pekerjaan_${monthName}_${year}.xlsx`;
+      const monthName = currentDate.toLocaleDateString('id-ID', { month: 'long' });
+      const year = currentDate.getFullYear();
+      filterInfoStr = `Bulanan — ${monthName} ${year}`;
     } else if (filterType === 'custom' && dateFrom && dateTo) {
-        filename = `Rekapitulasi_Pekerjaan_${dateFrom}_sd_${dateTo}.xlsx`;
-    } else {
-        const dateStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
-        filename = `Rekapitulasi_Pekerjaan_${dateStr}.xlsx`;
+      const f = new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      const t = new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      filterInfoStr = `Custom — ${f} s/d ${t}`;
     }
-    XLSX.writeFile(wb, filename);
-    showToast('Berhasil mengekspor data ke Excel', 'success');
+
+    try {
+      await exportRekapitulasiExcel(
+        jenisList,
+        pivotRows,
+        totalsRow,
+        grandTotalAll,
+        filterInfoStr || undefined,
+        upahHarian > 0 ? { upahHarian, getBiayaPerBerkas } : undefined,
+      );
+      showToast('Berhasil mengekspor data ke Excel', 'success');
+    } catch (err) {
+      console.error('Export error:', err);
+      showToast('Gagal mengekspor data', 'error');
+    }
   };
 
   const formatDateLabel = () => {
@@ -371,147 +354,147 @@ const Rekapitulasi: React.FC = () => {
       {/* Filters */}
       <div className="work-filter-bar">
         <div className="work-filter-left">
-            <button 
-                className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`} 
-                onClick={() => setFilterType('bulanan')}
-            >
-                Bulanan
-            </button>
-            <button 
-                className={`filter-btn ${filterType === 'custom' ? 'active' : ''}`} 
-                onClick={() => {
-                    setFilterType('custom');
-                    if(!isSelectingDateRange) setIsSelectingStart(true);
-                }}
-            >
-                Custom
-            </button>
+          <button
+            className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`}
+            onClick={() => setFilterType('bulanan')}
+          >
+            Bulanan
+          </button>
+          <button
+            className={`filter-btn ${filterType === 'custom' ? 'active' : ''}`}
+            onClick={() => {
+              setFilterType('custom');
+              if (!isSelectingDateRange) setIsSelectingStart(true);
+            }}
+          >
+            Custom
+          </button>
 
-            {filterType === 'bulanan' ? (
-                <div className="month-picker-container">
-                <button onClick={handlePrevMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                </button>
-                <span className="month-display">
-                    {currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
-                </span>
-                <button onClick={handleNextMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                </button>
-                </div>
-            ) : (
-                <div className="custom-date-range-container">
-                    <button
-                    className="custom-date-range-toggle"
-                    onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
-                    >
-                    {dateFrom && dateTo
-                        ? `${dateFrom} - ${dateTo}`
-                        : 'Pilih Rentang Tanggal'}
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        style={{
-                        width: '16px',
-                        height: '16px',
-                        transform: isSelectingDateRange ? 'rotate(180deg)' : 'rotate(0deg)',
-                        transition: 'transform 0.2s',
-                        }}
-                    >
-                        <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                    </button>
-
-                    {isSelectingDateRange && (
-                    <div className="custom-date-picker-dropdown">
-                        <div className="custom-date-picker-header">
-                        <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>←</button>
-                        <span>Pilih Rentang Tanggal</span>
-                        <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>→</button>
-                        </div>
-
-                        <div className="custom-calendars-container">
-                        {renderCalendarMonth(0)}
-                        {renderCalendarMonth(1)}
-                        </div>
-
-                        <div className="custom-date-range-info">
-                        {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
-                        {tempDateRangeStart && tempDateRangeEnd && (
-                            <p>{tempDateRangeStart} sampai {tempDateRangeEnd}</p>
-                        )}
-                        </div>
-
-                        <div className="custom-date-picker-footer">
-                            <button
-                                className="custom-date-apply-btn"
-                                onClick={() => {
-                                    if (tempDateRangeStart && tempDateRangeEnd) {
-                                        setDateFrom(tempDateRangeStart);
-                                        setDateTo(tempDateRangeEnd);
-                                        setIsSelectingDateRange(false);
-                                        setIsSelectingStart(true);
-                                    } else {
-                                        showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
-                                    }
-                                }}
-                            >
-                                Terapkan
-                            </button>
-                            <button
-                                className="custom-date-cancel-btn"
-                                onClick={() => {
-                                    setIsSelectingDateRange(false);
-                                    setTempDateRangeStart('');
-                                    setTempDateRangeEnd('');
-                                    setIsSelectingStart(true);
-                                }}
-                            >
-                                Batal
-                            </button>
-                        </div>
-                    </div>
-                    )}
-                </div>
-            )}
-
-            <div className="rekap-filter-group rekap-user-filter rekap-user-filter-container" ref={filterRef}>
+          {filterType === 'bulanan' ? (
+            <div className="month-picker-container">
+              <button onClick={handlePrevMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              </button>
+              <span className="month-display">
+                {currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+              </span>
+              <button onClick={handleNextMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </button>
+            </div>
+          ) : (
+            <div className="custom-date-range-container">
               <button
-                className="rekap-user-btn"
-                onClick={() => setShowUserFilter(!showUserFilter)}
+                className="custom-date-range-toggle"
+                onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                </svg>
-                {selectedUsers.length === 0
-                  ? 'Semua Peserta'
-                  : selectedUsers.length === users.length
-                    ? 'Semua Peserta'
-                    : `${selectedUsers.length} Peserta`}
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rekap-user-btn-icon-right">
+                {dateFrom && dateTo
+                  ? `${dateFrom} - ${dateTo}`
+                  : 'Pilih Rentang Tanggal'}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    transform: isSelectingDateRange ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s',
+                  }}
+                >
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               </button>
-              {showUserFilter && (
-                <div className="rekap-user-dropdown">
-                  <div className="rekap-user-option" onClick={selectAllUsers}>
-                    <input type="checkbox" checked={selectedUsers.length === users.length && users.length > 0} readOnly />
-                    <span style={{ fontWeight: 600 }}>Pilih Semua</span>
+
+              {isSelectingDateRange && (
+                <div className="custom-date-picker-dropdown">
+                  <div className="custom-date-picker-header">
+                    <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>←</button>
+                    <span>Pilih Rentang Tanggal</span>
+                    <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>→</button>
                   </div>
-                  <div className="rekap-user-dropdown-divider" />
-                  {users.map((u) => (
-                    <div key={u._id} className="rekap-user-option" onClick={() => toggleUser(u._id)}>
-                      <input type="checkbox" checked={selectedUsers.includes(u._id)} readOnly />
-                      <span>{u.name}</span>
-                    </div>
-                  ))}
+
+                  <div className="custom-calendars-container">
+                    {renderCalendarMonth(0)}
+                    {renderCalendarMonth(1)}
+                  </div>
+
+                  <div className="custom-date-range-info">
+                    {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
+                    {tempDateRangeStart && tempDateRangeEnd && (
+                      <p>{tempDateRangeStart} sampai {tempDateRangeEnd}</p>
+                    )}
+                  </div>
+
+                  <div className="custom-date-picker-footer">
+                    <button
+                      className="custom-date-apply-btn"
+                      onClick={() => {
+                        if (tempDateRangeStart && tempDateRangeEnd) {
+                          setDateFrom(tempDateRangeStart);
+                          setDateTo(tempDateRangeEnd);
+                          setIsSelectingDateRange(false);
+                          setIsSelectingStart(true);
+                        } else {
+                          showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
+                        }
+                      }}
+                    >
+                      Terapkan
+                    </button>
+                    <button
+                      className="custom-date-cancel-btn"
+                      onClick={() => {
+                        setIsSelectingDateRange(false);
+                        setTempDateRangeStart('');
+                        setTempDateRangeEnd('');
+                        setIsSelectingStart(true);
+                      }}
+                    >
+                      Batal
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
+          )}
+
+          <div className="rekap-filter-group rekap-user-filter rekap-user-filter-container" ref={filterRef}>
+            <button
+              className="rekap-user-btn"
+              onClick={() => setShowUserFilter(!showUserFilter)}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+              </svg>
+              {selectedUsers.length === 0
+                ? 'Semua Peserta'
+                : selectedUsers.length === users.length
+                  ? 'Semua Peserta'
+                  : `${selectedUsers.length} Peserta`}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rekap-user-btn-icon-right">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {showUserFilter && (
+              <div className="rekap-user-dropdown">
+                <div className="rekap-user-option" onClick={selectAllUsers}>
+                  <input type="checkbox" checked={selectedUsers.length === users.length && users.length > 0} readOnly />
+                  <span style={{ fontWeight: 600 }}>Pilih Semua</span>
+                </div>
+                <div className="rekap-user-dropdown-divider" />
+                {users.map((u) => (
+                  <div key={u._id} className="rekap-user-option" onClick={() => toggleUser(u._id)}>
+                    <input type="checkbox" checked={selectedUsers.includes(u._id)} readOnly />
+                    <span>{u.name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="rekap-filter-actions">
@@ -616,6 +599,99 @@ const Rekapitulasi: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* ===== BIAYA PER BERKAS TABLE ===== */}
+      {pivotRows.length > 0 && upahHarian > 0 && (
+        <div className="rekap-table-card" style={{ marginTop: 24 }}>
+          {/* <div style={{ padding: '16px 3px', borderBottom: '1px solid var(--gray-200)' }}>
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--gray-800)' }}>Rincian Biaya</h2>
+            <p style={{ margin: '4px 0 8px', fontSize: 12, color: 'var(--gray-500)' }}>
+              Biaya = jumlah item × (Upah Harian / Target per section)
+            </p>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 12px', background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)', border: '1px solid #bae6fd', borderRadius: 8, fontSize: 13, color: '#0369a1' }}>
+              Upah Harian: <strong style={{ fontWeight: 800 }}>{formatRupiah(upahHarian)}</strong>
+            </span>
+          </div> */}
+          <div className="rekap-table-wrapper">
+            <table className="rekap-table rekap-biaya-table">
+              <thead>
+                <tr>
+                  <th rowSpan={2} className="rekap-th-sticky">NAMA PESERTA</th>
+                  {jenisList.map((j) => {
+                    const rate = getBiayaPerBerkas(j);
+                    return (
+                      <th key={j} colSpan={4} className="rekap-th-group rekap-biaya-th-group">
+                        {j.toUpperCase()}
+                        {rate > 0 && (
+                          <div style={{ fontSize: 10, fontWeight: 500, opacity: 0.75, marginTop: 2 }}>
+                            {formatRupiah(rate)}/item
+                          </div>
+                        )}
+                      </th>
+                    );
+                  })}
+                  <th rowSpan={2} className="rekap-th-total">TOTAL</th>
+                </tr>
+                <tr>
+                  {jenisList.map((j) => (
+                    <React.Fragment key={j + '-sub-biaya'}>
+                      <th className="rekap-th-sub">BERKAS</th>
+                      <th className="rekap-th-sub">BUKU</th>
+                      <th className="rekap-th-sub">BUNDLE</th>
+                      <th className="rekap-th-sub rekap-th-sub-total">TOTAL</th>
+                    </React.Fragment>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {pivotRows.map((row) => {
+                  let rowGrandBiaya = 0;
+                  return (
+                    <tr key={row.userId + '-biaya'}>
+                      <td className="rekap-td-name">{row.userName}</td>
+                      {jenisList.map((j) => {
+                        const c = row.cells[j] || { berkas: 0, buku: 0, bundle: 0, total: 0 };
+                        const rate = getBiayaPerBerkas(j);
+                        const bBerkas = c.berkas * rate;
+                        const bBuku = c.buku * rate;
+                        const bBundle = c.bundle * rate;
+                        const bTotal = bBerkas + bBuku + bBundle;
+                        rowGrandBiaya += bTotal;
+                        return (
+                          <React.Fragment key={j}>
+                            <td className="rekap-td-num rekap-td-biaya">{rate > 0 ? formatRupiah(bBerkas) : '-'}</td>
+                            <td className="rekap-td-num rekap-td-biaya">{rate > 0 ? formatRupiah(bBuku) : '-'}</td>
+                            <td className="rekap-td-num rekap-td-biaya">{rate > 0 ? formatRupiah(bBundle) : '-'}</td>
+                            <td className="rekap-td-num rekap-td-subtotal rekap-td-biaya">{rate > 0 ? formatRupiah(bTotal) : '-'}</td>
+                          </React.Fragment>
+                        );
+                      })}
+                      <td className="rekap-td-num rekap-td-grandtotal rekap-td-biaya">{formatRupiah(rowGrandBiaya)}</td>
+                    </tr>
+                  );
+                })}
+                <tr className="rekap-total-row">
+                  <td className="rekap-td-name" style={{ fontWeight: 800 }}>TOTAL</td>
+                  {jenisList.map((j) => {
+                    const rate = getBiayaPerBerkas(j);
+                    return (
+                      <React.Fragment key={j + '-tot-biaya'}>
+                        <td className="rekap-td-num rekap-td-biaya">{rate > 0 ? formatRupiah(totalsRow[j].berkas * rate) : '-'}</td>
+                        <td className="rekap-td-num rekap-td-biaya">{rate > 0 ? formatRupiah(totalsRow[j].buku * rate) : '-'}</td>
+                        <td className="rekap-td-num rekap-td-biaya">{rate > 0 ? formatRupiah(totalsRow[j].bundle * rate) : '-'}</td>
+                        <td className="rekap-td-num rekap-td-subtotal rekap-td-biaya">{rate > 0 ? formatRupiah(totalsRow[j].total * rate) : '-'}</td>
+                      </React.Fragment>
+                    );
+                  })}
+                  <td className="rekap-td-num rekap-td-grandtotal rekap-td-biaya">
+                    {formatRupiah(jenisList.reduce((sum, j) => sum + totalsRow[j].total * getBiayaPerBerkas(j), 0))}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
