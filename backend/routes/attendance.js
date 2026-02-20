@@ -2,6 +2,7 @@ const router = require('express').Router();
 const Attendance = require('../models/Attendance');
 const QRCode = require('../models/QRCode');
 const LateThreshold = require('../models/LateThreshold');
+const User = require('../models/User');
 const { auth, adminOnly } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
@@ -74,7 +75,22 @@ router.get('/', auth, async (req, res) => {
       .sort({ tanggal: -1 })
       .limit(parseInt(req.query.limit) || 50);
 
-    res.json({ success: true, data: records });
+    // For deleted users, use denormalized fields as fallback
+    const data = records.map((r) => {
+      const obj = r.toObject();
+      if (!obj.userId && (obj.userName || obj.userEmail)) {
+        obj.userId = {
+          _id: r._doc.userId || '',
+          name: obj.userName || 'Pengguna Dihapus',
+          email: obj.userEmail || '-',
+          instansi: obj.userInstansi || '-',
+          _deleted: true,
+        };
+      }
+      return obj;
+    });
+
+    res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -131,6 +147,15 @@ router.post('/scan', auth, async (req, res) => {
       status,
       qrCodeId: qr._id,
     });
+
+    // Save denormalized user info
+    const scanUser = await User.findById(req.userId);
+    if (scanUser) {
+      attendance.userName = scanUser.name || '';
+      attendance.userEmail = scanUser.email || '';
+      attendance.userInstansi = scanUser.instansi || '';
+      await attendance.save();
+    }
 
     // Track scanned user on QR
     if (!qr.scannedBy.includes(req.userId)) {
@@ -190,6 +215,7 @@ router.post('/photo-checkin', auth, upload.single('foto'), async (req, res) => {
       : new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 
     // Prepare attendance data
+    const attendanceUser = await User.findById(req.userId);
     const attendanceData = {
       userId: req.userId,
       tanggal: new Date(today),
@@ -197,6 +223,9 @@ router.post('/photo-checkin', auth, upload.single('foto'), async (req, res) => {
       jamKeluar: '',
       status,
       fotoTimestamp,
+      userName: attendanceUser?.name || '',
+      userEmail: attendanceUser?.email || '',
+      userInstansi: attendanceUser?.instansi || '',
       locationMasuk: {
         latitude: latitude ? parseFloat(latitude) : null,
         longitude: longitude ? parseFloat(longitude) : null,
@@ -420,14 +449,27 @@ router.post('/admin/set-status', auth, adminOnly, async (req, res) => {
       att.status = status;
       if (jamMasuk !== undefined) att.jamMasuk = jamMasuk;
       if (jamKeluar !== undefined) att.jamKeluar = jamKeluar;
+      // Ensure denormalized user info is set
+      if (!att.userName) {
+        const targetUser = await User.findById(userId);
+        if (targetUser) {
+          att.userName = targetUser.name || '';
+          att.userEmail = targetUser.email || '';
+          att.userInstansi = targetUser.instansi || '';
+        }
+      }
       await att.save();
     } else {
+      const targetUser = await User.findById(userId);
       const createData = {
         userId,
         tanggal: targetDate,
         jamMasuk: jamMasuk !== undefined ? jamMasuk : '',
         jamKeluar: jamKeluar !== undefined ? jamKeluar : '',
         status,
+        userName: targetUser?.name || '',
+        userEmail: targetUser?.email || '',
+        userInstansi: targetUser?.instansi || '',
       };
       // For Hari Libur, follow bulk-holiday convention
       if (status === 'Hari Libur') {
@@ -454,7 +496,6 @@ router.post('/bulk-holiday', auth, adminOnly, async (req, res) => {
     const { tanggal } = req.body;
     if (!tanggal) return res.status(400).json({ success: false, message: 'Tanggal wajib diisi.' });
 
-    const User = require('../models/User');
     const users = await User.find({ role: 'user' });
 
     const dateStr = new Date(tanggal).toISOString().split('T')[0];
@@ -475,6 +516,12 @@ router.post('/bulk-holiday', auth, adminOnly, async (req, res) => {
       if (existing) {
         existing.status = 'Hari Libur';
         existing.jamMasuk = '-';
+        // Ensure denormalized user info
+        if (!existing.userName) {
+          existing.userName = user.name || '';
+          existing.userEmail = user.email || '';
+          existing.userInstansi = user.instansi || '';
+        }
         await existing.save();
         updated++;
       } else {
@@ -484,6 +531,9 @@ router.post('/bulk-holiday', auth, adminOnly, async (req, res) => {
           jamMasuk: '-',
           jamKeluar: '',
           status: 'Hari Libur',
+          userName: user.name || '',
+          userEmail: user.email || '',
+          userInstansi: user.instansi || '',
         });
         created++;
       }
@@ -535,26 +585,42 @@ router.get('/today', auth, adminOnly, async (req, res) => {
       tanggal: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59') },
     }).populate('userId', 'name email instansi');
 
-    res.json({ success: true, data: records });
+    // For deleted users, use denormalized fields as fallback
+    const data = records.map((r) => {
+      const obj = r.toObject();
+      if (!obj.userId && (obj.userName || obj.userEmail)) {
+        obj.userId = {
+          _id: r._doc.userId || '',
+          name: obj.userName || 'Pengguna Dihapus',
+          email: obj.userEmail || '-',
+          instansi: obj.userInstansi || '-',
+          _deleted: true,
+        };
+      }
+      return obj;
+    });
+
+    res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// GET /api/attendance/settings/late-threshold — get late threshold (returns today's per-day threshold if set, else default)
+// GET /api/attendance/settings/late-threshold — get late threshold for a specific date (or today if not specified)
 router.get('/settings/late-threshold', auth, async (req, res) => {
   try {
     const defaultThreshold = process.env.LATE_THRESHOLD || '08:00';
-    const today = new Date().toISOString().split('T')[0];
-    const todayDoc = await LateThreshold.findOne({ tanggal: today });
-    if (todayDoc) {
+    // Support ?tanggal=YYYY-MM-DD query param, fallback to today
+    const tanggal = req.query.tanggal || new Date().toISOString().split('T')[0];
+    const doc = await LateThreshold.findOne({ tanggal });
+    if (doc) {
       res.json({
         success: true,
         data: {
-          lateThreshold: todayDoc.threshold,
+          lateThreshold: doc.threshold,
           isCustom: true,
-          alasan: todayDoc.alasan || '',
-          tanggal: today,
+          alasan: doc.alasan || '',
+          tanggal,
           defaultThreshold,
         },
       });
@@ -565,7 +631,7 @@ router.get('/settings/late-threshold', auth, async (req, res) => {
           lateThreshold: defaultThreshold,
           isCustom: false,
           alasan: '',
-          tanggal: today,
+          tanggal,
           defaultThreshold,
         },
       });
@@ -596,36 +662,37 @@ router.post('/settings/late-threshold', auth, adminOnly, async (req, res) => {
   }
 });
 
-// POST /api/attendance/settings/today-threshold — set today's late threshold (admin only)
+// POST /api/attendance/settings/today-threshold — set late threshold for a specific date (admin only)
 router.post('/settings/today-threshold', auth, adminOnly, async (req, res) => {
   try {
-    const { threshold, alasan } = req.body;
+    const { threshold, alasan, tanggal: reqTanggal } = req.body;
     if (!threshold || !/^\d{2}:\d{2}$/.test(threshold)) {
       return res.status(400).json({
         success: false,
         message: 'Format threshold harus HH:MM (contoh: 08:30)',
       });
     }
-    const today = new Date().toISOString().split('T')[0];
-    const existing = await LateThreshold.findOne({ tanggal: today });
+    // Support tanggal from body, fallback to today
+    const tanggal = reqTanggal || new Date().toISOString().split('T')[0];
+    const existing = await LateThreshold.findOne({ tanggal });
     if (existing) {
       existing.threshold = threshold;
       existing.alasan = alasan || '';
       await existing.save();
       return res.json({
         success: true,
-        message: `Jam telat hari ini berhasil diubah ke ${threshold}`,
+        message: `Jam telat tanggal ${tanggal} berhasil diubah ke ${threshold}`,
         data: existing,
       });
     }
     const newDoc = await LateThreshold.create({
-      tanggal: today,
+      tanggal,
       threshold,
       alasan: alasan || '',
     });
     res.json({
       success: true,
-      message: `Jam telat hari ini berhasil diatur ke ${threshold}`,
+      message: `Jam telat tanggal ${tanggal} berhasil diatur ke ${threshold}`,
       data: newDoc,
     });
   } catch (err) {
@@ -633,22 +700,23 @@ router.post('/settings/today-threshold', auth, adminOnly, async (req, res) => {
   }
 });
 
-// DELETE /api/attendance/settings/today-threshold — reset today's threshold back to default (admin only)
+// DELETE /api/attendance/settings/today-threshold — reset threshold for a specific date back to default (admin only)
 router.delete('/settings/today-threshold', auth, adminOnly, async (req, res) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
-    const deleted = await LateThreshold.findOneAndDelete({ tanggal: today });
+    // Support ?tanggal=YYYY-MM-DD query param, fallback to today
+    const tanggal = req.query.tanggal || new Date().toISOString().split('T')[0];
+    const deleted = await LateThreshold.findOneAndDelete({ tanggal });
     const defaultThreshold = process.env.LATE_THRESHOLD || '08:00';
     if (!deleted) {
       return res.json({
         success: true,
-        message: 'Jam telat hari ini sudah menggunakan default',
+        message: `Jam telat tanggal ${tanggal} sudah menggunakan default`,
         data: { lateThreshold: defaultThreshold },
       });
     }
     res.json({
       success: true,
-      message: `Jam telat hari ini dikembalikan ke default (${defaultThreshold})`,
+      message: `Jam telat tanggal ${tanggal} dikembalikan ke default (${defaultThreshold})`,
       data: { lateThreshold: defaultThreshold },
     });
   } catch (err) {

@@ -247,17 +247,18 @@ export const AttendanceAPI = {
   checkout: (id: string) => API.put<Attendance>(`/attendance/${id}/checkout`),
   update: (id: string, data: Partial<Attendance>) => API.put<Attendance>(`/attendance/${id}`, data),
   getToday: () => API.get<Attendance[]>('/attendance/today'),
-  getLateThreshold: () => API.get<{ lateThreshold: string; isCustom: boolean; alasan: string; tanggal: string; defaultThreshold: string }>('/attendance/settings/late-threshold'),
+  getLateThreshold: (tanggal?: string) => API.get<{ lateThreshold: string; isCustom: boolean; alasan: string; tanggal: string; defaultThreshold: string }>(`/attendance/settings/late-threshold${tanggal ? `?tanggal=${tanggal}` : ''}`),
   setLateThreshold: (threshold: string) =>
     API.post<{ lateThreshold: string }>('/attendance/settings/late-threshold', {
       threshold,
     }),
-  setTodayThreshold: (threshold: string, alasan?: string) =>
+  setTodayThreshold: (threshold: string, alasan?: string, tanggal?: string) =>
     API.post<any>('/attendance/settings/today-threshold', {
       threshold,
       alasan,
+      tanggal,
     }),
-  resetTodayThreshold: () => API.delete<any>('/attendance/settings/today-threshold'),
+  resetTodayThreshold: (tanggal?: string) => API.delete<any>(`/attendance/settings/today-threshold${tanggal ? `?tanggal=${tanggal}` : ''}`),
   updateStatus: (id: string, status: string, jamMasuk?: string, jamKeluar?: string) =>
     API.put<Attendance>(`/attendance/${id}/status`, {
       status,

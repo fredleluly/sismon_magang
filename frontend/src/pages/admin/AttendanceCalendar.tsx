@@ -113,15 +113,15 @@ const AttendanceCalendar: React.FC = () => {
   };
 
   const handleSaveThreshold = async () => {
+    const targetDate = selectedDate || toDateStr(new Date());
     setThresholdSaving(true);
     try {
-      const res = await AttendanceAPI.setTodayThreshold(modalThresholdTime, modalThresholdAlasan);
+      const res = await AttendanceAPI.setTodayThreshold(modalThresholdTime, modalThresholdAlasan, targetDate);
       if (res && res.success) {
         setLateThreshold(modalThresholdTime);
         setIsCustomThreshold(true);
         setThresholdAlasan(modalThresholdAlasan);
-        localStorage.setItem('lateThreshold', modalThresholdTime);
-        showToast(res.message || 'Jam telat hari ini berhasil diubah', 'success');
+        showToast(res.message || 'Jam telat berhasil diubah', 'success');
         setShowThresholdModal(false);
       } else {
         showToast(res?.message || 'Gagal menyimpan', 'error');
@@ -134,14 +134,14 @@ const AttendanceCalendar: React.FC = () => {
   };
 
   const handleResetThreshold = async () => {
+    const targetDate = selectedDate || toDateStr(new Date());
     setThresholdSaving(true);
     try {
-      const res = await AttendanceAPI.resetTodayThreshold();
+      const res = await AttendanceAPI.resetTodayThreshold(targetDate);
       if (res && res.success) {
         setLateThreshold(defaultThreshold);
         setIsCustomThreshold(false);
         setThresholdAlasan('');
-        localStorage.setItem('lateThreshold', defaultThreshold);
         showToast('Jam telat dikembalikan ke default (' + defaultThreshold + ')', 'success');
         setShowThresholdModal(false);
       } else {
@@ -154,28 +154,42 @@ const AttendanceCalendar: React.FC = () => {
     }
   };
 
-  // Load late threshold, all users, and today stats
-  useEffect(() => {
-    const loadThreshold = async () => {
-      const res = await AttendanceAPI.getLateThreshold();
+  // Load threshold for the selected date
+  const loadThresholdForDate = async (tanggal?: string) => {
+    try {
+      const res = await AttendanceAPI.getLateThreshold(tanggal);
       if (res && res.success) {
         setLateThreshold(res.data.lateThreshold);
         setDefaultThreshold(res.data.defaultThreshold || '08:00');
         setIsCustomThreshold(res.data.isCustom || false);
         setThresholdAlasan(res.data.alasan || '');
-        localStorage.setItem('lateThreshold', res.data.lateThreshold);
       } else {
-        const saved = localStorage.getItem('lateThreshold');
-        if (saved) setLateThreshold(saved);
+        const defaultVal = '08:00';
+        setLateThreshold(defaultVal);
+        setIsCustomThreshold(false);
+        setThresholdAlasan('');
       }
       setIsThresholdLoaded(true);
-    };
-    loadThreshold();
+    } catch {
+      setIsThresholdLoaded(true);
+    }
+  };
+
+  // Load threshold, all users, and today stats on mount
+  useEffect(() => {
+    loadThresholdForDate(); // load today's threshold initially
     loadAllUsers();
     loadTodayStats();
     const iv = setInterval(loadTodayStats, 30000);
     return () => clearInterval(iv);
   }, []);
+
+  // Reload threshold when selectedDate changes
+  useEffect(() => {
+    if (selectedDate) {
+      loadThresholdForDate(selectedDate);
+    }
+  }, [selectedDate]);
 
   const handleViewPhoto = async (attendanceId: string, userName: string) => {
     try {
@@ -591,6 +605,7 @@ const AttendanceCalendar: React.FC = () => {
               { header: 'Jam Masuk', key: 'jamMasuk', width: 14 },
               { header: 'Jam Keluar', key: 'jamKeluar', width: 14 },
               { header: 'Status', key: 'status', width: 14 },
+              { header: 'Alasan Pulang Cepat', key: 'keterangan', width: 30 },
             ],
             data: dataToExport.map((att, index) => ({
               no: index + 1,
@@ -604,6 +619,7 @@ const AttendanceCalendar: React.FC = () => {
               jamMasuk: att.jamMasuk || '-',
               jamKeluar: att.jamKeluar || '-',
               status: att.status,
+              keterangan: att.keterangan || '-',
             })),
           },
         ],
@@ -783,9 +799,13 @@ const AttendanceCalendar: React.FC = () => {
                 margin: 0,
               }}
             >
-              Pengaturan Jam Telat Hari Ini
+              Pengaturan Jam Telat {selectedDate ? 'Tanggal Terpilih' : 'Hari Ini'}
             </h3>
-            <p style={{ fontSize: 11, color: '#94a3b8', margin: '4px 0 0' }}>{new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+            <p style={{ fontSize: 11, color: '#94a3b8', margin: '4px 0 0' }}>
+              {selectedDate
+                ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+                : new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
@@ -844,7 +864,7 @@ const AttendanceCalendar: React.FC = () => {
                 e.currentTarget.style.boxShadow = '0 2px 8px rgba(102,126,234,0.3)';
               }}
             >
-              ✏️ Ubah Jam Telat Hari Ini
+              ✏️ Ubah Jam Telat {selectedDate ? 'Tanggal Ini' : 'Hari Ini'}
             </button>
           </div>
         </div>
@@ -1139,114 +1159,122 @@ const AttendanceCalendar: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {displayData.map((att, i) => (
-                      <tr key={att._id}>
-                        <td>{i + 1}</td>
-                        <td className="name-cell">{typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown'}</td>
-                        <td>{typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-'}</td>
-                        {filterMode !== 'harian' && (
-                          <td style={{ fontSize: 12 }}>
-                            {new Date(att.tanggal).toLocaleDateString('id-ID', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
+                    {displayData.map((att, i) => {
+                      const userName = typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown';
+                      const userInstansi = typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-';
+                      const isDeletedUser = typeof att.userId === 'object' && (att.userId as any)?._deleted;
+                      return (
+                        <tr key={att._id}>
+                          <td>{i + 1}</td>
+                          <td className="name-cell">
+                            {userName}
+                            {isDeletedUser && <span style={{ fontSize: 10, color: '#ef4444', marginLeft: 4, fontWeight: 600 }}>(Dihapus)</span>}
                           </td>
-                        )}
-                        <td className="time-cell">{att.jamMasuk || '-'}</td>
-                        <td>
-                          <div className="reason-container">
-                            <span className="time-cell">{att.jamKeluar || '-'}</span>
-                            {att.keterangan && (
-                              <div className="reason-badge">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <circle cx="12" cy="12" r="10"></circle>
-                                  <line x1="12" y1="16" x2="12" y2="12"></line>
-                                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                </svg>
-                                Info
-                                <div className="reason-tooltip">
-                                  <strong>Alasan Pulang Cepat:</strong>
-                                  <br />
-                                  {att.keterangan}
+                          <td>{userInstansi}</td>
+                          {filterMode !== 'harian' && (
+                            <td style={{ fontSize: 12 }}>
+                              {new Date(att.tanggal).toLocaleDateString('id-ID', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                            </td>
+                          )}
+                          <td className="time-cell">{att.jamMasuk || '-'}</td>
+                          <td>
+                            <div className="reason-container">
+                              <span className="time-cell">{att.jamKeluar || '-'}</span>
+                              {att.keterangan && (
+                                <div className="reason-badge">
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                  </svg>
+                                  Info
+                                  <div className="reason-tooltip">
+                                    <strong>Alasan Pulang Cepat:</strong>
+                                    <br />
+                                    {att.keterangan}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          <span className={`status-badge status-${(isThresholdLoaded ? getStatusWithLate(att) : att.status || '').toLowerCase().replace(/\s+/g, '-')}`}>{isThresholdLoaded ? getStatusWithLate(att) : att.status}</span>
-                        </td>
-                        <td>
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 6,
-                            }}
-                          >
-                            {att.fotoAbsensi ? (
+                              )}
+                            </div>
+                          </td>
+                          <td>
+                            <span className={`status-badge status-${(isThresholdLoaded ? getStatusWithLate(att) : att.status || '').toLowerCase().replace(/\s+/g, '-')}`}>{isThresholdLoaded ? getStatusWithLate(att) : att.status}</span>
+                          </td>
+                          <td>
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                              }}
+                            >
+                              {att.fotoAbsensi ? (
+                                <button
+                                  onClick={() => handleViewPhoto(att._id, typeof att.userId === 'string' ? 'User' : att.userId?.name || 'User')}
+                                  title="Lihat Foto Masuk"
+                                  style={{
+                                    background: 'none',
+                                    border: '1px solid var(--gray-300)',
+                                    borderRadius: 4,
+                                    padding: 4,
+                                    cursor: 'pointer',
+                                    color: 'var(--primary-600)',
+                                  }}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                  </svg>
+                                </button>
+                              ) : (
+                                <span style={{ width: 26 }}></span>
+                              )}
+                              {att.fotoPulang ? (
+                                <button
+                                  onClick={() => handleViewPhotoPulang(att._id, typeof att.userId === 'string' ? 'User' : att.userId?.name || 'User')}
+                                  title="Lihat Foto Pulang"
+                                  style={{
+                                    background: 'none',
+                                    border: '1px solid #fcd34d',
+                                    borderRadius: 4,
+                                    padding: 4,
+                                    cursor: 'pointer',
+                                    color: '#d97706',
+                                  }}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                    <polyline points="16 17 21 12 16 7"></polyline>
+                                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                                  </svg>
+                                </button>
+                              ) : null}
                               <button
-                                onClick={() => handleViewPhoto(att._id, typeof att.userId === 'string' ? 'User' : att.userId?.name || 'User')}
-                                title="Lihat Foto Masuk"
+                                onClick={() => openEditStatus(att)}
+                                title="Edit Status"
                                 style={{
                                   background: 'none',
                                   border: '1px solid var(--gray-300)',
                                   borderRadius: 4,
                                   padding: 4,
                                   cursor: 'pointer',
-                                  color: 'var(--primary-600)',
+                                  color: '#f59e0b',
                                 }}
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                  <circle cx="12" cy="12" r="3"></circle>
+                                  <path d="M12 20h9"></path>
+                                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
                                 </svg>
                               </button>
-                            ) : (
-                              <span style={{ width: 26 }}></span>
-                            )}
-                            {att.fotoPulang ? (
-                              <button
-                                onClick={() => handleViewPhotoPulang(att._id, typeof att.userId === 'string' ? 'User' : att.userId?.name || 'User')}
-                                title="Lihat Foto Pulang"
-                                style={{
-                                  background: 'none',
-                                  border: '1px solid #fcd34d',
-                                  borderRadius: 4,
-                                  padding: 4,
-                                  cursor: 'pointer',
-                                  color: '#d97706',
-                                }}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                  <polyline points="16 17 21 12 16 7"></polyline>
-                                  <line x1="21" y1="12" x2="9" y2="12"></line>
-                                </svg>
-                              </button>
-                            ) : null}
-                            <button
-                              onClick={() => openEditStatus(att)}
-                              title="Edit Status"
-                              style={{
-                                background: 'none',
-                                border: '1px solid var(--gray-300)',
-                                borderRadius: 4,
-                                padding: 4,
-                                cursor: 'pointer',
-                                color: '#f59e0b',
-                              }}
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 20h9"></path>
-                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1941,14 +1969,21 @@ const AttendanceCalendar: React.FC = () => {
                 }}
               >
                 <div>
-                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Ubah Jam Telat Hari Ini</h3>
+                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Ubah Jam Telat {selectedDate ? 'Tanggal Terpilih' : 'Hari Ini'}</h3>
                   <p style={{ margin: '4px 0 0', fontSize: 12, opacity: 0.85 }}>
-                    {new Date().toLocaleDateString('id-ID', {
-                      weekday: 'long',
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                    })}
+                    {selectedDate
+                      ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', {
+                          weekday: 'long',
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })
+                      : new Date().toLocaleDateString('id-ID', {
+                          weekday: 'long',
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
                   </p>
                 </div>
                 <button
@@ -1991,7 +2026,7 @@ const AttendanceCalendar: React.FC = () => {
                     <line x1="12" y1="8" x2="12.01" y2="8" />
                   </svg>
                   <div style={{ fontSize: 12, color: '#0369a1', lineHeight: 1.4 }}>
-                    Perubahan ini hanya berlaku untuk <strong>hari ini</strong>. Default jam telat: <strong>{defaultThreshold}</strong>
+                    Perubahan ini hanya berlaku untuk <strong>tanggal yang dipilih</strong>. Default jam telat: <strong>{defaultThreshold}</strong>
                   </div>
                 </div>
 
