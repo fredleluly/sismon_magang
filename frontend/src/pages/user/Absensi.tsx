@@ -9,7 +9,7 @@ import './Absensi.css';
 const Absensi: React.FC = () => {
   const { showToast } = useToast();
   const [records, setRecords] = useState<Attendance[]>([]);
-  const [lateThreshold, setLateThreshold] = useState<string>('08:00');
+  const [lateThreshold, setLateThreshold] = useState<string>('08:10');
   const [showLateWarning, setShowLateWarning] = useState(false);
   const [activeTab, setActiveTab] = useState<'face' | 'qr'>('face');
 
@@ -546,7 +546,7 @@ const Absensi: React.FC = () => {
           </div>
           <div className="date-text">
             <h3>{dateStr}</h3>
-            <p>Jam masuk: 08:00 - 09:00 WIB</p>
+            <p>Jam masuk: 08:10 - 09:00 WIB</p>
           </div>
         </div>
         <div className="last-absensi-group">

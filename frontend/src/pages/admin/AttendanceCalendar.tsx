@@ -37,15 +37,15 @@ const AttendanceCalendar: React.FC = () => {
   // Status & threshold states (moved from QRCodeAdmin)
   const [totalPeserta, setTotalPeserta] = useState(0);
   const [todayAttendanceCount, setTodayAttendanceCount] = useState(0);
-  const [lateThreshold, setLateThreshold] = useState<string>('08:00');
-  const [defaultThreshold, setDefaultThreshold] = useState<string>('08:00');
+  const [lateThreshold, setLateThreshold] = useState<string>('08:10');
+  const [defaultThreshold, setDefaultThreshold] = useState<string>('08:10');
   const [isCustomThreshold, setIsCustomThreshold] = useState(false);
   const [thresholdAlasan, setThresholdAlasan] = useState<string>('');
   const [isThresholdLoaded, setIsThresholdLoaded] = useState(false);
 
   // Modal state for editing today's threshold
   const [showThresholdModal, setShowThresholdModal] = useState(false);
-  const [modalThresholdTime, setModalThresholdTime] = useState<string>('08:00');
+  const [modalThresholdTime, setModalThresholdTime] = useState<string>('08:10');
   const [modalThresholdAlasan, setModalThresholdAlasan] = useState<string>('');
   const [thresholdSaving, setThresholdSaving] = useState(false);
 
@@ -160,11 +160,11 @@ const AttendanceCalendar: React.FC = () => {
       const res = await AttendanceAPI.getLateThreshold(tanggal);
       if (res && res.success) {
         setLateThreshold(res.data.lateThreshold);
-        setDefaultThreshold(res.data.defaultThreshold || '08:00');
+        setDefaultThreshold(res.data.defaultThreshold || '08:10');
         setIsCustomThreshold(res.data.isCustom || false);
         setThresholdAlasan(res.data.alasan || '');
       } else {
-        const defaultVal = '08:00';
+        const defaultVal = '08:10';
         setLateThreshold(defaultVal);
         setIsCustomThreshold(false);
         setThresholdAlasan('');

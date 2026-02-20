@@ -24,7 +24,7 @@ const QRCodeAdmin: React.FC = () => {
   const [calendarLoading, setCalendarLoading] = useState(false);
 
   // Late threshold setting
-  const [lateThreshold, setLateThreshold] = useState<string>('08:00');
+  const [lateThreshold, setLateThreshold] = useState<string>('08:10');
   const [isEditingThreshold, setIsEditingThreshold] = useState(false);
   const [isThresholdLoaded, setIsThresholdLoaded] = useState(false);
 
@@ -171,7 +171,9 @@ const QRCodeAdmin: React.FC = () => {
         closeEdit();
         // Refresh all data
         const [attRes] = await Promise.all([
-          AttendanceAPI.getAll(`from=${new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString().split('T')[0]}&to=${new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59).toISOString().split('T')[0]}&limit=1000`),
+          AttendanceAPI.getAll(
+            `from=${new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString().split('T')[0]}&to=${new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59).toISOString().split('T')[0]}&limit=1000`,
+          ),
           loadAttendance(),
         ]);
         if (attRes && attRes.success) {
@@ -233,7 +235,7 @@ const QRCodeAdmin: React.FC = () => {
   };
 
   const handleResetThreshold = () => {
-    setLateThreshold('08:00');
+    setLateThreshold('08:10');
   };
 
   const downloadDayExcel = () => {
