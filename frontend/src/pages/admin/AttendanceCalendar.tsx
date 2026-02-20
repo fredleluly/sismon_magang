@@ -268,24 +268,32 @@ const AttendanceCalendar: React.FC = () => {
       }
       if (res && res.success) {
         showToast('Data kehadiran berhasil diperbarui', 'success');
+        const savedRecord = res.data; // The saved/created attendance record from API response
+        const editedId = editingAtt._id; // Capture before closeEdit resets editingAtt
         closeEdit();
-        const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-        const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59);
-        const from = toDateStr(startOfMonth);
-        const to = toDateStr(endOfMonth);
-        const attRes = await AttendanceAPI.getAll(`from=${from}&to=${to}&limit=1000`);
-        if (attRes && attRes.success) {
-          const newData = attRes.data || [];
-          setAttendanceData(newData);
-          if (selectedDayData.length > 0) {
-            const selectedDate = selectedDayData[0]?.tanggal.toString().split('T')[0];
-            setSelectedDayData(newData.filter((a: any) => a.tanggal.toString().split('T')[0] === selectedDate));
-          }
-          // Also refresh filter data if active
-          if (filterData.length > 0) {
-            applyFilterOnData(newData);
+
+        if (savedRecord) {
+          // Directly update local state using the API response — no re-fetch needed
+          // This avoids timezone mismatch and stale closure issues
+          setAttendanceData(prev => {
+            const filtered = prev.filter(a => a._id !== savedRecord._id);
+            return [...filtered, savedRecord];
+          });
+
+          // Replace the virtual "belum-xxx" entry (or old record) with the saved record
+          setSelectedDayData(prev => {
+            const withoutOld = prev.filter(a => a._id !== editedId && a._id !== savedRecord._id);
+            return [...withoutOld, savedRecord];
+          });
+
+          if (filterMode === 'harian') {
+            setFilterData(prev => {
+              const withoutOld = prev.filter(a => a._id !== editedId && a._id !== savedRecord._id);
+              return [...withoutOld, savedRecord];
+            });
           }
         }
+        loadTodayStats();
       } else {
         showToast(res?.message || 'Gagal memperbarui data', 'error');
       }

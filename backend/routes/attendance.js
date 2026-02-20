@@ -421,13 +421,13 @@ router.post('/admin/set-status', auth, adminOnly, async (req, res) => {
     if (!allowed.includes(status)) return res.status(400).json({ success: false, message: 'Status tidak valid.' });
 
     const dateStr = tanggal.split('T')[0];
-    const targetDate = new Date(dateStr + 'T00:00:00');
+    const targetDate = new Date(dateStr);
 
     let att = await Attendance.findOne({
       userId,
       tanggal: {
-        $gte: new Date(dateStr + 'T00:00:00'),
-        $lt: new Date(dateStr + 'T23:59:59'),
+        $gte: new Date(dateStr),
+        $lt: new Date(dateStr + 'T23:59:59.999Z'),
       },
     });
 
