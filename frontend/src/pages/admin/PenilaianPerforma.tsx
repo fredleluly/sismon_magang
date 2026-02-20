@@ -241,50 +241,39 @@ const PenilaianPerforma: React.FC = () => {
         </div>
       </div>
 
-      {/* Month/Year Selector */}
-      <div className="filter-bar">
-        <div className="filter-group">
-          <label>Bulan</label>
-          <select value={bulan} onChange={(e) => setBulan(+e.target.value)}>
-            {MONTHS.map((m, i) => (
-              <option key={i} value={i + 1}>{m}</option>
-            ))}
-          </select>
+      {/* Month Selector */}
+      <div className="perf-month-selector">
+        <button
+          className="perf-month-nav"
+          onClick={() => {
+            const prev = bulan === 1 ? 12 : bulan - 1;
+            const prevYear = bulan === 1 ? tahun - 1 : tahun;
+            setBulan(prev);
+            setTahun(prevYear);
+          }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+        <div className="perf-month-label">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <span>{MONTHS[bulan - 1]} {tahun}</span>
         </div>
-        <div className="filter-group">
-          <label>Tahun</label>
-          <select value={tahun} onChange={(e) => setTahun(+e.target.value)}>
-            {[2024, 2025, 2026, 2027].map(y => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-        </div>
-        <div className="filter-group ml-auto">
-          <label>&nbsp;</label>
-          <button 
-            className="btn btn-danger-outline" 
-            onClick={() => {
-              showConfirm(
-                'Hapus Semua Final',
-                `Hapus SEMUA penilaian final di ${MONTHS[bulan - 1]} ${tahun}? Tindakan ini tidak bisa dibatalkan!`,
-                'Ya, Hapus Semua',
-                'danger',
-                async () => {
-                  closeConfirm();
-                  const res = await PerformanceAPI.deleteAllFinals(bulan, tahun);
-                  if (res && res.success) {
-                    showToast(res.message || 'Semua penilaian final berhasil dihapus', 'success');
-                    loadEvaluations();
-                  } else {
-                    showToast(res?.message || 'Gagal menghapus', 'error');
-                  }
-                }
-              );
-            }}
-          >
-            🗑️ Hapus Semua Final
-          </button>
-        </div>
+        <button
+          className="perf-month-nav"
+          onClick={() => {
+            const next = bulan === 12 ? 1 : bulan + 1;
+            const nextYear = bulan === 12 ? tahun + 1 : tahun;
+            setBulan(next);
+            setTahun(nextYear);
+          }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
       </div>
 
       {/* Evaluation Form */}

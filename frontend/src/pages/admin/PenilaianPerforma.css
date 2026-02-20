@@ -27,42 +27,59 @@
   stroke: #fff;
 }
 
-/* Filter Bar */
-.filter-bar {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.filter-group label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.filter-group select {
-  padding: 0.5rem 2rem 0.5rem 0.75rem;
-  border: 1.5px solid #e0e0e0;
-  border-radius: 10px;
-  font-size: 0.875rem;
+/* Month Selector */
+.perf-month-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
   background: #fff;
-  cursor: pointer;
-  min-width: 140px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-.filter-group select:focus {
-  outline: none;
-  border-color: #3282b8;
-  box-shadow: 0 0 0 3px rgba(50, 130, 184, 0.12);
+.perf-month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.perf-month-nav:hover {
+  background: #f1f5f9;
+  color: #0f4c75;
+}
+
+.perf-month-nav:active {
+  background: #e2e8f0;
+  transform: scale(0.95);
+}
+
+.perf-month-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.perf-month-label svg {
+  color: #3282b8;
+  flex-shrink: 0;
 }
 
 /* Eval Card */
@@ -574,8 +591,85 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .page-header-perf {
+    padding: 1.25rem 1rem 1rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+  }
+
+  .page-header-perf h1 {
+    font-size: 1.125rem;
+  }
+
+  .page-header-perf p {
+    font-size: 0.75rem;
+  }
+
+  .page-icon-perf {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+
+  .page-icon-perf svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .perf-month-selector {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .perf-month-label {
+    padding: 0 8px;
+    font-size: 0.8125rem;
+  }
+
+  .eval-card {
+    border-radius: 12px;
+    margin-bottom: 1rem;
+  }
+
+  .eval-card-header {
+    padding: 1rem 1rem 0.75rem;
+  }
+
+  .eval-card-header h2 {
+    font-size: 1rem;
+  }
+
+  .eval-card-body {
+    padding: 1rem;
+  }
+
+  .search-section {
+    max-width: none;
+  }
+
   .score-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .score-card {
+    padding: 1rem;
+    border-radius: 10px;
+  }
+
+  .score-value {
+    font-size: 1.75rem;
+  }
+
+  .total-score-bar {
+    border-radius: 10px;
+    padding: 1.25rem;
+  }
+
+  .total-value {
+    font-size: 2.25rem;
   }
 
   .eval-actions {
@@ -588,14 +682,54 @@
     text-align: center;
   }
 
-  .total-value {
-    font-size: 2.5rem;
+  .eval-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .eval-table th,
+  .eval-table td {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .td-actions {
+    gap: 0.25rem;
+  }
+
+  .btn-icon {
+    width: 28px;
+    height: 28px;
   }
 }
 
 @media (max-width: 480px) {
   .score-grid {
     grid-template-columns: 1fr;
+  }
+
+  .perf-month-label span {
+    font-size: 0.8rem;
+  }
+
+  .perf-month-nav {
+    width: 28px;
+    height: 28px;
+  }
+
+  .result-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .total-value {
+    font-size: 2rem;
+  }
+
+  .eval-table th,
+  .eval-table td {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.75rem;
   }
 }
 
