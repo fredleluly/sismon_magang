@@ -275,20 +275,20 @@ const AttendanceCalendar: React.FC = () => {
         if (savedRecord) {
           // Directly update local state using the API response — no re-fetch needed
           // This avoids timezone mismatch and stale closure issues
-          setAttendanceData(prev => {
-            const filtered = prev.filter(a => a._id !== savedRecord._id);
+          setAttendanceData((prev) => {
+            const filtered = prev.filter((a) => a._id !== savedRecord._id);
             return [...filtered, savedRecord];
           });
 
           // Replace the virtual "belum-xxx" entry (or old record) with the saved record
-          setSelectedDayData(prev => {
-            const withoutOld = prev.filter(a => a._id !== editedId && a._id !== savedRecord._id);
+          setSelectedDayData((prev) => {
+            const withoutOld = prev.filter((a) => a._id !== editedId && a._id !== savedRecord._id);
             return [...withoutOld, savedRecord];
           });
 
           if (filterMode === 'harian') {
-            setFilterData(prev => {
-              const withoutOld = prev.filter(a => a._id !== editedId && a._id !== savedRecord._id);
+            setFilterData((prev) => {
+              const withoutOld = prev.filter((a) => a._id !== editedId && a._id !== savedRecord._id);
               return [...withoutOld, savedRecord];
             });
           }
