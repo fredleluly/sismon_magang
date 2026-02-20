@@ -242,12 +242,18 @@ const AttendanceCalendar: React.FC = () => {
     document.body.style.overflow = '';
   };
 
+  // Statuses that do NOT require jam masuk / jam keluar
+  const statusTanpaJam = ['Izin', 'Sakit', 'Alpha', 'Libur', 'Hari Libur'];
+
   const handleSaveStatus = async () => {
     if (!editingAtt) return;
     try {
       const isValidTime = (t: string | undefined | null) => typeof t === 'string' && /^\d{1,2}:\d{2}$/.test(t);
-      const jamMasukToSend = isValidTime(editJamMasuk) ? editJamMasuk : undefined;
-      const jamKeluarToSend = isValidTime(editJamKeluar) ? editJamKeluar : undefined;
+
+      // If selected status doesn't need time, send '-' so backend clears the fields
+      const needsTime = !statusTanpaJam.includes(editStatus);
+      const jamMasukToSend = needsTime && isValidTime(editJamMasuk) ? editJamMasuk : '-';
+      const jamKeluarToSend = needsTime && isValidTime(editJamKeluar) ? editJamKeluar : '';
 
       let res;
 
@@ -257,14 +263,9 @@ const AttendanceCalendar: React.FC = () => {
         const targetUserId = typeof editingAtt.userId === 'string' ? editingAtt.userId : editingAtt.userId?._id;
         const tanggal = typeof editingAtt.tanggal === 'string' ? editingAtt.tanggal : toDateStr(new Date(editingAtt.tanggal));
 
-        // For Hari Libur or Libur, follow backend convention
-        if (editStatus === 'Hari Libur' || editStatus === 'Libur') {
-          res = await AttendanceAPI.adminSetStatus(targetUserId, tanggal, editStatus, '-', '');
-        } else {
-          res = await AttendanceAPI.adminSetStatus(targetUserId, tanggal, editStatus, jamMasukToSend, jamKeluarToSend);
-        }
+        res = await AttendanceAPI.adminSetStatus(targetUserId, tanggal, editStatus, jamMasukToSend, jamKeluarToSend);
       } else {
-        res = await AttendanceAPI.updateStatus(editingAtt._id, editStatus, jamMasukToSend, jamKeluarToSend);
+        res = await AttendanceAPI.updateStatus(editingAtt._id, editStatus, needsTime && isValidTime(editJamMasuk) ? editJamMasuk : undefined, needsTime && isValidTime(editJamKeluar) ? editJamKeluar : undefined);
       }
       if (res && res.success) {
         showToast('Data kehadiran berhasil diperbarui', 'success');
@@ -1429,83 +1430,8 @@ const AttendanceCalendar: React.FC = () => {
 
               {/* Form */}
               <div className="form-body">
+                {/* Status Kehadiran - dipindah ke atas agar admin bisa pilih status dulu */}
                 <div style={{ marginBottom: 18 }}>
-                  <label
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: '#475569',
-                      marginBottom: 8,
-                    }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10"></circle>
-                      <polyline points="12 6 12 12 16 14"></polyline>
-                    </svg>
-                    Jam Masuk
-                  </label>
-                  <input
-                    type="time"
-                    value={editJamMasuk}
-                    onChange={(e) => setEditJamMasuk(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '11px 14px',
-                      border: '2px solid #e2e8f0',
-                      borderRadius: 10,
-                      fontSize: 14,
-                      fontFamily: 'inherit',
-                      boxSizing: 'border-box',
-                      transition: 'border-color 0.2s',
-                      outline: 'none',
-                    }}
-                    onFocus={(e) => (e.target.style.borderColor = '#667eea')}
-                    onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
-                  />
-                </div>
-
-                <div style={{ marginBottom: 18 }}>
-                  <label
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: '#475569',
-                      marginBottom: 8,
-                    }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10"></circle>
-                      <polyline points="12 6 12 12 16 14"></polyline>
-                    </svg>
-                    Jam Keluar
-                  </label>
-                  <input
-                    type="time"
-                    value={editJamKeluar}
-                    onChange={(e) => setEditJamKeluar(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '11px 14px',
-                      border: '2px solid #e2e8f0',
-                      borderRadius: 10,
-                      fontSize: 14,
-                      fontFamily: 'inherit',
-                      boxSizing: 'border-box',
-                      transition: 'border-color 0.2s',
-                      outline: 'none',
-                    }}
-                    onFocus={(e) => (e.target.style.borderColor = '#667eea')}
-                    onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
-                  />
-                </div>
-
-                <div style={{ marginBottom: 24 }}>
                   <label
                     style={{
                       display: 'flex',
@@ -1526,7 +1452,14 @@ const AttendanceCalendar: React.FC = () => {
                   </label>
                   <select
                     value={editStatus}
-                    onChange={(e) => setEditStatus(e.target.value)}
+                    onChange={(e) => {
+                      setEditStatus(e.target.value);
+                      // Clear jam masuk/keluar when switching to status that doesn't need time
+                      if (statusTanpaJam.includes(e.target.value)) {
+                        setEditJamMasuk('');
+                        setEditJamKeluar('');
+                      }
+                    }}
                     style={{
                       width: '100%',
                       padding: '11px 14px',
@@ -1553,6 +1486,109 @@ const AttendanceCalendar: React.FC = () => {
                     <option value="Belum Absen">⏳ Belum Absen</option>
                   </select>
                 </div>
+
+                {/* Jam Masuk & Jam Keluar - hanya tampil jika status membutuhkan waktu */}
+                {!statusTanpaJam.includes(editStatus) && (
+                  <>
+                    <div style={{ marginBottom: 18 }}>
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: '#475569',
+                          marginBottom: 8,
+                        }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        Jam Masuk
+                      </label>
+                      <input
+                        type="time"
+                        value={editJamMasuk}
+                        onChange={(e) => setEditJamMasuk(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '11px 14px',
+                          border: '2px solid #e2e8f0',
+                          borderRadius: 10,
+                          fontSize: 14,
+                          fontFamily: 'inherit',
+                          boxSizing: 'border-box',
+                          transition: 'border-color 0.2s',
+                          outline: 'none',
+                        }}
+                        onFocus={(e) => (e.target.style.borderColor = '#667eea')}
+                        onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: 18 }}>
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: '#475569',
+                          marginBottom: 8,
+                        }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        Jam Keluar
+                      </label>
+                      <input
+                        type="time"
+                        value={editJamKeluar}
+                        onChange={(e) => setEditJamKeluar(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '11px 14px',
+                          border: '2px solid #e2e8f0',
+                          borderRadius: 10,
+                          fontSize: 14,
+                          fontFamily: 'inherit',
+                          boxSizing: 'border-box',
+                          transition: 'border-color 0.2s',
+                          outline: 'none',
+                        }}
+                        onFocus={(e) => (e.target.style.borderColor = '#667eea')}
+                        onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {statusTanpaJam.includes(editStatus) && (
+                  <div
+                    style={{
+                      background: '#f0f9ff',
+                      border: '1px solid #bae6fd',
+                      borderRadius: 10,
+                      padding: '12px 16px',
+                      marginBottom: 18,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      fontSize: 13,
+                      color: '#0369a1',
+                    }}
+                  >
+                    <span>ℹ️</span>
+                    <span>
+                      Status <strong>{editStatus}</strong> tidak memerlukan jam masuk & jam keluar.
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Footer */}
