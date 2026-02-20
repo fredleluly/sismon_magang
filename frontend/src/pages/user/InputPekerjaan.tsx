@@ -33,7 +33,7 @@ const InputPekerjaan: React.FC = () => {
     setConfirmModal({ show: true, title, message, confirmText, type, onConfirm });
   };
 
-  const closeConfirm = () => setConfirmModal(prev => ({ ...prev, show: false }));
+  const closeConfirm = () => setConfirmModal((prev) => ({ ...prev, show: false }));
 
   // Add pause/blur effect on modal open
   useEffect(() => {
@@ -94,46 +94,34 @@ const InputPekerjaan: React.FC = () => {
 
   const submitAllPending = async () => {
     if (pendingData.length === 0) return;
-    
-    showConfirm(
-      'Kirim Semua Log?',
-      `Apakah Anda yakin ingin mengirim semua ${pendingData.length} log pekerjaan status draft menjadi final? Data yang sudah final tidak dapat diubah lagi.`,
-      'Ya, Kirim Semua',
-      'primary',
-      async () => {
-        closeConfirm();
-        let success = 0;
-        let fail = 0;
-        for (const item of pendingData) {
-          const res = await WorkLogAPI.submit(item._id);
-          if (res && res.success) success++;
-          else fail++;
-        }
-        if (fail === 0) {
-          showToast(`${success} data berhasil dikirim final!`, 'success');
-        } else {
-          showToast(`${success} berhasil, ${fail} gagal dikirim`, 'error');
-        }
-        loadPending();
+
+    showConfirm('Kirim Semua Log?', `Apakah Anda yakin ingin mengirim semua ${pendingData.length} log pekerjaan status draft menjadi final? Data yang sudah final tidak dapat diubah lagi.`, 'Ya, Kirim Semua', 'primary', async () => {
+      closeConfirm();
+      let success = 0;
+      let fail = 0;
+      for (const item of pendingData) {
+        const res = await WorkLogAPI.submit(item._id);
+        if (res && res.success) success++;
+        else fail++;
       }
-    );
+      if (fail === 0) {
+        showToast(`${success} data berhasil dikirim final!`, 'success');
+      } else {
+        showToast(`${success} berhasil, ${fail} gagal dikirim`, 'error');
+      }
+      loadPending();
+    });
   };
 
   const deletePending = async (id: string) => {
-    showConfirm(
-      'Hapus Log?',
-      'Apakah Anda yakin ingin menghapus log pekerjaan ini? Tindakan ini tidak dapat dibatalkan.',
-      'Ya, Hapus',
-      'danger',
-      async () => {
-        closeConfirm();
-        const res = await WorkLogAPI.delete(id);
-        if (res && res.success) {
-          showToast('Data pending berhasil dihapus', 'success');
-          loadPending();
-        } else showToast(res?.message || 'Gagal menghapus', 'error');
-      }
-    );
+    showConfirm('Hapus Log?', 'Apakah Anda yakin ingin menghapus log pekerjaan ini? Tindakan ini tidak dapat dibatalkan.', 'Ya, Hapus', 'danger', async () => {
+      closeConfirm();
+      const res = await WorkLogAPI.delete(id);
+      if (res && res.success) {
+        showToast('Data pending berhasil dihapus', 'success');
+        loadPending();
+      } else showToast(res?.message || 'Gagal menghapus', 'error');
+    });
   };
 
   const editPending = async (id: string) => {
@@ -175,8 +163,8 @@ const InputPekerjaan: React.FC = () => {
             <select value={jenis} onChange={(e) => setJenis(e.target.value)} required>
               <option value="">Pilih Pekerjaan (Jobdesk)</option>
               <option value="Sortir">Sortir</option>
-              <option value="Register">Register</option>
-              <option value="Pencopotan Steples">Pencopotan Steples</option>
+              <option value="Register">Registrasi</option>
+              <option value="Pencopotan Steples">Pencopotan Staples</option>
               <option value="Scanning">Scanning</option>
               <option value="Rekardus">Rekardus</option>
               <option value="Stikering">Stikering</option>
@@ -238,6 +226,14 @@ const InputPekerjaan: React.FC = () => {
                     </svg>
                   </button>
                 </div>
+                {item.keterangan && (
+                  <div className="pending-item-keterangan" style={{ fontSize: 13, color: '#64748b', marginBottom: 8, padding: '6px 10px', background: '#f8fafc', borderRadius: 6, borderLeft: '3px solid #0ea5e9' }}>
+                    <span className="label" style={{ display: 'block', marginBottom: 2 }}>
+                      Keterangan:
+                    </span>
+                    <span>{item.keterangan}</span>
+                  </div>
+                )}
                 <div className="pending-item-body">
                   <div>
                     <span className="label">Berkas:</span>
@@ -266,61 +262,55 @@ const InputPekerjaan: React.FC = () => {
         </div>
       </div>
 
-      
       {/* Confirm Modal (Portal) */}
-      {confirmModal.show && ReactDOM.createPortal(
-        <div className="modal-overlay active" style={{ zIndex: 9999 }}>
-          <div className="modal-card" style={{ maxWidth: '400px', textAlign: 'center' }}>
-            <div className="modal-body" style={{ padding: '32px 24px 24px' }}>
-              <div className={`confirm-icon-wrap ${confirmModal.type}`} style={{ 
-                margin: '0 auto 16px', 
-                width: 64, height: 64, 
-                borderRadius: '50%', 
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: confirmModal.type === 'danger' ? '#fee2e2' : '#e0f2fe',
-                color: confirmModal.type === 'danger' ? '#ef4444' : '#0ea5e9'
-              }}>
-                {confirmModal.type === 'danger' ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                  </svg>
-                )}
-              </div>
-              
-              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: '#1e293b' }}>
-                {confirmModal.title}
-              </h3>
-              <p style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.5 }}>
-                {confirmModal.message}
-              </p>
+      {confirmModal.show &&
+        ReactDOM.createPortal(
+          <div className="modal-overlay active" style={{ zIndex: 9999 }}>
+            <div className="modal-card" style={{ maxWidth: '400px', textAlign: 'center' }}>
+              <div className="modal-body" style={{ padding: '32px 24px 24px' }}>
+                <div
+                  className={`confirm-icon-wrap ${confirmModal.type}`}
+                  style={{
+                    margin: '0 auto 16px',
+                    width: 64,
+                    height: 64,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: confirmModal.type === 'danger' ? '#fee2e2' : '#e0f2fe',
+                    color: confirmModal.type === 'danger' ? '#ef4444' : '#0ea5e9',
+                  }}
+                >
+                  {confirmModal.type === 'danger' ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                  )}
+                </div>
 
-              <div style={{ display: 'flex', gap: 12 }}>
-                <button 
-                  className="btn-outline" 
-                  onClick={closeConfirm}
-                  style={{ flex: 1, justifyContent: 'center' }}
-                >
-                  Batal
-                </button>
-                <button 
-                  className={`btn ${confirmModal.type === 'danger' ? 'btn-danger' : 'btn-primary'}`} 
-                  onClick={confirmModal.onConfirm}
-                  style={{ flex: 1, justifyContent: 'center' }}
-                >
-                  {confirmModal.confirmText}
-                </button>
+                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: '#1e293b' }}>{confirmModal.title}</h3>
+                <p style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.5 }}>{confirmModal.message}</p>
+
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button className="btn-outline" onClick={closeConfirm} style={{ flex: 1, justifyContent: 'center' }}>
+                    Batal
+                  </button>
+                  <button className={`btn ${confirmModal.type === 'danger' ? 'btn-danger' : 'btn-primary'}`} onClick={confirmModal.onConfirm} style={{ flex: 1, justifyContent: 'center' }}>
+                    {confirmModal.confirmText}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
