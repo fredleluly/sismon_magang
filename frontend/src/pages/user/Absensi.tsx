@@ -124,7 +124,7 @@ const Absensi: React.FC = () => {
             aspectRatio: 1.0,
             showTorchButtonIfSupported: true,
           },
-          false
+          false,
         );
 
         scanner.render(
@@ -133,7 +133,7 @@ const Absensi: React.FC = () => {
             setScannedResult(decodedText);
             handleScan(decodedText);
           },
-          () => {}
+          () => {},
         );
 
         return () => {
@@ -159,10 +159,7 @@ const Absensi: React.FC = () => {
           const { latitude, longitude, accuracy } = position.coords;
           let address = '';
           try {
-            const resp = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
-              { headers: { 'Accept-Language': 'id' } }
-            );
+            const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`, { headers: { 'Accept-Language': 'id' } });
             const data = await resp.json();
             address = data.display_name || '';
           } catch {
@@ -182,7 +179,7 @@ const Absensi: React.FC = () => {
           setGeoError(msg);
           reject(new Error(msg));
         },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
       );
     });
   }, []);
@@ -431,10 +428,7 @@ const Absensi: React.FC = () => {
       }
 
       if (res && res.success) {
-        showToast(
-          absenMode === 'masuk' ? 'Absensi masuk berhasil!' : 'Absensi pulang berhasil!',
-          'success'
-        );
+        showToast(absenMode === 'masuk' ? 'Absensi masuk berhasil!' : 'Absensi pulang berhasil!', 'success');
         setCapturedPhoto(null);
         setCaptureTimestamp('');
         setGeoLocation(null);
@@ -513,22 +507,11 @@ const Absensi: React.FC = () => {
     minute: '2-digit',
     second: '2-digit',
   });
-  const lastTimeMasuk =
-    records.length > 0 && records[0].jamMasuk ? records[0].jamMasuk + ' WIB' : '--:-- WIB';
-  const lastTimePulang =
-    records.length > 0 &&
-    records[0].jamKeluar &&
-    records[0].jamKeluar !== '' &&
-    records[0].jamKeluar !== '-'
-      ? records[0].jamKeluar + ' WIB'
-      : '--:-- WIB';
+  const lastTimeMasuk = records.length > 0 && records[0].jamMasuk ? records[0].jamMasuk + ' WIB' : '--:-- WIB';
+  const lastTimePulang = records.length > 0 && records[0].jamKeluar && records[0].jamKeluar !== '' && records[0].jamKeluar !== '-' ? records[0].jamKeluar + ' WIB' : '--:-- WIB';
 
   const alreadyCheckedIn = !!todayRecord && !!todayRecord.jamMasuk;
-  const alreadyCheckedOut =
-    !!todayRecord &&
-    !!todayRecord.jamKeluar &&
-    todayRecord.jamKeluar !== '' &&
-    todayRecord.jamKeluar !== '-';
+  const alreadyCheckedOut = !!todayRecord && !!todayRecord.jamKeluar && todayRecord.jamKeluar !== '' && todayRecord.jamKeluar !== '-';
 
   // Switch tab handler
   const switchTab = (tab: 'face' | 'qr') => {
@@ -554,13 +537,7 @@ const Absensi: React.FC = () => {
       <div className="absensi-date-bar">
         <div className="date-info">
           <div className="date-icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
               <line x1="16" x2="16" y1="2" y2="6" />
               <line x1="8" x2="8" y1="2" y2="6" />
@@ -595,15 +572,7 @@ const Absensi: React.FC = () => {
           }}
           disabled={alreadyCheckedIn}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
             <polyline points="10 17 15 12 10 7" />
             <line x1="15" y1="12" x2="3" y2="12" />
@@ -620,15 +589,7 @@ const Absensi: React.FC = () => {
           }}
           disabled={!alreadyCheckedIn || alreadyCheckedOut}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
             <polyline points="16 17 21 12 16 7" />
             <line x1="21" y1="12" x2="9" y2="12" />
@@ -643,24 +604,12 @@ const Absensi: React.FC = () => {
         <div className={`status-card ${alreadyCheckedIn ? 'done' : 'pending'}`}>
           <div className="status-card-icon masuk-icon">
             {alreadyCheckedIn ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                 <polyline points="22 4 12 14.01 9 11.01" />
               </svg>
             ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />
               </svg>
@@ -671,10 +620,7 @@ const Absensi: React.FC = () => {
             <span className="status-card-time">{todayRecord?.jamMasuk || '--:--'}</span>
           </div>
           {todayRecord?.locationMasuk?.address && (
-            <div
-              className="status-card-location"
-              title={todayRecord.locationMasuk.address}
-            >
+            <div className="status-card-location" title={todayRecord.locationMasuk.address}>
               📍 {todayRecord.locationMasuk.address.substring(0, 40)}
               {todayRecord.locationMasuk.address.length > 40 ? '...' : ''}
             </div>
@@ -683,24 +629,12 @@ const Absensi: React.FC = () => {
         <div className={`status-card ${alreadyCheckedOut ? 'done' : 'pending'}`}>
           <div className="status-card-icon pulang-icon">
             {alreadyCheckedOut ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                 <polyline points="22 4 12 14.01 9 11.01" />
               </svg>
             ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />
               </svg>
@@ -708,26 +642,16 @@ const Absensi: React.FC = () => {
           </div>
           <div>
             <span className="status-card-label">Pulang</span>
-            <span className="status-card-time">
-              {todayRecord?.jamKeluar &&
-              todayRecord.jamKeluar !== '' &&
-              todayRecord.jamKeluar !== '-'
-                ? todayRecord.jamKeluar
-                : '--:--'}
-            </span>
+            <span className="status-card-time">{todayRecord?.jamKeluar && todayRecord.jamKeluar !== '' && todayRecord.jamKeluar !== '-' ? todayRecord.jamKeluar : '--:--'}</span>
           </div>
           {todayRecord?.locationPulang?.address && (
-            <div
-              className="status-card-location"
-              title={todayRecord.locationPulang.address}
-            >
+            <div className="status-card-location" title={todayRecord.locationPulang.address}>
               📍 {todayRecord.locationPulang.address.substring(0, 40)}
               {todayRecord.locationPulang.address.length > 40 ? '...' : ''}
             </div>
           )}
         </div>
       </div>
-
 
       {/* FACE CAPTURE SECTION */}
       {activeTab === 'face' && (
@@ -739,25 +663,13 @@ const Absensi: React.FC = () => {
             }}
           >
             {absenMode === 'masuk' ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#16a34a"
-                strokeWidth="2"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2">
                 <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
                 <polyline points="10 17 15 12 10 7" />
                 <line x1="15" y1="12" x2="3" y2="12" />
               </svg>
             ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#d97706"
-                strokeWidth="2"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                 <polyline points="16 17 21 12 16 7" />
                 <line x1="21" y1="12" x2="9" y2="12" />
@@ -765,21 +677,11 @@ const Absensi: React.FC = () => {
             )}
           </div>
           <h3>Absensi {absenMode === 'masuk' ? 'Masuk' : 'Pulang'} — Foto Wajah</h3>
-          <p>
-            Ambil foto selfie untuk mencatat{' '}
-            {absenMode === 'masuk' ? 'kehadiran' : 'kepulangan'} Anda
-          </p>
+          <p>Ambil foto selfie untuk mencatat {absenMode === 'masuk' ? 'kehadiran' : 'kepulangan'} Anda</p>
 
           {/* Live clock */}
           <div className="face-live-clock">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              style={{ width: 16, height: 16 }}
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}>
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
@@ -797,10 +699,7 @@ const Absensi: React.FC = () => {
             {geoError && (
               <div className="geo-status geo-error">
                 <span>⚠️ {geoError}</span>
-                <button
-                  className="btn-retry"
-                  onClick={() => getGeoLocation().catch(() => {})}
-                >
+                <button className="btn-retry" onClick={() => getGeoLocation().catch(() => {})}>
                   Coba Lagi
                 </button>
               </div>
@@ -808,8 +707,7 @@ const Absensi: React.FC = () => {
             {geoLocation && !geoLoading && (
               <div className="geo-status geo-ready">
                 <span>
-                  📍{' '}
-                  {geoLocation.address.substring(0, 60)}
+                  📍 {geoLocation.address.substring(0, 60)}
                   {geoLocation.address.length > 60 ? '...' : ''}
                 </span>
               </div>
@@ -827,14 +725,7 @@ const Absensi: React.FC = () => {
               )}
               {faceDetection.error && (
                 <div className="face-detection-status face-detection-error">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    style={{ width: 16, height: 16 }}
-                  >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}>
                     <circle cx="12" cy="12" r="10" />
                     <line x1="15" y1="9" x2="9" y2="15" />
                     <line x1="9" y1="9" x2="15" y2="15" />
@@ -846,90 +737,38 @@ const Absensi: React.FC = () => {
                 </div>
               )}
               {faceDetection.ready && cameraActive && !faceDetection.error && (
-                <div
-                  className={`face-detection-status ${
-                    faceDetection.faceDetected
-                      ? 'face-detection-ready'
-                      : 'face-detection-searching'
-                  }`}
-                >
+                <div className={`face-detection-status ${faceDetection.faceDetected ? 'face-detection-ready' : 'face-detection-searching'}`}>
                   {faceDetection.faceDetected ? (
                     <>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        style={{ width: 16, height: 16 }}
-                      >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16 }}>
                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                         <polyline points="22 4 12 14.01 9 11.01" />
                       </svg>
-                      <span>
-                        {faceDetection.validation?.message || 'Wajah terdeteksi ✓'}
-                      </span>
+                      <span>{faceDetection.validation?.message || 'Wajah terdeteksi ✓'}</span>
                     </>
                   ) : (
                     <>
                       <div className="searching-icon"></div>
-                      <span>
-                        {faceDetection.validation?.message || 'Mencari wajah...'}
-                      </span>
+                      <span>{faceDetection.validation?.message || 'Mencari wajah...'}</span>
                     </>
                   )}
                 </div>
               )}
-              {faceDetection.ready &&
-                cameraActive &&
-                faceDetection.validation &&
-                faceDetection.validation.hasFace && (
-                  <div className="face-validation-checklist">
-                    <span
-                      className={
-                        faceDetection.validation.hasEyes ? 'check-ok' : 'check-fail'
-                      }
-                    >
-                      {faceDetection.validation.hasEyes ? '✓' : '✗'} Mata
-                    </span>
-                    <span
-                      className={
-                        faceDetection.validation.hasMouth ? 'check-ok' : 'check-fail'
-                      }
-                    >
-                      {faceDetection.validation.hasMouth ? '✓' : '✗'} Mulut
-                    </span>
-                    <span
-                      className={
-                        faceDetection.validation.hasNose ? 'check-ok' : 'check-fail'
-                      }
-                    >
-                      {faceDetection.validation.hasNose ? '✓' : '✗'} Hidung
-                    </span>
-                    <span
-                      className={
-                        faceDetection.validation.isProperSize ? 'check-ok' : 'check-fail'
-                      }
-                    >
-                      {faceDetection.validation.isProperSize ? '✓' : '✗'} Jarak
-                    </span>
-                  </div>
-                )}
+              {faceDetection.ready && cameraActive && faceDetection.validation && faceDetection.validation.hasFace && (
+                <div className="face-validation-checklist">
+                  <span className={faceDetection.validation.hasEyes ? 'check-ok' : 'check-fail'}>{faceDetection.validation.hasEyes ? '✓' : '✗'} Mata</span>
+                  <span className={faceDetection.validation.hasMouth ? 'check-ok' : 'check-fail'}>{faceDetection.validation.hasMouth ? '✓' : '✗'} Mulut</span>
+                  <span className={faceDetection.validation.hasNose ? 'check-ok' : 'check-fail'}>{faceDetection.validation.hasNose ? '✓' : '✗'} Hidung</span>
+                  <span className={faceDetection.validation.isProperSize ? 'check-ok' : 'check-fail'}>{faceDetection.validation.isProperSize ? '✓' : '✗'} Jarak</span>
+                </div>
+              )}
             </div>
           )}
 
           {/* Already done message */}
-          {((absenMode === 'masuk' && alreadyCheckedIn) ||
-            (absenMode === 'pulang' && alreadyCheckedOut)) && (
+          {((absenMode === 'masuk' && alreadyCheckedIn) || (absenMode === 'pulang' && alreadyCheckedOut)) && (
             <div className="already-done-msg">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                style={{ width: 20, height: 20 }}
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 20, height: 20 }}>
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                 <polyline points="22 4 12 14.01 9 11.01" />
               </svg>
@@ -938,8 +777,7 @@ const Absensi: React.FC = () => {
           )}
 
           {/* Camera or captured result */}
-          {!((absenMode === 'masuk' && alreadyCheckedIn) ||
-            (absenMode === 'pulang' && alreadyCheckedOut)) && (
+          {!((absenMode === 'masuk' && alreadyCheckedIn) || (absenMode === 'pulang' && alreadyCheckedOut)) && (
             <>
               {absenMode === 'pulang' && !alreadyCheckedIn && (
                 <div
@@ -950,9 +788,7 @@ const Absensi: React.FC = () => {
                     borderColor: '#fde68a',
                   }}
                 >
-                  <span>
-                    ⚠️ Anda belum absen masuk. Silakan absen masuk terlebih dahulu.
-                  </span>
+                  <span>⚠️ Anda belum absen masuk. Silakan absen masuk terlebih dahulu.</span>
                 </div>
               )}
 
@@ -981,14 +817,7 @@ const Absensi: React.FC = () => {
                         )}
                         {!cameraActive && (
                           <div className="face-camera-placeholder">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              style={{ width: 64, height: 64, opacity: 0.3 }}
-                            >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: 64, height: 64, opacity: 0.3 }}>
                               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                               <circle cx="12" cy="13" r="4" />
                             </svg>
@@ -1000,19 +829,8 @@ const Absensi: React.FC = () => {
 
                       <div className="face-camera-actions">
                         {!cameraActive ? (
-                          <button
-                            className="btn btn-primary"
-                            onClick={startCamera}
-                            disabled={faceDetection.loading || !!faceDetection.error}
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              style={{ width: 18, height: 18, marginRight: 6 }}
-                            >
+                          <button className="btn btn-primary" onClick={startCamera} disabled={faceDetection.loading || !!faceDetection.error}>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 18, height: 18, marginRight: 6 }}>
                               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                               <circle cx="12" cy="13" r="4" />
                             </svg>
@@ -1027,43 +845,26 @@ const Absensi: React.FC = () => {
                               alignItems: 'center',
                             }}
                           >
-                            {!faceDetection.faceDetected &&
-                              faceDetection.ready &&
-                              faceDetection.validation && (
-                                <p
-                                  style={{
-                                    fontSize: '0.875rem',
-                                    color: 'var(--orange-600)',
-                                    margin: 0,
-                                    textAlign: 'center',
-                                  }}
-                                >
-                                  ⚠️ {faceDetection.validation.message}
-                                </p>
-                              )}
+                            {!faceDetection.faceDetected && faceDetection.ready && faceDetection.validation && (
+                              <p
+                                style={{
+                                  fontSize: '0.875rem',
+                                  color: 'var(--orange-600)',
+                                  margin: 0,
+                                  textAlign: 'center',
+                                }}
+                              >
+                                ⚠️ {faceDetection.validation.message}
+                              </p>
+                            )}
                             <div style={{ display: 'flex', gap: 8 }}>
                               <button
                                 className="btn btn-primary"
                                 onClick={handleCapture}
-                                disabled={
-                                  countdown !== null ||
-                                  !faceDetection.faceDetected ||
-                                  faceDetection.loading
-                                }
-                                title={
-                                  !faceDetection.faceDetected
-                                    ? 'Wajah belum terdeteksi'
-                                    : 'Ambil foto'
-                                }
+                                disabled={countdown !== null || !faceDetection.faceDetected || faceDetection.loading}
+                                title={!faceDetection.faceDetected ? 'Wajah belum terdeteksi' : 'Ambil foto'}
                               >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  style={{ width: 18, height: 18, marginRight: 6 }}
-                                >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 18, height: 18, marginRight: 6 }}>
                                   <circle cx="12" cy="12" r="10" />
                                   <circle cx="12" cy="12" r="3" />
                                 </svg>
@@ -1091,34 +892,15 @@ const Absensi: React.FC = () => {
                         />
                       </div>
                       <div className="face-result-actions">
-                        <button
-                          className="btn-outline"
-                          onClick={retakePhoto}
-                          disabled={submitting}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            style={{ width: 16, height: 16, marginRight: 4 }}
-                          >
+                        <button className="btn-outline" onClick={retakePhoto} disabled={submitting}>
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16, marginRight: 4 }}>
                             <polyline points="1 4 1 10 7 10" />
                             <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
                           </svg>
                           Foto Ulang
                         </button>
-                        <button
-                          className="btn btn-primary"
-                          onClick={submitAbsensi}
-                          disabled={submitting}
-                        >
-                          {submitting
-                            ? 'Mengirim...'
-                            : absenMode === 'masuk'
-                            ? 'Kirim Absen Masuk'
-                            : 'Kirim Absen Pulang'}
+                        <button className="btn btn-primary" onClick={submitAbsensi} disabled={submitting}>
+                          {submitting ? 'Mengirim...' : absenMode === 'masuk' ? 'Kirim Absen Masuk' : 'Kirim Absen Pulang'}
                         </button>
                       </div>
                     </div>
@@ -1134,13 +916,7 @@ const Absensi: React.FC = () => {
       {activeTab === 'qr' && (
         <div className="qr-section">
           <div className="qr-icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="3" width="7" height="7"></rect>
               <rect x="14" y="3" width="7" height="7"></rect>
               <rect x="14" y="14" width="7" height="7"></rect>
@@ -1153,19 +929,8 @@ const Absensi: React.FC = () => {
           <div id="reader"></div>
 
           <form onSubmit={handleTokenSubmit} className="token-input-container">
-            <input
-              type="text"
-              className="token-input"
-              placeholder="Atau masukkan token manual"
-              value={qrToken}
-              onChange={(e) => setQrToken(e.target.value)}
-              disabled={submitting}
-            />
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={submitting || !qrToken}
-            >
+            <input type="text" className="token-input" placeholder="Atau masukkan token manual" value={qrToken} onChange={(e) => setQrToken(e.target.value)} disabled={submitting} />
+            <button type="submit" className="btn btn-primary" disabled={submitting || !qrToken}>
               {submitting ? '...' : 'Kirim'}
             </button>
           </form>
@@ -1177,27 +942,15 @@ const Absensi: React.FC = () => {
         <div className="late-warning-overlay">
           <div className="late-warning-modal">
             <div className="late-warning-icon">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#b45309"
-                strokeWidth="2"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
               </svg>
             </div>
             <h3>⏰ Anda Sedang Telat!</h3>
             <p>Waktu saat ini melampaui batas jam absensi ({lateThreshold}).</p>
-            <p className="warning-message">
-              Anda tetap bisa melakukan absensi, namun akan dicatat sebagai
-              &ldquo;Telat&rdquo;
-            </p>
+            <p className="warning-message">Anda tetap bisa melakukan absensi, namun akan dicatat sebagai &ldquo;Telat&rdquo;</p>
             <div className="late-warning-buttons">
-              <button
-                className="btn-cancel"
-                onClick={() => setShowLateWarning(false)}
-              >
+              <button className="btn-cancel" onClick={() => setShowLateWarning(false)}>
                 Batal
               </button>
               <button className="btn-proceed" onClick={handleProceedAnyway}>
@@ -1211,13 +964,7 @@ const Absensi: React.FC = () => {
       {/* History */}
       <div className="absensi-history">
         <h3>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 6 12 12 16 14" />
           </svg>{' '}
@@ -1236,10 +983,7 @@ const Absensi: React.FC = () => {
           <tbody>
             {records.length === 0 ? (
               <tr>
-                <td
-                  colSpan={4}
-                  style={{ textAlign: 'center', padding: 20, color: 'var(--gray-400)' }}
-                >
+                <td colSpan={4} style={{ textAlign: 'center', padding: 20, color: 'var(--gray-400)' }}>
                   Belum ada riwayat
                 </td>
               </tr>
@@ -1256,10 +1000,7 @@ const Absensi: React.FC = () => {
                   cls = 'selesai';
                 } else if (displayStatus === 'Izin') {
                   cls = 'pending';
-                } else if (
-                  displayStatus === 'Telat' ||
-                  displayStatus === 'telat'
-                ) {
+                } else if (displayStatus === 'Telat' || displayStatus === 'telat') {
                   cls = 'telat';
                 }
 
@@ -1267,17 +1008,9 @@ const Absensi: React.FC = () => {
                   <tr key={r._id}>
                     <td>{d}</td>
                     <td>{r.jamMasuk || '-'}</td>
+                    <td>{r.jamKeluar && r.jamKeluar !== '' && r.jamKeluar !== '-' ? r.jamKeluar : '-'}</td>
                     <td>
-                      {r.jamKeluar &&
-                      r.jamKeluar !== '' &&
-                      r.jamKeluar !== '-'
-                        ? r.jamKeluar
-                        : '-'}
-                    </td>
-                    <td>
-                      <span className={`status-badge ${cls}`}>
-                        {displayStatus}
-                      </span>
+                      <span className={`status-badge ${cls}`}>{displayStatus}</span>
                     </td>
                   </tr>
                 );
@@ -1291,23 +1024,15 @@ const Absensi: React.FC = () => {
         <div className="late-warning-overlay">
           <div className="late-warning-modal">
             <div className="late-warning-icon">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#d97706"
-                strokeWidth="2"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
             </div>
             <h3>Pulang Lebih Awal?</h3>
-            <p>
-              Anda melakukan absen pulang sebelum jam 17:00. Mohon sertakan alasan Anda.
-            </p>
-            
+            <p>Anda melakukan absen pulang sebelum jam 17:00. Mohon sertakan alasan Anda.</p>
+
             <textarea
               className="early-reason-input"
               placeholder="Contoh: Izin sakit, urusan keluarga, dll..."
@@ -1322,7 +1047,7 @@ const Absensi: React.FC = () => {
                 marginTop: '10px',
                 marginBottom: '10px',
                 fontFamily: 'inherit',
-                fontSize: '14px'
+                fontSize: '14px',
               }}
             />
 
