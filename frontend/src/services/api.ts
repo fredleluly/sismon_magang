@@ -1,35 +1,22 @@
-import type {
-  ApiResponse,
-  User,
-  WorkLog,
-  Attendance,
-  Complaint,
-  QRCode,
-  UserDashboard,
-  AdminDashboard,
-  WorkStats,
-  TargetSection,
-  PerformanceEvaluation,
-  PerformanceCalculation,
-} from "../types";
+import type { ApiResponse, User, WorkLog, Attendance, Complaint, QRCode, UserDashboard, AdminDashboard, WorkStats, TargetSection, PerformanceEvaluation, PerformanceCalculation } from '../types';
 
 // Ambil URL dari env, hapus slash di akhir jika ada
-let envUrl = import.meta.env.VITE_API_URL || "";
-if (envUrl.endsWith("/")) {
+let envUrl = import.meta.env.VITE_API_URL || '';
+if (envUrl.endsWith('/')) {
   envUrl = envUrl.slice(0, -1);
 }
 
 // Pastikan URL mengarah ke /api (karena router backend ada di /api)
 // Jika user hanya memasukkan domain utama (misal: ...vercel.app), kita tambahkan /api otomatis
-if (envUrl && !envUrl.endsWith("/api")) {
+if (envUrl && !envUrl.endsWith('/api')) {
   envUrl = `${envUrl}/api`;
 }
 
-const API_BASE = envUrl || "/api";
+const API_BASE = envUrl || '/api';
 
 // ===== TOKEN MANAGEMENT =====
-const TOKEN_KEY = "pln_token";
-const TOKEN_TIMESTAMP_KEY = "pln_token_ts";
+const TOKEN_KEY = 'pln_token';
+const TOKEN_TIMESTAMP_KEY = 'pln_token_ts';
 const MAX_TOKEN_AGE = 24 * 60 * 60 * 1000; // 24 hours
 
 export function getToken(): string | null {
@@ -55,23 +42,20 @@ export function setToken(token: string): void {
 export function removeToken(): void {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(TOKEN_TIMESTAMP_KEY);
-  localStorage.removeItem("pln_current_user");
+  localStorage.removeItem('pln_current_user');
 }
 
 // ===== HTTP HELPER =====
-async function apiRequest<T = unknown>(
-  endpoint: string,
-  options: RequestInit = {},
-): Promise<ApiResponse<T>> {
+async function apiRequest<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
   const token = getToken();
   const headers: Record<string, string> = {};
 
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (token) headers['Authorization'] = `Bearer ${token}`;
 
   // Don't set Content-Type for FormData (browser handles multipart boundary)
   const isFormData = options.body instanceof FormData;
   if (!isFormData) {
-    headers["Content-Type"] = "application/json";
+    headers['Content-Type'] = 'application/json';
   }
 
   try {
@@ -81,10 +65,10 @@ async function apiRequest<T = unknown>(
     });
 
     // Handle non-JSON responses
-    const contentType = res.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
       const text = await res.text();
-      console.error("Non-JSON response:", text);
+      console.error('Non-JSON response:', text);
       return {
         success: false,
         message: `Server error (${res.status}): ${text.substring(0, 100)}`,
@@ -96,16 +80,16 @@ async function apiRequest<T = unknown>(
 
     if (res.status === 401) {
       removeToken();
-      window.location.href = "/login";
-      return { success: false, message: "Session expired", data: {} as T };
+      window.location.href = '/login';
+      return { success: false, message: 'Session expired', data: {} as T };
     }
 
     return data;
   } catch (err) {
-    console.error("API Error:", err);
+    console.error('API Error:', err);
     return {
       success: false,
-      message: "Gagal terhubung ke server. Pastikan backend berjalan.",
+      message: 'Gagal terhubung ke server. Pastikan backend berjalan.',
       data: {} as T,
     };
   }
@@ -116,66 +100,56 @@ const API = {
   post: <T = unknown>(endpoint: string, body?: unknown) => {
     const isFormData = body instanceof FormData;
     return apiRequest<T>(endpoint, {
-      method: "POST",
+      method: 'POST',
       body: isFormData ? body : JSON.stringify(body),
     });
   },
-  put: <T = unknown>(endpoint: string, body?: unknown) =>
-    apiRequest<T>(endpoint, { method: "PUT", body: JSON.stringify(body) }),
-  delete: <T = unknown>(endpoint: string) =>
-    apiRequest<T>(endpoint, { method: "DELETE" }),
+  put: <T = unknown>(endpoint: string, body?: unknown) => apiRequest<T>(endpoint, { method: 'PUT', body: JSON.stringify(body) }),
+  delete: <T = unknown>(endpoint: string) => apiRequest<T>(endpoint, { method: 'DELETE' }),
 };
 
 // ===== AUTH API =====
 export const AuthAPI = {
   async login(identifier: string, password: string) {
-    const res = await API.post<{ token: string; user: User }>("/auth/login", {
+    const res = await API.post<{ token: string; user: User }>('/auth/login', {
       identifier,
       password,
     });
     if (res && res.success) {
       setToken(res.data.token);
-      localStorage.setItem("pln_current_user", JSON.stringify(res.data.user));
+      localStorage.setItem('pln_current_user', JSON.stringify(res.data.user));
     }
     return res;
   },
 
-  async register(
-    name: string,
-    email: string,
-    password: string,
-    instansi: string,
-  ) {
-    const res = await API.post<{ token: string; user: User }>(
-      "/auth/register",
-      { name, email, password, instansi },
-    );
+  async register(name: string, email: string, password: string, instansi: string) {
+    const res = await API.post<{ token: string; user: User }>('/auth/register', { name, email, password, instansi });
     if (res && res.success) {
       setToken(res.data.token);
-      localStorage.setItem("pln_current_user", JSON.stringify(res.data.user));
+      localStorage.setItem('pln_current_user', JSON.stringify(res.data.user));
     }
     return res;
   },
 
   async getProfile() {
-    return API.get<User>("/auth/me");
+    return API.get<User>('/auth/me');
   },
 
   async updateProfile(data: Partial<User & { password?: string }>) {
-    const res = await API.put<User>("/auth/profile", data);
+    const res = await API.put<User>('/auth/profile', data);
     if (res && res.success) {
-      localStorage.setItem("pln_current_user", JSON.stringify(res.data));
+      localStorage.setItem('pln_current_user', JSON.stringify(res.data));
     }
     return res;
   },
 
   async changePassword(data: { newPassword: string }) {
-    return API.post("/auth/change-password", data);
+    return API.post('/auth/change-password', data);
   },
 
   logout() {
     removeToken();
-    window.location.href = "/login";
+    window.location.href = '/login';
   },
 
   isLoggedIn(): boolean {
@@ -184,7 +158,7 @@ export const AuthAPI = {
 
   getCurrentUser(): User | null {
     try {
-      const raw = localStorage.getItem("pln_current_user");
+      const raw = localStorage.getItem('pln_current_user');
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
@@ -194,35 +168,28 @@ export const AuthAPI = {
 
 // ===== USERS API (Admin) =====
 export const UsersAPI = {
-  getAll: () => API.get<User[]>("/users"),
+  getAll: () => API.get<User[]>('/users'),
   getById: (id: string) => API.get<User>(`/users/${id}`),
-  create: (data: Partial<User & { password: string }>) =>
-    API.post<User>("/users", data),
-  update: (id: string, data: Partial<User>) =>
-    API.put<User>(`/users/${id}`, data),
+  create: (data: Partial<User & { password: string }>) => API.post<User>('/users', data),
+  update: (id: string, data: Partial<User>) => API.put<User>(`/users/${id}`, data),
   delete: (id: string) => API.delete(`/users/${id}`),
-  resetPassword: (id: string, newPassword: string) =>
-    API.put(`/users/${id}/reset-password`, { newPassword }),
+  resetPassword: (id: string, newPassword: string) => API.put(`/users/${id}/reset-password`, { newPassword }),
   // Superadmin only
-  getAdmins: () => API.get<User[]>("/users/admins/list"),
-  createAdmin: (data: Partial<User & { password: string }>) =>
-    API.post<User>("/users/admins", data),
-  updateAdmin: (id: string, data: Partial<User>) =>
-    API.put<User>(`/users/admins/${id}`, data),
+  getAdmins: () => API.get<User[]>('/users/admins/list'),
+  createAdmin: (data: Partial<User & { password: string }>) => API.post<User>('/users/admins', data),
+  updateAdmin: (id: string, data: Partial<User>) => API.put<User>(`/users/admins/${id}`, data),
   deleteAdmin: (id: string) => API.delete(`/users/admins/${id}`),
 };
 
 // ===== WORK LOGS API =====
 export const WorkLogAPI = {
-  getAll: (params = "") =>
-    API.get<WorkLog[]>(`/work-logs${params ? "?" + params : ""}`),
-  create: (data: Partial<WorkLog>) => API.post<WorkLog>("/work-logs", data),
-  update: (id: string, data: Partial<WorkLog>) =>
-    API.put<WorkLog>(`/work-logs/${id}`, data),
+  getAll: (params = '') => API.get<WorkLog[]>(`/work-logs${params ? '?' + params : ''}`),
+  create: (data: Partial<WorkLog>) => API.post<WorkLog>('/work-logs', data),
+  update: (id: string, data: Partial<WorkLog>) => API.put<WorkLog>(`/work-logs/${id}`, data),
   submit: (id: string) => API.put<WorkLog>(`/work-logs/${id}/submit`),
   delete: (id: string) => API.delete(`/work-logs/${id}`),
-  getMyStats: () => API.get<WorkStats>("/work-logs/stats/me"),
-  getRecap: (params = "") =>
+  getMyStats: () => API.get<WorkStats>('/work-logs/stats/me'),
+  getRecap: (params = '') =>
     API.get<
       {
         userId: string;
@@ -232,14 +199,13 @@ export const WorkLogAPI = {
         buku: number;
         bundle: number;
       }[]
-    >(`/work-logs/recap${params ? "?" + params : ""}`),
+    >(`/work-logs/recap${params ? '?' + params : ''}`),
 };
 
 // ===== ATTENDANCE API =====
 export const AttendanceAPI = {
-  getAll: (params = "") =>
-    API.get<Attendance[]>(`/attendance${params ? "?" + params : ""}`),
-  scan: (token: string) => API.post<Attendance>("/attendance/scan", { token }),
+  getAll: (params = '') => API.get<Attendance[]>(`/attendance${params ? '?' + params : ''}`),
+  scan: (token: string) => API.post<Attendance>('/attendance/scan', { token }),
   photoCheckin: (
     foto: string,
     timestamp: string,
@@ -251,7 +217,7 @@ export const AttendanceAPI = {
       accuracy: number;
     },
   ) =>
-    API.post<Attendance>("/attendance/photo-checkin", {
+    API.post<Attendance>('/attendance/photo-checkin', {
       foto,
       timestamp,
       timezone,
@@ -269,86 +235,68 @@ export const AttendanceAPI = {
     },
     keterangan?: string,
   ) =>
-    API.post<Attendance>("/attendance/photo-checkout", {
+    API.post<Attendance>('/attendance/photo-checkout', {
       foto,
       timestamp,
       timezone,
       ...location,
       keterangan,
     }),
-  getPhoto: (id: string) =>
-    API.get<{ foto: string; fotoTimestamp: string }>(`/attendance/${id}/photo`),
-  getPhotoPulang: (id: string) =>
-    API.get<{ foto: string; fotoTimestamp: string }>(
-      `/attendance/${id}/photo-pulang`,
-    ),
+  getPhoto: (id: string) => API.get<{ foto: string; fotoTimestamp: string }>(`/attendance/${id}/photo`),
+  getPhotoPulang: (id: string) => API.get<{ foto: string; fotoTimestamp: string }>(`/attendance/${id}/photo-pulang`),
   checkout: (id: string) => API.put<Attendance>(`/attendance/${id}/checkout`),
-  update: (id: string, data: Partial<Attendance>) =>
-    API.put<Attendance>(`/attendance/${id}`, data),
-  getToday: () => API.get<Attendance[]>("/attendance/today"),
-  getLateThreshold: () =>
-    API.get<{ lateThreshold: string }>("/attendance/settings/late-threshold"),
+  update: (id: string, data: Partial<Attendance>) => API.put<Attendance>(`/attendance/${id}`, data),
+  getToday: () => API.get<Attendance[]>('/attendance/today'),
+  getLateThreshold: (tanggal?: string) => API.get<{ lateThreshold: string; isCustom: boolean; alasan: string; tanggal: string; defaultThreshold: string }>(`/attendance/settings/late-threshold${tanggal ? `?tanggal=${tanggal}` : ''}`),
   setLateThreshold: (threshold: string) =>
-    API.post<{ lateThreshold: string }>("/attendance/settings/late-threshold", {
+    API.post<{ lateThreshold: string }>('/attendance/settings/late-threshold', {
       threshold,
     }),
-  updateStatus: (
-    id: string,
-    status: string,
-    jamMasuk?: string,
-    jamKeluar?: string,
-  ) =>
+  setTodayThreshold: (threshold: string, alasan?: string, tanggal?: string) =>
+    API.post<any>('/attendance/settings/today-threshold', {
+      threshold,
+      alasan,
+      tanggal,
+    }),
+  resetTodayThreshold: (tanggal?: string) => API.delete<any>(`/attendance/settings/today-threshold${tanggal ? `?tanggal=${tanggal}` : ''}`),
+  updateStatus: (id: string, status: string, jamMasuk?: string, jamKeluar?: string) =>
     API.put<Attendance>(`/attendance/${id}/status`, {
       status,
       ...(jamMasuk && { jamMasuk }),
       ...(jamKeluar !== undefined && { jamKeluar }),
     }),
   // Admin: create or update a single user's attendance for a given date
-  adminSetStatus: (
-    userId: string,
-    tanggal: string,
-    status: string,
-    jamMasuk?: string,
-    jamKeluar?: string,
-  ) =>
-    API.post<Attendance>("/attendance/admin/set-status", {
+  adminSetStatus: (userId: string, tanggal: string, status: string, jamMasuk?: string, jamKeluar?: string) =>
+    API.post<Attendance>('/attendance/admin/set-status', {
       userId,
       tanggal,
       status,
       ...(jamMasuk !== undefined ? { jamMasuk } : {}),
       ...(jamKeluar !== undefined ? { jamKeluar } : {}),
     }),
-  bulkHoliday: (tanggal: string) =>
-    API.post<{ created: number; updated: number; total: number }>(
-      "/attendance/bulk-holiday",
-      { tanggal },
-    ),
-  cancelHoliday: (tanggal: string) =>
-    API.post<{ deleted: number }>("/attendance/cancel-holiday", { tanggal }),
+  bulkHoliday: (tanggal: string) => API.post<{ created: number; updated: number; total: number }>('/attendance/bulk-holiday', { tanggal }),
+  cancelHoliday: (tanggal: string) => API.post<{ deleted: number }>('/attendance/cancel-holiday', { tanggal }),
 };
 
 // ===== COMPLAINTS API =====
 export const ComplaintAPI = {
-  getAll: (params = "") =>
-    API.get<Complaint[]>(`/complaints${params ? "?" + params : ""}`),
-  create: (data: Partial<Complaint>) =>
-    API.post<Complaint>("/complaints", data),
-  updateStatus: (id: string, status: string) =>
-    API.put<Complaint>(`/complaints/${id}/status`, { status }),
-  getStats: () => API.get("/complaints/stats"),
+  getAll: (params = '') => API.get<Complaint[]>(`/complaints${params ? '?' + params : ''}`),
+  create: (data: Partial<Complaint>) => API.post<Complaint>('/complaints', data),
+  updateStatus: (id: string, status: string) => API.put<Complaint>(`/complaints/${id}/status`, { status }),
+  getStats: () => API.get('/complaints/stats'),
 };
 
 // ===== QR CODE API =====
 export const QRCodeAPI = {
-  generate: () => API.post<QRCode>("/qrcode/generate"),
-  getToday: () => API.get<QRCode>("/qrcode/today"),
-  getHistory: () => API.get<QRCode[]>("/qrcode/history"),
+  generate: () => API.post<QRCode>('/qrcode/generate'),
+  getToday: () => API.get<QRCode>('/qrcode/today'),
+  getHistory: () => API.get<QRCode[]>('/qrcode/history'),
 };
 
 // ===== DASHBOARD API =====
 export const DashboardAPI = {
-  getAdmin: (query = "") => API.get<AdminDashboard>(`/dashboard/admin${query}`),
-  getUser: () => API.get<UserDashboard>("/dashboard/user"),
+  getAdmin: (query = '') => API.get<AdminDashboard>(`/dashboard/admin${query}`),
+  getUser: () => API.get<UserDashboard>('/dashboard/user'),
 };
 
 // ===== TARGET SECTION API =====
@@ -356,38 +304,15 @@ export const TargetSectionAPI = {
   getAll: () => API.get<TargetSection[]>("/target-section"),
   bulkUpdate: (targets: { jenis: string; targetPerDay: number }[]) =>
     API.put<TargetSection[]>("/target-section", { targets }),
-  getUpahHarian: () =>
-    API.get<{ upahHarian: number }>("/target-section/upah-harian"),
-  setUpahHarian: (upahHarian: number) =>
-    API.put<{ upahHarian: number }>("/target-section/upah-harian", { upahHarian }),
 };
 
 // ===== PERFORMANCE API =====
 export const PerformanceAPI = {
-  calculate: (userId: string, bulan: number, tahun: number) =>
-    API.get<PerformanceCalculation>(
-      `/performance/calculate/${userId}?bulan=${bulan}&tahun=${tahun}`,
-    ),
-  save: (data: {
-    userId: string;
-    bulan: number;
-    tahun: number;
-    absen: number;
-    kuantitas: number;
-    kualitas: number;
-    laporan: boolean;
-    status: string;
-  }) => API.post<PerformanceEvaluation>("/performance", data),
-  getAll: (bulan: number, tahun: number) =>
-    API.get<PerformanceEvaluation[]>(
-      `/performance?bulan=${bulan}&tahun=${tahun}`,
-    ),
-  getRanking: (bulan: number, tahun: number) =>
-    API.get<PerformanceEvaluation[]>(
-      `/performance/ranking?bulan=${bulan}&tahun=${tahun}`,
-    ),
+  calculate: (userId: string, bulan: number, tahun: number) => API.get<PerformanceCalculation>(`/performance/calculate/${userId}?bulan=${bulan}&tahun=${tahun}`),
+  save: (data: { userId: string; bulan: number; tahun: number; absen: number; kuantitas: number; kualitas: number; laporan: boolean; status: string }) => API.post<PerformanceEvaluation>('/performance', data),
+  getAll: (bulan: number, tahun: number) => API.get<PerformanceEvaluation[]>(`/performance?bulan=${bulan}&tahun=${tahun}`),
+  getRanking: (bulan: number, tahun: number) => API.get<PerformanceEvaluation[]>(`/performance/ranking?bulan=${bulan}&tahun=${tahun}`),
   delete: (id: string) => API.delete(`/performance/${id}`),
   resetToDraft: (id: string) => API.put(`/performance/${id}/reset-to-draft`, {}),
-  deleteAllFinals: (bulan: number, tahun: number) =>
-    API.delete(`/performance/delete-all-finals/${bulan}/${tahun}`),
+  deleteAllFinals: (bulan: number, tahun: number) => API.delete(`/performance/delete-all-finals/${bulan}/${tahun}`),
 };

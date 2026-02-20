@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from "react";
-import ReactDOM from "react-dom";
-import { AttendanceAPI, UsersAPI, getToken } from "../../services/api";
-import { useToast } from "../../context/ToastContext";
-import type { Attendance, User } from "../../types";
-import { exportExcel } from "../../utils/excelExport";
-import "./AttendanceCalendar.css";
+import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { AttendanceAPI, UsersAPI, getToken } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
+import type { Attendance, User } from '../../types';
+import { exportExcel } from '../../utils/excelExport';
+import './AttendanceCalendar.css';
 
-type FilterMode = "harian" | "mingguan" | "bulanan" | "custom";
+type FilterMode = 'harian' | 'mingguan' | 'bulanan' | 'custom';
 
 const AttendanceCalendar: React.FC = () => {
   const { showToast } = useToast();
@@ -16,79 +16,71 @@ const AttendanceCalendar: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [holidayLoading, setHolidayLoading] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<string>('');
   const [showHolidayConfirm, setShowHolidayConfirm] = useState(false);
   const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
-  const [viewingPhotoName, setViewingPhotoName] = useState<string>("");
+  const [viewingPhotoName, setViewingPhotoName] = useState<string>('');
   const [editingAtt, setEditingAtt] = useState<any | null>(null);
-  const [editStatus, setEditStatus] = useState<string>("Hadir");
-  const [editJamMasuk, setEditJamMasuk] = useState<string>("");
-  const [editJamKeluar, setEditJamKeluar] = useState<string>("");
-  const [showCancelHolidayConfirm, setShowCancelHolidayConfirm] =
-    useState(false);
+  const [editStatus, setEditStatus] = useState<string>('Hadir');
+  const [editJamMasuk, setEditJamMasuk] = useState<string>('');
+  const [editJamKeluar, setEditJamKeluar] = useState<string>('');
+  const [showCancelHolidayConfirm, setShowCancelHolidayConfirm] = useState(false);
 
   // Filter states
-  const [filterMode, setFilterMode] = useState<FilterMode>("harian");
+  const [filterMode, setFilterMode] = useState<FilterMode>('harian');
   const [filterData, setFilterData] = useState<Attendance[]>([]);
-  const [filterLabel, setFilterLabel] = useState<string>("");
-  const [customFrom, setCustomFrom] = useState<string>("");
-  const [customTo, setCustomTo] = useState<string>("");
+  const [filterLabel, setFilterLabel] = useState<string>('');
+  const [customFrom, setCustomFrom] = useState<string>('');
+  const [customTo, setCustomTo] = useState<string>('');
   const [filterLoading, setFilterLoading] = useState(false);
 
   // Status & threshold states (moved from QRCodeAdmin)
   const [totalPeserta, setTotalPeserta] = useState(0);
   const [todayAttendanceCount, setTodayAttendanceCount] = useState(0);
-  const [lateThreshold, setLateThreshold] = useState<string>("08:00");
-  const [isEditingThreshold, setIsEditingThreshold] = useState(false);
+  const [lateThreshold, setLateThreshold] = useState<string>('08:00');
+  const [defaultThreshold, setDefaultThreshold] = useState<string>('08:00');
+  const [isCustomThreshold, setIsCustomThreshold] = useState(false);
+  const [thresholdAlasan, setThresholdAlasan] = useState<string>('');
   const [isThresholdLoaded, setIsThresholdLoaded] = useState(false);
+
+  // Modal state for editing today's threshold
+  const [showThresholdModal, setShowThresholdModal] = useState(false);
+  const [modalThresholdTime, setModalThresholdTime] = useState<string>('08:00');
+  const [modalThresholdAlasan, setModalThresholdAlasan] = useState<string>('');
+  const [thresholdSaving, setThresholdSaving] = useState(false);
 
   // Custom Date Picker State (from Rekapitulasi)
   const [datePickerMonth, setDatePickerMonth] = useState(new Date());
   const [isSelectingDateRange, setIsSelectingDateRange] = useState(false);
-  const [tempDateRangeStart, setTempDateRangeStart] = useState<string>("");
-  const [tempDateRangeEnd, setTempDateRangeEnd] = useState<string>("");
+  const [tempDateRangeStart, setTempDateRangeStart] = useState<string>('');
+  const [tempDateRangeEnd, setTempDateRangeEnd] = useState<string>('');
   const [isSelectingStart, setIsSelectingStart] = useState(true);
 
   const isLate = (jamMasuk: string | null | undefined): boolean => {
     if (!jamMasuk) return false;
     try {
-      const normalized = jamMasuk.replace(".", ":");
-      const [masukHours, masukMinutes] = normalized.split(":").map(Number);
-      const [thresholdHours, thresholdMinutes] = lateThreshold
-        .split(":")
-        .map(Number);
-      if (
-        isNaN(masukHours) ||
-        isNaN(masukMinutes) ||
-        isNaN(thresholdHours) ||
-        isNaN(thresholdMinutes)
-      )
-        return false;
-      return (
-        masukHours * 60 + masukMinutes > thresholdHours * 60 + thresholdMinutes
-      );
+      const normalized = jamMasuk.replace('.', ':');
+      const [masukHours, masukMinutes] = normalized.split(':').map(Number);
+      const [thresholdHours, thresholdMinutes] = lateThreshold.split(':').map(Number);
+      if (isNaN(masukHours) || isNaN(masukMinutes) || isNaN(thresholdHours) || isNaN(thresholdMinutes)) return false;
+      return masukHours * 60 + masukMinutes > thresholdHours * 60 + thresholdMinutes;
     } catch {
       return false;
     }
   };
 
   const getStatusWithLate = (att: Attendance): string => {
-    if (
-      typeof att.status === "string" &&
-      att.status.toLowerCase() !== "hadir"
-    ) {
+    if (typeof att.status === 'string' && att.status.toLowerCase() !== 'hadir') {
       return att.status;
     }
-    return isLate(att.jamMasuk) ? "Telat" : att.status || "Hadir";
+    return isLate(att.jamMasuk) ? 'Telat' : att.status || 'Hadir';
   };
 
-  const getDaysInMonth = (date: Date) =>
-    new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  const getFirstDayOfMonth = (date: Date) =>
-    new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  const getFirstDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 
   const toDateStr = (d: Date): string => {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
 
   // Load all users (non-admin)
@@ -96,7 +88,7 @@ const AttendanceCalendar: React.FC = () => {
     try {
       const users = await UsersAPI.getAll();
       if (users && users.success) {
-        const nonAdmin = users.data.filter((u: User) => u.role !== "admin");
+        const nonAdmin = users.data.filter((u: User) => u.role !== 'admin');
         setAllUsers(nonAdmin);
         setTotalPeserta(nonAdmin.length);
       }
@@ -106,14 +98,14 @@ const AttendanceCalendar: React.FC = () => {
   // Load today's attendance count and total peserta
   const loadTodayStats = async () => {
     try {
-      const res = await fetch("/api/attendance/today", {
-        headers: { Authorization: "Bearer " + getToken() },
+      const res = await fetch('/api/attendance/today', {
+        headers: { Authorization: 'Bearer ' + getToken() },
       });
       const d = await res.json();
       if (d.success) {
         const count = (d.data || []).filter((a: any) => {
-          const s = (a.status || "").toLowerCase();
-          return s === "hadir" || s === "telat";
+          const s = (a.status || '').toLowerCase();
+          return s === 'hadir' || s === 'telat';
         }).length;
         setTodayAttendanceCount(count);
       }
@@ -121,178 +113,173 @@ const AttendanceCalendar: React.FC = () => {
   };
 
   const handleSaveThreshold = async () => {
-    const res = await AttendanceAPI.setLateThreshold(lateThreshold);
-    if (res && res.success) {
-      localStorage.setItem("lateThreshold", lateThreshold);
-      showToast("Jam telat berhasil diatur ke " + lateThreshold, "success");
-      setIsEditingThreshold(false);
-    } else {
-      showToast(res?.message || "Gagal menyimpan", "error");
+    const targetDate = selectedDate || toDateStr(new Date());
+    setThresholdSaving(true);
+    try {
+      const res = await AttendanceAPI.setTodayThreshold(modalThresholdTime, modalThresholdAlasan, targetDate);
+      if (res && res.success) {
+        setLateThreshold(modalThresholdTime);
+        setIsCustomThreshold(true);
+        setThresholdAlasan(modalThresholdAlasan);
+        showToast(res.message || 'Jam telat berhasil diubah', 'success');
+        setShowThresholdModal(false);
+      } else {
+        showToast(res?.message || 'Gagal menyimpan', 'error');
+      }
+    } catch {
+      showToast('Gagal menyimpan jam telat', 'error');
+    } finally {
+      setThresholdSaving(false);
     }
   };
 
-  // Load late threshold, all users, and today stats
-  useEffect(() => {
-    const loadThreshold = async () => {
-      const res = await AttendanceAPI.getLateThreshold();
+  const handleResetThreshold = async () => {
+    const targetDate = selectedDate || toDateStr(new Date());
+    setThresholdSaving(true);
+    try {
+      const res = await AttendanceAPI.resetTodayThreshold(targetDate);
+      if (res && res.success) {
+        setLateThreshold(defaultThreshold);
+        setIsCustomThreshold(false);
+        setThresholdAlasan('');
+        showToast('Jam telat dikembalikan ke default (' + defaultThreshold + ')', 'success');
+        setShowThresholdModal(false);
+      } else {
+        showToast(res?.message || 'Gagal mereset', 'error');
+      }
+    } catch {
+      showToast('Gagal mereset jam telat', 'error');
+    } finally {
+      setThresholdSaving(false);
+    }
+  };
+
+  // Load threshold for the selected date
+  const loadThresholdForDate = async (tanggal?: string) => {
+    try {
+      const res = await AttendanceAPI.getLateThreshold(tanggal);
       if (res && res.success) {
         setLateThreshold(res.data.lateThreshold);
-        localStorage.setItem("lateThreshold", res.data.lateThreshold);
+        setDefaultThreshold(res.data.defaultThreshold || '08:00');
+        setIsCustomThreshold(res.data.isCustom || false);
+        setThresholdAlasan(res.data.alasan || '');
       } else {
-        const saved = localStorage.getItem("lateThreshold");
-        if (saved) setLateThreshold(saved);
+        const defaultVal = '08:00';
+        setLateThreshold(defaultVal);
+        setIsCustomThreshold(false);
+        setThresholdAlasan('');
       }
       setIsThresholdLoaded(true);
-    };
-    loadThreshold();
+    } catch {
+      setIsThresholdLoaded(true);
+    }
+  };
+
+  // Load threshold, all users, and today stats on mount
+  useEffect(() => {
+    loadThresholdForDate(); // load today's threshold initially
     loadAllUsers();
     loadTodayStats();
     const iv = setInterval(loadTodayStats, 30000);
     return () => clearInterval(iv);
   }, []);
 
+  // Reload threshold when selectedDate changes
+  useEffect(() => {
+    if (selectedDate) {
+      loadThresholdForDate(selectedDate);
+    }
+  }, [selectedDate]);
+
   const handleViewPhoto = async (attendanceId: string, userName: string) => {
     try {
-      showToast("Memuat foto...", "info");
+      showToast('Memuat foto...', 'info');
       const res = await AttendanceAPI.getPhoto(attendanceId);
       if (res && res.success && res.data.foto) {
         setViewingPhoto(res.data.foto);
-        setViewingPhotoName(userName + " (Masuk)");
+        setViewingPhotoName(userName + ' (Masuk)');
       } else {
-        showToast("Foto tidak tersedia", "error");
+        showToast('Foto tidak tersedia', 'error');
       }
     } catch (error) {
-      showToast("Gagal memuat foto", "error");
+      showToast('Gagal memuat foto', 'error');
     }
   };
 
-  const handleViewPhotoPulang = async (
-    attendanceId: string,
-    userName: string,
-  ) => {
+  const handleViewPhotoPulang = async (attendanceId: string, userName: string) => {
     try {
-      showToast("Memuat foto pulang...", "info");
+      showToast('Memuat foto pulang...', 'info');
       const res = await AttendanceAPI.getPhotoPulang(attendanceId);
       if (res && res.success && res.data.foto) {
         setViewingPhoto(res.data.foto);
-        setViewingPhotoName(userName + " (Pulang)");
+        setViewingPhotoName(userName + ' (Pulang)');
       } else {
-        showToast("Foto pulang tidak tersedia", "error");
+        showToast('Foto pulang tidak tersedia', 'error');
       }
     } catch (error) {
-      showToast("Gagal memuat foto pulang", "error");
+      showToast('Gagal memuat foto pulang', 'error');
     }
   };
 
   const openEditStatus = (att: any) => {
     setEditingAtt(att);
-    setEditStatus(att.status || "Hadir");
+    setEditStatus(att.status || 'Hadir');
     const normalize = (t?: string | null) => {
-      if (!t) return "";
-      const r = t.replace(".", ":");
-      return /^\d{1,2}:\d{2}$/.test(r) ? r : "";
+      if (!t) return '';
+      const r = t.replace('.', ':');
+      return /^\d{1,2}:\d{2}$/.test(r) ? r : '';
     };
     setEditJamMasuk(normalize(att.jamMasuk));
     setEditJamKeluar(normalize(att.jamKeluar));
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = 'hidden';
   };
 
   const closeEdit = () => {
     setEditingAtt(null);
-    setEditStatus("Hadir");
-    setEditJamMasuk("");
-    setEditJamKeluar("");
-    document.body.style.overflow = "";
+    setEditStatus('Hadir');
+    setEditJamMasuk('');
+    setEditJamKeluar('');
+    document.body.style.overflow = '';
   };
 
   const handleSaveStatus = async () => {
     if (!editingAtt) return;
     try {
-      const isValidTime = (t: string | undefined | null) =>
-        typeof t === "string" && /^\d{1,2}:\d{2}$/.test(t);
-      const jamMasukToSend = isValidTime(editJamMasuk)
-        ? editJamMasuk
-        : undefined;
-      const jamKeluarToSend = isValidTime(editJamKeluar)
-        ? editJamKeluar
-        : undefined;
+      const isValidTime = (t: string | undefined | null) => typeof t === 'string' && /^\d{1,2}:\d{2}$/.test(t);
+      const jamMasukToSend = isValidTime(editJamMasuk) ? editJamMasuk : undefined;
+      const jamKeluarToSend = isValidTime(editJamKeluar) ? editJamKeluar : undefined;
 
       let res;
 
       // If this is a generated "Belum Absen" entry (no DB id), call adminSetStatus to create/update
-      if (
-        typeof editingAtt._id === "string" &&
-        editingAtt._id.startsWith("belum-")
-      ) {
+      if (typeof editingAtt._id === 'string' && editingAtt._id.startsWith('belum-')) {
         // editingAtt.userId may be a User object (from mergeUsersWithAttendance)
-        const targetUserId =
-          typeof editingAtt.userId === "string"
-            ? editingAtt.userId
-            : editingAtt.userId?._id;
-        const tanggal =
-          typeof editingAtt.tanggal === "string"
-            ? editingAtt.tanggal
-            : toDateStr(new Date(editingAtt.tanggal));
+        const targetUserId = typeof editingAtt.userId === 'string' ? editingAtt.userId : editingAtt.userId?._id;
+        const tanggal = typeof editingAtt.tanggal === 'string' ? editingAtt.tanggal : toDateStr(new Date(editingAtt.tanggal));
 
         // For Hari Libur or Libur, follow backend convention
-        if (editStatus === "Hari Libur" || editStatus === "Libur") {
-          res = await AttendanceAPI.adminSetStatus(
-            targetUserId,
-            tanggal,
-            editStatus,
-            "-",
-            "",
-          );
+        if (editStatus === 'Hari Libur' || editStatus === 'Libur') {
+          res = await AttendanceAPI.adminSetStatus(targetUserId, tanggal, editStatus, '-', '');
         } else {
-          res = await AttendanceAPI.adminSetStatus(
-            targetUserId,
-            tanggal,
-            editStatus,
-            jamMasukToSend,
-            jamKeluarToSend,
-          );
+          res = await AttendanceAPI.adminSetStatus(targetUserId, tanggal, editStatus, jamMasukToSend, jamKeluarToSend);
         }
       } else {
-        res = await AttendanceAPI.updateStatus(
-          editingAtt._id,
-          editStatus,
-          jamMasukToSend,
-          jamKeluarToSend,
-        );
+        res = await AttendanceAPI.updateStatus(editingAtt._id, editStatus, jamMasukToSend, jamKeluarToSend);
       }
       if (res && res.success) {
-        showToast("Data kehadiran berhasil diperbarui", "success");
+        showToast('Data kehadiran berhasil diperbarui', 'success');
         closeEdit();
-        const startOfMonth = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          1,
-        );
-        const endOfMonth = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth() + 1,
-          0,
-          23,
-          59,
-          59,
-        );
+        const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59);
         const from = toDateStr(startOfMonth);
         const to = toDateStr(endOfMonth);
-        const attRes = await AttendanceAPI.getAll(
-          `from=${from}&to=${to}&limit=1000`,
-        );
+        const attRes = await AttendanceAPI.getAll(`from=${from}&to=${to}&limit=1000`);
         if (attRes && attRes.success) {
           const newData = attRes.data || [];
           setAttendanceData(newData);
           if (selectedDayData.length > 0) {
-            const selectedDate = selectedDayData[0]?.tanggal
-              .toString()
-              .split("T")[0];
-            setSelectedDayData(
-              newData.filter(
-                (a: any) => a.tanggal.toString().split("T")[0] === selectedDate,
-              ),
-            );
+            const selectedDate = selectedDayData[0]?.tanggal.toString().split('T')[0];
+            setSelectedDayData(newData.filter((a: any) => a.tanggal.toString().split('T')[0] === selectedDate));
           }
           // Also refresh filter data if active
           if (filterData.length > 0) {
@@ -300,41 +287,28 @@ const AttendanceCalendar: React.FC = () => {
           }
         }
       } else {
-        showToast(res?.message || "Gagal memperbarui data", "error");
+        showToast(res?.message || 'Gagal memperbarui data', 'error');
       }
     } catch (err) {
-      showToast("Gagal memperbarui data", "error");
+      showToast('Gagal memperbarui data', 'error');
     }
   };
 
   const loadAttendanceData = async () => {
     setLoading(true);
     try {
-      const startOfMonth = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        1,
-      );
-      const endOfMonth = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth() + 1,
-        0,
-        23,
-        59,
-        59,
-      );
+      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59);
       const from = toDateStr(startOfMonth);
       const to = toDateStr(endOfMonth);
-      const res = await AttendanceAPI.getAll(
-        `from=${from}&to=${to}&limit=1000&_t=${new Date().getTime()}`,
-      );
+      const res = await AttendanceAPI.getAll(`from=${from}&to=${to}&limit=1000&_t=${new Date().getTime()}`);
       if (res && res.success) {
         setAttendanceData(res.data || []);
       } else {
-        showToast("Gagal memuat data kehadiran", "error");
+        showToast('Gagal memuat data kehadiran', 'error');
       }
     } catch (error) {
-      showToast("Error memuat data", "error");
+      showToast('Error memuat data', 'error');
     } finally {
       setLoading(false);
     }
@@ -345,47 +319,32 @@ const AttendanceCalendar: React.FC = () => {
   }, [currentDate]);
 
   useEffect(() => {
-    if (filterMode === "bulanan") {
+    if (filterMode === 'bulanan') {
       setFilterData(attendanceData);
-      setFilterLabel(
-        `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`,
-      );
+      setFilterLabel(`${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`);
     }
   }, [attendanceData, filterMode, currentDate]);
 
   const getAttendanceForDay = (day: number): Attendance[] => {
-    const targetDate = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      day,
-    );
+    const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     const dateStr = toDateStr(targetDate);
-    return attendanceData.filter(
-      (a) => a.tanggal.toString().split("T")[0] === dateStr,
-    );
+    return attendanceData.filter((a) => a.tanggal.toString().split('T')[0] === dateStr);
   };
 
   const handlePreviousMonth = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1),
-    );
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
   };
 
   const handleNextMonth = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1),
-    );
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
   };
 
   // Merge attendance data with all users — users without records get 'Belum Absen'
-  const mergeUsersWithAttendance = (
-    dayAttendance: Attendance[],
-    dateStr: string,
-  ): Attendance[] => {
+  const mergeUsersWithAttendance = (dayAttendance: Attendance[], dateStr: string): Attendance[] => {
     const attendedUserIds = new Set(
       dayAttendance.map((a) => {
-        if (typeof a.userId === "string") return a.userId;
-        return a.userId?._id || "";
+        if (typeof a.userId === 'string') return a.userId;
+        return a.userId?._id || '';
       }),
     );
 
@@ -397,7 +356,7 @@ const AttendanceCalendar: React.FC = () => {
         tanggal: dateStr,
         jamMasuk: undefined,
         jamKeluar: undefined,
-        status: "Belum Absen" as const,
+        status: 'Belum Absen' as const,
       }));
 
     return [...dayAttendance, ...belumAbsen];
@@ -405,11 +364,7 @@ const AttendanceCalendar: React.FC = () => {
 
   const handleDayClick = (day: number) => {
     const dayData = getAttendanceForDay(day);
-    const targetDate = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      day,
-    );
+    const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     const dateStr = toDateStr(targetDate);
     setSelectedDate(dateStr);
 
@@ -417,33 +372,20 @@ const AttendanceCalendar: React.FC = () => {
     const merged = mergeUsersWithAttendance(dayData, dateStr);
     setSelectedDayData(merged);
 
-    setFilterMode("harian");
+    setFilterMode('harian');
     setFilterData(merged);
     setFilterLabel(
-      targetDate.toLocaleDateString("id-ID", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
+      targetDate.toLocaleDateString('id-ID', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
       }),
     );
   };
 
-  const monthNames = [
-    "Januari",
-    "Februari",
-    "Maret",
-    "April",
-    "Mei",
-    "Juni",
-    "Juli",
-    "Agustus",
-    "September",
-    "Oktober",
-    "November",
-    "Desember",
-  ];
-  const dayNames = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+  const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
   const daysInMonth = getDaysInMonth(currentDate);
   const firstDay = getFirstDayOfMonth(currentDate);
@@ -455,60 +397,40 @@ const AttendanceCalendar: React.FC = () => {
   };
 
   // --- Date Picker Logic (Adapted from Rekapitulasi) ---
-  const handleDatePickerPrevMonth = () =>
-    setDatePickerMonth(
-      new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() - 1),
-    );
-  const handleDatePickerNextMonth = () =>
-    setDatePickerMonth(
-      new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() + 1),
-    );
+  const handleDatePickerPrevMonth = () => setDatePickerMonth(new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() - 1));
+  const handleDatePickerNextMonth = () => setDatePickerMonth(new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() + 1));
 
-  const handleCalendarDateClick = (
-    year: number,
-    month: number,
-    day: number,
-  ) => {
-    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const handleCalendarDateClick = (year: number, month: number, day: number) => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     if (isSelectingStart) {
       setTempDateRangeStart(dateStr);
-      setTempDateRangeEnd("");
+      setTempDateRangeEnd('');
       setIsSelectingStart(false);
     } else {
       if (new Date(dateStr) >= new Date(tempDateRangeStart)) {
         setTempDateRangeEnd(dateStr);
       } else {
-        showToast(
-          "Pilih tanggal akhir yang lebih besar dari tanggal awal",
-          "error",
-        );
+        showToast('Pilih tanggal akhir yang lebih besar dari tanggal awal', 'error');
       }
     }
   };
 
   const isDateInRange = (year: number, month: number, day: number): boolean => {
-    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     if (!tempDateRangeStart) return false;
     if (!tempDateRangeEnd) return dateStr >= tempDateRangeStart;
     return dateStr >= tempDateRangeStart && dateStr <= tempDateRangeEnd;
   };
 
-  const isDateStartEnd = (
-    year: number,
-    month: number,
-    day: number,
-  ): "start" | "end" | null => {
-    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    if (dateStr === tempDateRangeStart) return "start";
-    if (dateStr === tempDateRangeEnd) return "end";
+  const isDateStartEnd = (year: number, month: number, day: number): 'start' | 'end' | null => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    if (dateStr === tempDateRangeStart) return 'start';
+    if (dateStr === tempDateRangeEnd) return 'end';
     return null;
   };
 
   const renderCalendarMonth = (offset: number) => {
-    const month = new Date(
-      datePickerMonth.getFullYear(),
-      datePickerMonth.getMonth() + offset,
-    );
+    const month = new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() + offset);
     const year = month.getFullYear();
     const monthIndex = month.getMonth();
     const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
@@ -523,15 +445,11 @@ const AttendanceCalendar: React.FC = () => {
     for (let day = 1; day <= daysInMonth; day++) {
       const inRange = isDateInRange(year, monthIndex, day);
       const startEnd = isDateStartEnd(year, monthIndex, day);
-      const isStart = startEnd === "start";
-      const isEnd = startEnd === "end";
+      const isStart = startEnd === 'start';
+      const isEnd = startEnd === 'end';
 
       days.push(
-        <div
-          key={day}
-          className={`calendar-cell ${inRange ? "in-range" : ""} ${isStart ? "start-date" : ""} ${isEnd ? "end-date" : ""}`}
-          onClick={() => handleCalendarDateClick(year, monthIndex, day)}
-        >
+        <div key={day} className={`calendar-cell ${inRange ? 'in-range' : ''} ${isStart ? 'start-date' : ''} ${isEnd ? 'end-date' : ''}`} onClick={() => handleCalendarDateClick(year, monthIndex, day)}>
           {day}
         </div>,
       );
@@ -545,7 +463,7 @@ const AttendanceCalendar: React.FC = () => {
           </h3>
         </div>
         <div className="calendar-weekdays">
-          {["S", "M", "T", "W", "T", "F", "S"].map((d) => (
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d) => (
             <div key={d} className="calendar-weekday">
               {d}
             </div>
@@ -560,7 +478,7 @@ const AttendanceCalendar: React.FC = () => {
   // Filter helpers
   const applyFilterOnData = (data: Attendance[]) => {
     const now = new Date();
-    if (filterMode === "mingguan") {
+    if (filterMode === 'mingguan') {
       const dayOfWeek = now.getDay();
       const startOfWeek = new Date(now);
       startOfWeek.setDate(now.getDate() - dayOfWeek);
@@ -570,16 +488,16 @@ const AttendanceCalendar: React.FC = () => {
       const toStr = toDateStr(endOfWeek);
       setFilterData(
         data.filter((a) => {
-          const d = a.tanggal.toString().split("T")[0];
+          const d = a.tanggal.toString().split('T')[0];
           return d >= fromStr && d <= toStr;
         }),
       );
-    } else if (filterMode === "bulanan") {
+    } else if (filterMode === 'bulanan') {
       setFilterData(data);
-    } else if (filterMode === "custom" && customFrom && customTo) {
+    } else if (filterMode === 'custom' && customFrom && customTo) {
       setFilterData(
         data.filter((a) => {
-          const d = a.tanggal.toString().split("T")[0];
+          const d = a.tanggal.toString().split('T')[0];
           return d >= customFrom && d <= customTo;
         }),
       );
@@ -587,18 +505,18 @@ const AttendanceCalendar: React.FC = () => {
   };
 
   const handleApplyFilter = async () => {
-    if (filterMode === "harian") {
+    if (filterMode === 'harian') {
       // Harian uses the calendar day click
       return;
     }
 
     setFilterLoading(true);
     try {
-      let from = "";
-      let to = "";
+      let from = '';
+      let to = '';
       const now = new Date();
 
-      if (filterMode === "mingguan") {
+      if (filterMode === 'mingguan') {
         const dayOfWeek = now.getDay();
         const startOfWeek = new Date(now);
         startOfWeek.setDate(now.getDate() - dayOfWeek);
@@ -606,51 +524,35 @@ const AttendanceCalendar: React.FC = () => {
         endOfWeek.setDate(startOfWeek.getDate() + 6);
         from = toDateStr(startOfWeek);
         to = toDateStr(endOfWeek);
-        setFilterLabel(
-          `${startOfWeek.toLocaleDateString("id-ID", { day: "numeric", month: "short" })} - ${endOfWeek.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}`,
-        );
-      } else if (filterMode === "bulanan") {
-        const startOfMonth = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          1,
-        );
-        const endOfMonth = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth() + 1,
-          0,
-        );
+        setFilterLabel(`${startOfWeek.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} - ${endOfWeek.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`);
+      } else if (filterMode === 'bulanan') {
+        const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
         from = toDateStr(startOfMonth);
         to = toDateStr(endOfMonth);
-        setFilterLabel(
-          `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`,
-        );
-      } else if (filterMode === "custom") {
+        setFilterLabel(`${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`);
+      } else if (filterMode === 'custom') {
         if (!customFrom || !customTo) {
-          showToast("Pilih tanggal awal dan akhir", "error");
+          showToast('Pilih tanggal awal dan akhir', 'error');
           setFilterLoading(false);
           return;
         }
         from = customFrom;
         to = customTo;
-        const fromDate = new Date(customFrom + "T00:00:00");
-        const toDate = new Date(customTo + "T00:00:00");
-        setFilterLabel(
-          `${fromDate.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })} - ${toDate.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}`,
-        );
+        const fromDate = new Date(customFrom + 'T00:00:00');
+        const toDate = new Date(customTo + 'T00:00:00');
+        setFilterLabel(`${fromDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} - ${toDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`);
       }
 
-      const res = await AttendanceAPI.getAll(
-        `from=${from}&to=${to}&limit=5000&_t=${new Date().getTime()}`,
-      );
+      const res = await AttendanceAPI.getAll(`from=${from}&to=${to}&limit=5000&_t=${new Date().getTime()}`);
       if (res && res.success) {
         setFilterData(res.data || []);
         setSelectedDayData([]);
       } else {
-        showToast("Gagal memuat data", "error");
+        showToast('Gagal memuat data', 'error');
       }
     } catch (error) {
-      showToast("Error memuat data", "error");
+      showToast('Error memuat data', 'error');
     } finally {
       setFilterLoading(false);
     }
@@ -659,21 +561,19 @@ const AttendanceCalendar: React.FC = () => {
   const handleExportExcel = async () => {
     const dataToExport = filterData.length > 0 ? filterData : selectedDayData;
     if (dataToExport.length === 0) {
-      showToast("Tidak ada data untuk diexport", "error");
+      showToast('Tidak ada data untuk diexport', 'error');
       return;
     }
 
     try {
       // Count status
-      const hadir = dataToExport.filter((a) => a.status === "Hadir").length;
-      const izin = dataToExport.filter((a) => a.status === "Izin").length;
-      const sakit = dataToExport.filter((a) => a.status === "Sakit").length;
-      const alpha = dataToExport.filter(
-        (a) => a.status === "Alpha" || a.status === "Belum Absen",
-      ).length;
+      const hadir = dataToExport.filter((a) => a.status === 'Hadir').length;
+      const izin = dataToExport.filter((a) => a.status === 'Izin').length;
+      const sakit = dataToExport.filter((a) => a.status === 'Sakit').length;
+      const alpha = dataToExport.filter((a) => a.status === 'Alpha' || a.status === 'Belum Absen').length;
 
-      let filename = "Kehadiran";
-      if (filterMode === "mingguan") {
+      let filename = 'Kehadiran';
+      if (filterMode === 'mingguan') {
         // Calculate start and end of week for filename
         const now = new Date();
         const dayOfWeek = now.getDay();
@@ -682,68 +582,58 @@ const AttendanceCalendar: React.FC = () => {
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 6);
         filename = `Kehadiran_Mingguan_${toDateStr(startOfWeek)}_sd_${toDateStr(endOfWeek)}`;
-      } else if (filterMode === "bulanan")
-        filename = `Kehadiran_${monthNames[currentDate.getMonth()]}_${currentDate.getFullYear()}`;
-      else if (filterMode === "custom" && customFrom && customTo)
-        filename = `Kehadiran_${customFrom}_sd_${customTo}`;
-      else if (filterMode === "harian" && selectedDayData.length > 0) {
-        filename = `Kehadiran_${selectedDayData[0]?.tanggal.toString().split("T")[0]}`;
+      } else if (filterMode === 'bulanan') filename = `Kehadiran_${monthNames[currentDate.getMonth()]}_${currentDate.getFullYear()}`;
+      else if (filterMode === 'custom' && customFrom && customTo) filename = `Kehadiran_${customFrom}_sd_${customTo}`;
+      else if (filterMode === 'harian' && selectedDayData.length > 0) {
+        filename = `Kehadiran_${selectedDayData[0]?.tanggal.toString().split('T')[0]}`;
       }
 
       await exportExcel({
         fileName: filename,
-        companyName: "SISMON Magang",
+        companyName: 'SISMON Magang',
         sheets: [
           {
-            sheetName: "Kehadiran",
-            title: "DATA KEHADIRAN",
-            subtitle: "Laporan Kehadiran Peserta Magang",
-            infoLines: [
-              `Filter: ${filterLabel || "Semua"}`,
-              `Total Data: ${dataToExport.length} peserta`,
-              `Hadir: ${hadir} | Izin: ${izin} | Sakit: ${sakit} | Alpha: ${alpha}`,
-            ],
+            sheetName: 'Kehadiran',
+            title: 'DATA KEHADIRAN',
+            subtitle: 'Laporan Kehadiran Peserta Magang',
+            infoLines: [`Filter: ${filterLabel || 'Semua'}`, `Total Data: ${dataToExport.length} peserta`, `Hadir: ${hadir} | Izin: ${izin} | Sakit: ${sakit} | Alpha: ${alpha}`],
             columns: [
-              { header: "No", key: "no", width: 6, type: "number" },
-              { header: "Nama", key: "nama", width: 24 },
-              { header: "Institusi", key: "instansi", width: 24 },
-              { header: "Tanggal", key: "tanggal", width: 22, type: "date" },
-              { header: "Jam Masuk", key: "jamMasuk", width: 14 },
-              { header: "Jam Keluar", key: "jamKeluar", width: 14 },
-              { header: "Status", key: "status", width: 14 },
+              { header: 'No', key: 'no', width: 6, type: 'number' },
+              { header: 'Nama', key: 'nama', width: 24 },
+              { header: 'Institusi', key: 'instansi', width: 24 },
+              { header: 'Tanggal', key: 'tanggal', width: 22, type: 'date' },
+              { header: 'Jam Masuk', key: 'jamMasuk', width: 14 },
+              { header: 'Jam Keluar', key: 'jamKeluar', width: 14 },
+              { header: 'Status', key: 'status', width: 14 },
+              { header: 'Alasan Pulang Cepat', key: 'keterangan', width: 30 },
             ],
             data: dataToExport.map((att, index) => ({
               no: index + 1,
-              nama:
-                typeof att.userId === "string"
-                  ? "Unknown"
-                  : att.userId?.name || "Unknown",
-              instansi:
-                typeof att.userId === "string"
-                  ? "-"
-                  : att.userId?.instansi || "-",
-              tanggal: new Date(att.tanggal).toLocaleDateString("id-ID", {
-                day: "numeric",
-                month: "long",  
-                year: "numeric",
+              nama: typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown',
+              instansi: typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-',
+              tanggal: new Date(att.tanggal).toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
               }),
-              jamMasuk: att.jamMasuk || "-",
-              jamKeluar: att.jamKeluar || "-",
+              jamMasuk: att.jamMasuk || '-',
+              jamKeluar: att.jamKeluar || '-',
               status: att.status,
+              keterangan: att.keterangan || '-',
             })),
           },
         ],
       });
-      showToast("Excel berhasil diunduh!", "success");
+      showToast('Excel berhasil diunduh!', 'success');
     } catch (error) {
-      showToast("Gagal mengunduh Excel", "error");
+      showToast('Gagal mengunduh Excel', 'error');
     }
   };
 
   // Handle bulk holiday
   const handleBulkHoliday = async () => {
     if (!selectedDate) {
-      showToast("Pilih tanggal terlebih dahulu dari kalender", "error");
+      showToast('Pilih tanggal terlebih dahulu dari kalender', 'error');
       return;
     }
     setShowHolidayConfirm(true);
@@ -756,18 +646,18 @@ const AttendanceCalendar: React.FC = () => {
     try {
       const res = await AttendanceAPI.bulkHoliday(selectedDate);
       if (res && res.success) {
-        showToast(res.message || "Hari libur berhasil diterapkan!", "success");
+        showToast(res.message || 'Hari libur berhasil diterapkan!', 'success');
         // Refresh data
         await loadAttendanceData();
         loadTodayStats();
         // Re-click day to refresh merged view
-        const day = parseInt(selectedDate.split("-")[2]);
+        const day = parseInt(selectedDate.split('-')[2]);
         setTimeout(() => handleDayClick(day), 300);
       } else {
-        showToast(res?.message || "Gagal menerapkan hari libur", "error");
+        showToast(res?.message || 'Gagal menerapkan hari libur', 'error');
       }
     } catch {
-      showToast("Error menerapkan hari libur", "error");
+      showToast('Error menerapkan hari libur', 'error');
     } finally {
       setHolidayLoading(false);
     }
@@ -784,25 +674,33 @@ const AttendanceCalendar: React.FC = () => {
     try {
       const res = await AttendanceAPI.cancelHoliday(selectedDate);
       if (res && res.success) {
-        showToast(res.message || "Hari libur berhasil dibatalkan!", "success");
+        showToast(res.message || 'Hari libur berhasil dibatalkan!', 'success');
         // Refresh data
         await loadAttendanceData();
         loadTodayStats();
         // Re-click day to refresh merged view
-        const day = parseInt(selectedDate.split("-")[2]);
+        const day = parseInt(selectedDate.split('-')[2]);
         setTimeout(() => handleDayClick(day), 300);
       } else {
-        showToast(res?.message || "Gagal membatalkan hari libur", "error");
+        showToast(res?.message || 'Gagal membatalkan hari libur', 'error');
       }
     } catch {
-      showToast("Error membatalkan hari libur", "error");
+      showToast('Error membatalkan hari libur', 'error');
     } finally {
       setHolidayLoading(false);
     }
   };
 
   // Data to display in detail table - use filterData when filter is non-harian, selectedDayData for harian
-  const displayData = filterMode === "harian" ? selectedDayData : filterData;
+  // Sort by jamMasuk ascending (earliest first), entries without jamMasuk go to the bottom
+  const displayData = (filterMode === 'harian' ? selectedDayData : filterData).slice().sort((a, b) => {
+    const timeA = a.jamMasuk ? a.jamMasuk.replace('.', ':') : null;
+    const timeB = b.jamMasuk ? b.jamMasuk.replace('.', ':') : null;
+    if (!timeA && !timeB) return 0;
+    if (!timeA) return 1;
+    if (!timeB) return -1;
+    return timeA.localeCompare(timeB);
+  });
 
   return (
     <div className="attendance-calendar-container">
@@ -810,19 +708,19 @@ const AttendanceCalendar: React.FC = () => {
       <div
         className="stats-header-grid"
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-          gap: "20px",
-          marginBottom: "20px",
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '20px',
+          marginBottom: '20px',
         }}
       >
         <div
           style={{
-            background: "#fff",
+            background: '#fff',
             borderRadius: 12,
             padding: 20,
-            border: "1px solid rgba(226,232,240,0.6)",
-            boxShadow: "0 4px 24px rgba(10,101,153,0.1)",
+            border: '1px solid rgba(226,232,240,0.6)',
+            boxShadow: '0 4px 24px rgba(10,101,153,0.1)',
           }}
         >
           <div style={{ marginBottom: 12 }}>
@@ -830,30 +728,28 @@ const AttendanceCalendar: React.FC = () => {
               style={{
                 fontSize: 16,
                 fontWeight: 700,
-                color: "#1e293b",
+                color: '#1e293b',
                 margin: 0,
               }}
             >
               Status Absen Hari Ini
             </h3>
           </div>
-          <div style={{ display: "flex", gap: 16 }}>
+          <div style={{ display: 'flex', gap: 16 }}>
             <div
               style={{
                 flex: 1,
-                background: "#f0f9ff",
+                background: '#f0f9ff',
                 borderRadius: 10,
-                padding: "16px 14px",
-                textAlign: "center",
+                padding: '16px 14px',
+                textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: 28, fontWeight: 800, color: "#0a6599" }}>
-                {totalPeserta}
-              </div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: '#0a6599' }}>{totalPeserta}</div>
               <div
                 style={{
                   fontSize: 12,
-                  color: "#64748b",
+                  color: '#64748b',
                   fontWeight: 500,
                   marginTop: 4,
                 }}
@@ -864,19 +760,17 @@ const AttendanceCalendar: React.FC = () => {
             <div
               style={{
                 flex: 1,
-                background: "#f0fdf4",
+                background: '#f0fdf4',
                 borderRadius: 10,
-                padding: "16px 14px",
-                textAlign: "center",
+                padding: '16px 14px',
+                textAlign: 'center',
               }}
             >
-              <div style={{ fontSize: 28, fontWeight: 800, color: "#22c55e" }}>
-                {todayAttendanceCount}
-              </div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: '#22c55e' }}>{todayAttendanceCount}</div>
               <div
                 style={{
                   fontSize: 12,
-                  color: "#64748b",
+                  color: '#64748b',
                   fontWeight: 500,
                   marginTop: 4,
                 }}
@@ -889,11 +783,11 @@ const AttendanceCalendar: React.FC = () => {
 
         <div
           style={{
-            background: "#fff",
+            background: '#fff',
             borderRadius: 12,
             padding: 20,
-            border: "1px solid rgba(226,232,240,0.6)",
-            boxShadow: "0 4px 24px rgba(10,101,153,0.1)",
+            border: '1px solid rgba(226,232,240,0.6)',
+            boxShadow: '0 4px 24px rgba(10,101,153,0.1)',
           }}
         >
           <div style={{ marginBottom: 12 }}>
@@ -901,86 +795,78 @@ const AttendanceCalendar: React.FC = () => {
               style={{
                 fontSize: 16,
                 fontWeight: 700,
-                color: "#1e293b",
+                color: '#1e293b',
                 margin: 0,
               }}
             >
-              Pengaturan Jam Telat
+              Pengaturan Jam Telat {selectedDate ? 'Tanggal Terpilih' : 'Hari Ini'}
             </h3>
+            <p style={{ fontSize: 11, color: '#94a3b8', margin: '4px 0 0' }}>
+              {selectedDate
+                ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+                : new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
           </div>
-          {!isEditingThreshold ? (
-            <div>
-              <div style={{ fontSize: 13, color: "#64748b", marginBottom: 8 }}>
-                Jam Batas Telat:
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div
-                  style={{ fontSize: 24, fontWeight: 700, color: "#0a6599" }}
-                >
-                  {lateThreshold}
-                </div>
-                <button
-                  onClick={() => setIsEditingThreshold(true)}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <div style={{ fontSize: 28, fontWeight: 800, color: '#0a6599' }}>{lateThreshold}</div>
+              {isCustomThreshold && (
+                <span
                   style={{
-                    padding: "6px 14px",
-                    background: "#e2e8f0",
-                    border: "none",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                    fontSize: 12,
+                    fontSize: 10,
+                    background: '#fef3c7',
+                    color: '#d97706',
+                    padding: '2px 8px',
+                    borderRadius: 10,
                     fontWeight: 600,
                   }}
                 >
-                  Edit
-                </button>
-              </div>
+                  Diubah
+                </span>
+              )}
             </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <input
-                type="time"
-                value={lateThreshold}
-                onChange={(e) => setLateThreshold(e.target.value)}
-                style={{
-                  padding: "8px 10px",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: 6,
-                  fontSize: 14,
-                }}
-              />
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  onClick={handleSaveThreshold}
-                  style={{
-                    flex: 1,
-                    padding: "8px 12px",
-                    background: "#22c55e",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 6,
-                    fontSize: 12,
-                    fontWeight: 600,
-                  }}
-                >
-                  Simpan
-                </button>
-                <button
-                  onClick={() => setIsEditingThreshold(false)}
-                  style={{
-                    flex: 1,
-                    padding: "8px 12px",
-                    background: "#cbd5e1",
-                    border: "none",
-                    borderRadius: 6,
-                    fontSize: 12,
-                    fontWeight: 600,
-                  }}
-                >
-                  Batal
-                </button>
+            {isCustomThreshold && thresholdAlasan && (
+              <div style={{ fontSize: 12, color: '#64748b', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+                {thresholdAlasan}
               </div>
-            </div>
-          )}
+            )}
+            <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 10 }}>Default: {defaultThreshold}</div>
+            <button
+              onClick={() => {
+                setModalThresholdTime(lateThreshold);
+                setModalThresholdAlasan(thresholdAlasan);
+                setShowThresholdModal(true);
+              }}
+              style={{
+                padding: '8px 18px',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 8,
+                cursor: 'pointer',
+                fontSize: 12,
+                fontWeight: 600,
+                width: '100%',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                boxShadow: '0 2px 8px rgba(102,126,234,0.3)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(102,126,234,0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(102,126,234,0.3)';
+              }}
+            >
+              ✏️ Ubah Jam Telat {selectedDate ? 'Tanggal Ini' : 'Hari Ini'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -988,13 +874,7 @@ const AttendanceCalendar: React.FC = () => {
         <div className="calendar-card">
           <div className="calendar-header">
             <button className="calendar-nav-btn" onClick={handlePreviousMonth}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
             </button>
@@ -1002,13 +882,7 @@ const AttendanceCalendar: React.FC = () => {
               {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
             </h2>
             <button className="calendar-nav-btn" onClick={handleNextMonth}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </button>
@@ -1016,11 +890,7 @@ const AttendanceCalendar: React.FC = () => {
 
           <div className="calendar-day-names">
             {dayNames.map((day, idx) => (
-              <div
-                key={day}
-                className="day-name"
-                style={idx === 0 || idx === 6 ? { color: "#dc2626" } : {}}
-              >
+              <div key={day} className="day-name" style={idx === 0 || idx === 6 ? { color: '#dc2626' } : {}}>
                 {day}
               </div>
             ))}
@@ -1032,27 +902,13 @@ const AttendanceCalendar: React.FC = () => {
             ))}
             {days.map((day) => {
               const count = getAttendanceCount(day);
-              const isSelected =
-                selectedDayData.length > 0 &&
-                selectedDayData[0]?.tanggal.toString().split("T")[0] ===
-                  `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-              const dayOfWeek = new Date(
-                currentDate.getFullYear(),
-                currentDate.getMonth(),
-                day,
-              ).getDay();
+              const isSelected = selectedDayData.length > 0 && selectedDayData[0]?.tanggal.toString().split('T')[0] === `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              const dayOfWeek = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).getDay();
               const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
               const dayAtt = getAttendanceForDay(day);
-              const isHoliday =
-                dayAtt.length > 0 &&
-                dayAtt.every((a) => a.status === "Hari Libur");
+              const isHoliday = dayAtt.length > 0 && dayAtt.every((a) => a.status === 'Hari Libur');
               return (
-                <div
-                  key={day}
-                  className={`calendar-day ${count > 0 ? "has-data" : ""} ${isSelected ? "selected" : ""} ${isWeekend || isHoliday ? "is-holiday" : ""}`}
-                  onClick={() => handleDayClick(day)}
-                  title={`${count} orang absen`}
-                >
+                <div key={day} className={`calendar-day ${count > 0 ? 'has-data' : ''} ${isSelected ? 'selected' : ''} ${isWeekend || isHoliday ? 'is-holiday' : ''}`} onClick={() => handleDayClick(day)} title={`${count} orang absen`}>
                   <div className="day-number">{day}</div>
                   {count > 0 && <div className="day-badge">{count}</div>}
                 </div>
@@ -1071,23 +927,21 @@ const AttendanceCalendar: React.FC = () => {
           <div className="work-filter-bar">
             <div className="work-filter-left">
               <div className="filter-buttons">
-                {(
-                  ["harian", "mingguan", "bulanan", "custom"] as FilterMode[]
-                ).map((mode) => (
+                {(['harian', 'mingguan', 'bulanan', 'custom'] as FilterMode[]).map((mode) => (
                   <button
                     key={mode}
-                    className={`filter-btn ${filterMode === mode ? "active" : ""}`}
+                    className={`filter-btn ${filterMode === mode ? 'active' : ''}`}
                     onClick={() => {
                       setFilterMode(mode);
-                      if (mode === "harian") {
+                      if (mode === 'harian') {
                         setFilterData([]);
-                        setFilterLabel("");
+                        setFilterLabel('');
                         // Optionally do nothing else, user clicks calendar
-                      } else if (mode === "custom") {
+                      } else if (mode === 'custom') {
                         if (!isSelectingDateRange) setIsSelectingStart(true);
-                      } else if (mode === "mingguan") {
+                      } else if (mode === 'mingguan') {
                         // Manual trigger via button
-                      } else if (mode === "bulanan") {
+                      } else if (mode === 'bulanan') {
                         // Trigger monthly filter directly
                         setTimeout(() => handleApplyFilter(), 0);
                       }
@@ -1099,59 +953,28 @@ const AttendanceCalendar: React.FC = () => {
               </div>
 
               {/* Dynamic Filter Input */}
-              {filterMode === "bulanan" && (
+              {filterMode === 'bulanan' && (
                 <div className="month-picker-container">
-                  <button
-                    onClick={handlePreviousMonth}
-                    className="month-nav-btn"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
+                  <button onClick={handlePreviousMonth} className="month-nav-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="15 18 9 12 15 6"></polyline>
                     </svg>
                   </button>
                   <span className="month-display">
-                    {monthNames[currentDate.getMonth()]}{" "}
-                    {currentDate.getFullYear()}
+                    {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
                   </span>
                   <button onClick={handleNextMonth} className="month-nav-btn">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="9 18 15 12 9 6"></polyline>
                     </svg>
                   </button>
                 </div>
               )}
 
-              {filterMode === "custom" && (
+              {filterMode === 'custom' && (
                 <div className="custom-date-range-container">
-                  <button
-                    className="custom-date-range-toggle"
-                    onClick={() =>
-                      setIsSelectingDateRange(!isSelectingDateRange)
-                    }
-                  >
-                    {customFrom && customTo
-                      ? `${customFrom} - ${customTo}`
-                      : "Pilih Rentang Tanggal"}
+                  <button className="custom-date-range-toggle" onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}>
+                    {customFrom && customTo ? `${customFrom} - ${customTo}` : 'Pilih Rentang Tanggal'}
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       viewBox="0 0 24 24"
@@ -1159,12 +982,10 @@ const AttendanceCalendar: React.FC = () => {
                       stroke="currentColor"
                       strokeWidth="2"
                       style={{
-                        width: "16px",
-                        height: "16px",
-                        transform: isSelectingDateRange
-                          ? "rotate(180deg)"
-                          : "rotate(0deg)",
-                        transition: "transform 0.2s",
+                        width: '16px',
+                        height: '16px',
+                        transform: isSelectingDateRange ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s',
                       }}
                     >
                       <polyline points="6 9 12 15 18 9" />
@@ -1174,17 +995,11 @@ const AttendanceCalendar: React.FC = () => {
                   {isSelectingDateRange && (
                     <div className="custom-date-picker-dropdown">
                       <div className="custom-date-picker-header">
-                        <button
-                          className="custom-date-nav-btn"
-                          onClick={handleDatePickerPrevMonth}
-                        >
+                        <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>
                           ←
                         </button>
                         <span>Pilih Rentang Tanggal</span>
-                        <button
-                          className="custom-date-nav-btn"
-                          onClick={handleDatePickerNextMonth}
-                        >
+                        <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>
                           →
                         </button>
                       </div>
@@ -1195,9 +1010,7 @@ const AttendanceCalendar: React.FC = () => {
                       </div>
 
                       <div className="custom-date-range-info">
-                        {tempDateRangeStart && !tempDateRangeEnd && (
-                          <p>Pilih tanggal akhir</p>
-                        )}
+                        {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
                         {tempDateRangeStart && tempDateRangeEnd && (
                           <p>
                             {tempDateRangeStart} sampai {tempDateRangeEnd}
@@ -1217,10 +1030,7 @@ const AttendanceCalendar: React.FC = () => {
                               // Apply filter logic
                               setTimeout(() => handleApplyFilter(), 0);
                             } else {
-                              showToast(
-                                "Pilih tanggal awal dan akhir terlebih dahulu",
-                                "error",
-                              );
+                              showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
                             }
                           }}
                         >
@@ -1230,8 +1040,8 @@ const AttendanceCalendar: React.FC = () => {
                           className="custom-date-cancel-btn"
                           onClick={() => {
                             setIsSelectingDateRange(false);
-                            setTempDateRangeStart("");
-                            setTempDateRangeEnd("");
+                            setTempDateRangeStart('');
+                            setTempDateRangeEnd('');
                             setIsSelectingStart(true);
                           }}
                         >
@@ -1243,13 +1053,9 @@ const AttendanceCalendar: React.FC = () => {
                 </div>
               )}
 
-              {filterMode === "mingguan" && (
-                <button
-                  className="btn-apply-filter"
-                  onClick={handleApplyFilter}
-                  disabled={filterLoading}
-                >
-                  {filterLoading ? "Memuat..." : "Terapkan Filter"}
+              {filterMode === 'mingguan' && (
+                <button className="btn-apply-filter" onClick={handleApplyFilter} disabled={filterLoading}>
+                  {filterLoading ? 'Memuat...' : 'Terapkan Filter'}
                 </button>
               )}
             </div>
@@ -1257,108 +1063,67 @@ const AttendanceCalendar: React.FC = () => {
             {/* Action Buttons (Right Aligned) */}
             <div className="rekap-filter-actions">
               {/* Holiday Buttons */}
-              {filterMode === "harian" && selectedDate && (
+              {filterMode === 'harian' && selectedDate && (
                 <>
-                  {selectedDayData.length > 0 &&
-                  selectedDayData.every((a) => a.status === "Hari Libur") ? (
+                  {selectedDayData.length > 0 && selectedDayData.every((a) => a.status === 'Hari Libur') ? (
                     <button
                       onClick={handleCancelHoliday}
                       disabled={holidayLoading}
                       style={{
-                        padding: "8px 16px",
-                        background: "#ef4444",
-                        color: "white",
-                        border: "none",
+                        padding: '8px 16px',
+                        background: '#ef4444',
+                        color: 'white',
+                        border: 'none',
                         borderRadius: 8,
-                        cursor: holidayLoading ? "not-allowed" : "pointer",
+                        cursor: holidayLoading ? 'not-allowed' : 'pointer',
                         fontSize: 13,
                         fontWeight: 600,
-                        display: "flex",
-                        alignItems: "center",
+                        display: 'flex',
+                        alignItems: 'center',
                         gap: 8,
                         opacity: holidayLoading ? 0.7 : 1,
                       }}
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M3 6h18"></path>
                         <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
                         <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
                       </svg>
-                      {holidayLoading ? "..." : "Batal Libur"}
+                      {holidayLoading ? '...' : 'Batal Libur'}
                     </button>
                   ) : (
                     <button
                       onClick={handleBulkHoliday}
                       disabled={holidayLoading}
                       style={{
-                        padding: "8px 16px",
-                        background: "#f59e0b",
-                        color: "white",
-                        border: "none",
+                        padding: '8px 16px',
+                        background: '#f59e0b',
+                        color: 'white',
+                        border: 'none',
                         borderRadius: 8,
-                        cursor: holidayLoading ? "not-allowed" : "pointer",
+                        cursor: holidayLoading ? 'not-allowed' : 'pointer',
                         fontSize: 13,
                         fontWeight: 600,
-                        display: "flex",
-                        alignItems: "center",
+                        display: 'flex',
+                        alignItems: 'center',
                         gap: 8,
                         opacity: holidayLoading ? 0.7 : 1,
                       }}
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect
-                          x="3"
-                          y="4"
-                          width="18"
-                          height="18"
-                          rx="2"
-                          ry="2"
-                        ></rect>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                         <line x1="16" y1="2" x2="16" y2="6"></line>
                         <line x1="8" y1="2" x2="8" y2="6"></line>
                         <line x1="3" y1="10" x2="21" y2="10"></line>
                       </svg>
-                      {holidayLoading ? "..." : "Set Libur"}
+                      {holidayLoading ? '...' : 'Set Libur'}
                     </button>
                   )}
                 </>
               )}
 
-              <button
-                className="btn-export"
-                onClick={handleExportExcel}
-                disabled={displayData.length === 0}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+              <button className="btn-export" onClick={handleExportExcel} disabled={displayData.length === 0}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
@@ -1370,16 +1135,12 @@ const AttendanceCalendar: React.FC = () => {
 
           {displayData.length === 0 ? (
             <div className="no-selection">
-              <p>
-                {filterMode === "harian"
-                  ? "Pilih tanggal untuk melihat detail kehadiran"
-                  : 'Klik "Terapkan Filter" untuk memuat data'}
-              </p>
+              <p>{filterMode === 'harian' ? 'Pilih tanggal untuk melihat detail kehadiran' : 'Klik "Terapkan Filter" untuk memuat data'}</p>
             </div>
           ) : (
             <div className="details-content">
               <div className="day-info">
-                <h4>{filterLabel || "Data Kehadiran"}</h4>
+                <h4>{filterLabel || 'Data Kehadiran'}</h4>
                 <p>{displayData.length} data kehadiran</p>
               </div>
 
@@ -1390,7 +1151,7 @@ const AttendanceCalendar: React.FC = () => {
                       <th>No</th>
                       <th>Nama</th>
                       <th>Institusi</th>
-                      {filterMode !== "harian" && <th>Tanggal</th>}
+                      {filterMode !== 'harian' && <th>Tanggal</th>}
                       <th>Jam Masuk</th>
                       <th>Jam Keluar</th>
                       <th>Status</th>
@@ -1398,180 +1159,122 @@ const AttendanceCalendar: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {displayData.map((att, i) => (
-                      <tr key={att._id}>
-                        <td>{i + 1}</td>
-                        <td className="name-cell">
-                          {typeof att.userId === "string"
-                            ? "Unknown"
-                            : att.userId?.name || "Unknown"}
-                        </td>
-                        <td>
-                          {typeof att.userId === "string"
-                            ? "-"
-                            : att.userId?.instansi || "-"}
-                        </td>
-                        {filterMode !== "harian" && (
-                          <td style={{ fontSize: 12 }}>
-                            {new Date(att.tanggal).toLocaleDateString("id-ID", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            })}
+                    {displayData.map((att, i) => {
+                      const userName = typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown';
+                      const userInstansi = typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-';
+                      const isDeletedUser = typeof att.userId === 'object' && (att.userId as any)?._deleted;
+                      return (
+                        <tr key={att._id}>
+                          <td>{i + 1}</td>
+                          <td className="name-cell">
+                            {userName}
+                            {isDeletedUser && <span style={{ fontSize: 10, color: '#ef4444', marginLeft: 4, fontWeight: 600 }}>(Dihapus)</span>}
                           </td>
-                        )}
-                        <td className="time-cell">{att.jamMasuk || "-"}</td>
-                        <td>
-                          <div className="reason-container">
-                            <span className="time-cell">
-                              {att.jamKeluar || "-"}
-                            </span>
-                            {att.keterangan && (
-                              <div className="reason-badge">
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                >
-                                  <circle cx="12" cy="12" r="10"></circle>
-                                  <line x1="12" y1="16" x2="12" y2="12"></line>
-                                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                </svg>
-                                Info
-                                <div className="reason-tooltip">
-                                  <strong>Alasan Pulang Cepat:</strong>
-                                  <br />
-                                  {att.keterangan}
+                          <td>{userInstansi}</td>
+                          {filterMode !== 'harian' && (
+                            <td style={{ fontSize: 12 }}>
+                              {new Date(att.tanggal).toLocaleDateString('id-ID', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                            </td>
+                          )}
+                          <td className="time-cell">{att.jamMasuk || '-'}</td>
+                          <td>
+                            <div className="reason-container">
+                              <span className="time-cell">{att.jamKeluar || '-'}</span>
+                              {att.keterangan && (
+                                <div className="reason-badge">
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                  </svg>
+                                  Info
+                                  <div className="reason-tooltip">
+                                    <strong>Alasan Pulang Cepat:</strong>
+                                    <br />
+                                    {att.keterangan}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          <span
-                            className={`status-badge status-${(isThresholdLoaded ? getStatusWithLate(att) : att.status || "").toLowerCase().replace(/\s+/g, "-")}`}
-                          >
-                            {isThresholdLoaded
-                              ? getStatusWithLate(att)
-                              : att.status}
-                          </span>
-                        </td>
-                        <td>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            {att.fotoAbsensi ? (
-                              <button
-                                onClick={() =>
-                                  handleViewPhoto(
-                                    att._id,
-                                    typeof att.userId === "string"
-                                      ? "User"
-                                      : att.userId?.name || "User",
-                                  )
-                                }
-                                title="Lihat Foto Masuk"
-                                style={{
-                                  background: "none",
-                                  border: "1px solid var(--gray-300)",
-                                  borderRadius: 4,
-                                  padding: 4,
-                                  cursor: "pointer",
-                                  color: "var(--primary-600)",
-                                }}
-                              >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="16"
-                                  height="16"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                  <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                              </button>
-                            ) : (
-                              <span style={{ width: 26 }}></span>
-                            )}
-                            {att.fotoPulang ? (
-                              <button
-                                onClick={() =>
-                                  handleViewPhotoPulang(
-                                    att._id,
-                                    typeof att.userId === "string"
-                                      ? "User"
-                                      : att.userId?.name || "User",
-                                  )
-                                }
-                                title="Lihat Foto Pulang"
-                                style={{
-                                  background: "none",
-                                  border: "1px solid #fcd34d",
-                                  borderRadius: 4,
-                                  padding: 4,
-                                  cursor: "pointer",
-                                  color: "#d97706",
-                                }}
-                              >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="16"
-                                  height="16"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                  <polyline points="16 17 21 12 16 7"></polyline>
-                                  <line x1="21" y1="12" x2="9" y2="12"></line>
-                                </svg>
-                              </button>
-                            ) : null}
-                            <button
-                              onClick={() => openEditStatus(att)}
-                              title="Edit Status"
+                              )}
+                            </div>
+                          </td>
+                          <td>
+                            <span className={`status-badge status-${(isThresholdLoaded ? getStatusWithLate(att) : att.status || '').toLowerCase().replace(/\s+/g, '-')}`}>{isThresholdLoaded ? getStatusWithLate(att) : att.status}</span>
+                          </td>
+                          <td>
+                            <div
                               style={{
-                                background: "none",
-                                border: "1px solid var(--gray-300)",
-                                borderRadius: 4,
-                                padding: 4,
-                                cursor: "pointer",
-                                color: "#f59e0b",
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
                               }}
                             >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
+                              {att.fotoAbsensi ? (
+                                <button
+                                  onClick={() => handleViewPhoto(att._id, typeof att.userId === 'string' ? 'User' : att.userId?.name || 'User')}
+                                  title="Lihat Foto Masuk"
+                                  style={{
+                                    background: 'none',
+                                    border: '1px solid var(--gray-300)',
+                                    borderRadius: 4,
+                                    padding: 4,
+                                    cursor: 'pointer',
+                                    color: 'var(--primary-600)',
+                                  }}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                  </svg>
+                                </button>
+                              ) : (
+                                <span style={{ width: 26 }}></span>
+                              )}
+                              {att.fotoPulang ? (
+                                <button
+                                  onClick={() => handleViewPhotoPulang(att._id, typeof att.userId === 'string' ? 'User' : att.userId?.name || 'User')}
+                                  title="Lihat Foto Pulang"
+                                  style={{
+                                    background: 'none',
+                                    border: '1px solid #fcd34d',
+                                    borderRadius: 4,
+                                    padding: 4,
+                                    cursor: 'pointer',
+                                    color: '#d97706',
+                                  }}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                    <polyline points="16 17 21 12 16 7"></polyline>
+                                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                                  </svg>
+                                </button>
+                              ) : null}
+                              <button
+                                onClick={() => openEditStatus(att)}
+                                title="Edit Status"
+                                style={{
+                                  background: 'none',
+                                  border: '1px solid var(--gray-300)',
+                                  borderRadius: 4,
+                                  padding: 4,
+                                  cursor: 'pointer',
+                                  color: '#f59e0b',
+                                }}
                               >
-                                <path d="M12 20h9"></path>
-                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M12 20h9"></path>
+                                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1585,19 +1288,19 @@ const AttendanceCalendar: React.FC = () => {
                 {
                   displayData.filter((a) => {
                     const s = getStatusWithLate(a);
-                    const sl = (s || "").toLowerCase();
-                    return sl === "hadir" || sl === "telat";
+                    const sl = (s || '').toLowerCase();
+                    return sl === 'hadir' || sl === 'telat';
                   }).length
                 }
               </div>
             </div>
             <div className="stat-box">
               <div className="stat-label">Total Telat</div>
-              <div className="stat-value" style={{ color: "#ea580c" }}>
+              <div className="stat-value" style={{ color: '#ea580c' }}>
                 {
                   displayData.filter((a) => {
                     const s = getStatusWithLate(a);
-                    return (s || "").toLowerCase() === "telat";
+                    return (s || '').toLowerCase() === 'telat';
                   }).length
                 }
               </div>
@@ -1608,7 +1311,7 @@ const AttendanceCalendar: React.FC = () => {
                 {
                   displayData.filter((a) => {
                     const s = getStatusWithLate(a);
-                    return (s || "").toLowerCase() === "izin";
+                    return (s || '').toLowerCase() === 'izin';
                   }).length
                 }
               </div>
@@ -1619,20 +1322,20 @@ const AttendanceCalendar: React.FC = () => {
                 {
                   displayData.filter((a) => {
                     const s = getStatusWithLate(a);
-                    const sl = (s || "").toLowerCase();
-                    return sl === "alpha" || sl === "alpa";
+                    const sl = (s || '').toLowerCase();
+                    return sl === 'alpha' || sl === 'alpa';
                   }).length
                 }
               </div>
             </div>
             <div className="stat-box">
               <div className="stat-label">Total Libur</div>
-              <div className="stat-value" style={{ color: "#d97706" }}>
+              <div className="stat-value" style={{ color: '#d97706' }}>
                 {
                   displayData.filter((a) => {
                     const s = getStatusWithLate(a);
-                    const sl = (s || "").toLowerCase();
-                    return sl === "libur" || sl === "hari libur";
+                    const sl = (s || '').toLowerCase();
+                    return sl === 'libur' || sl === 'hari libur';
                   }).length
                 }
               </div>
@@ -1644,25 +1347,12 @@ const AttendanceCalendar: React.FC = () => {
       {editingAtt &&
         ReactDOM.createPortal(
           <div className="edit-kehadiran-overlay" onClick={closeEdit}>
-            <div
-              className="edit-kehadiran-modal"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <div className="edit-kehadiran-modal" onClick={(e) => e.stopPropagation()}>
               {/* Header */}
               <div className="edit-kehadiran-modal-header">
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div className="header-icon">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="white"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 20h9"></path>
                       <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
                     </svg>
@@ -1675,26 +1365,21 @@ const AttendanceCalendar: React.FC = () => {
                 <button
                   onClick={closeEdit}
                   style={{
-                    background: "rgba(255,255,255,0.15)",
-                    border: "none",
-                    borderRadius: "50%",
+                    background: 'rgba(255,255,255,0.15)',
+                    border: 'none',
+                    borderRadius: '50%',
                     width: 32,
                     height: 32,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "white",
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
                     fontSize: 16,
-                    transition: "background 0.2s",
+                    transition: 'background 0.2s',
                   }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "rgba(255,255,255,0.3)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background =
-                      "rgba(255,255,255,0.15)")
-                  }
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.3)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.15)')}
                 >
                   ✕
                 </button>
@@ -1702,44 +1387,34 @@ const AttendanceCalendar: React.FC = () => {
 
               {/* User Info */}
               <div className="user-info">
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div
                     style={{
                       width: 44,
                       height: 44,
-                      borderRadius: "50%",
-                      background:
-                        "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "white",
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
                       fontSize: 16,
                       fontWeight: 700,
                     }}
                   >
-                    {(typeof editingAtt.userId === "string"
-                      ? "U"
-                      : editingAtt.userId?.name?.charAt(0) || "U"
-                    ).toUpperCase()}
+                    {(typeof editingAtt.userId === 'string' ? 'U' : editingAtt.userId?.name?.charAt(0) || 'U').toUpperCase()}
                   </div>
                   <div>
                     <div
                       style={{
                         fontSize: 15,
                         fontWeight: 600,
-                        color: "#1e293b",
+                        color: '#1e293b',
                       }}
                     >
-                      {typeof editingAtt.userId === "string"
-                        ? "Unknown"
-                        : editingAtt.userId?.name}
+                      {typeof editingAtt.userId === 'string' ? 'Unknown' : editingAtt.userId?.name}
                     </div>
-                    <div style={{ fontSize: 12, color: "#94a3b8" }}>
-                      {typeof editingAtt.userId === "string"
-                        ? "-"
-                        : editingAtt.userId?.instansi || "-"}
-                    </div>
+                    <div style={{ fontSize: 12, color: '#94a3b8' }}>{typeof editingAtt.userId === 'string' ? '-' : editingAtt.userId?.instansi || '-'}</div>
                   </div>
                 </div>
               </div>
@@ -1749,26 +1424,16 @@ const AttendanceCalendar: React.FC = () => {
                 <div style={{ marginBottom: 18 }}>
                   <label
                     style={{
-                      display: "flex",
-                      alignItems: "center",
+                      display: 'flex',
+                      alignItems: 'center',
                       gap: 6,
                       fontSize: 13,
                       fontWeight: 600,
-                      color: "#475569",
+                      color: '#475569',
                       marginBottom: 8,
                     }}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="10"></circle>
                       <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
@@ -1779,44 +1444,34 @@ const AttendanceCalendar: React.FC = () => {
                     value={editJamMasuk}
                     onChange={(e) => setEditJamMasuk(e.target.value)}
                     style={{
-                      width: "100%",
-                      padding: "11px 14px",
-                      border: "2px solid #e2e8f0",
+                      width: '100%',
+                      padding: '11px 14px',
+                      border: '2px solid #e2e8f0',
                       borderRadius: 10,
                       fontSize: 14,
-                      fontFamily: "inherit",
-                      boxSizing: "border-box",
-                      transition: "border-color 0.2s",
-                      outline: "none",
+                      fontFamily: 'inherit',
+                      boxSizing: 'border-box',
+                      transition: 'border-color 0.2s',
+                      outline: 'none',
                     }}
-                    onFocus={(e) => (e.target.style.borderColor = "#667eea")}
-                    onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")}
+                    onFocus={(e) => (e.target.style.borderColor = '#667eea')}
+                    onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
                   />
                 </div>
 
                 <div style={{ marginBottom: 18 }}>
                   <label
                     style={{
-                      display: "flex",
-                      alignItems: "center",
+                      display: 'flex',
+                      alignItems: 'center',
                       gap: 6,
                       fontSize: 13,
                       fontWeight: 600,
-                      color: "#475569",
+                      color: '#475569',
                       marginBottom: 8,
                     }}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="10"></circle>
                       <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
@@ -1827,44 +1482,34 @@ const AttendanceCalendar: React.FC = () => {
                     value={editJamKeluar}
                     onChange={(e) => setEditJamKeluar(e.target.value)}
                     style={{
-                      width: "100%",
-                      padding: "11px 14px",
-                      border: "2px solid #e2e8f0",
+                      width: '100%',
+                      padding: '11px 14px',
+                      border: '2px solid #e2e8f0',
                       borderRadius: 10,
                       fontSize: 14,
-                      fontFamily: "inherit",
-                      boxSizing: "border-box",
-                      transition: "border-color 0.2s",
-                      outline: "none",
+                      fontFamily: 'inherit',
+                      boxSizing: 'border-box',
+                      transition: 'border-color 0.2s',
+                      outline: 'none',
                     }}
-                    onFocus={(e) => (e.target.style.borderColor = "#667eea")}
-                    onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")}
+                    onFocus={(e) => (e.target.style.borderColor = '#667eea')}
+                    onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
                   />
                 </div>
 
                 <div style={{ marginBottom: 24 }}>
                   <label
                     style={{
-                      display: "flex",
-                      alignItems: "center",
+                      display: 'flex',
+                      alignItems: 'center',
                       gap: 6,
                       fontSize: 13,
                       fontWeight: 600,
-                      color: "#475569",
+                      color: '#475569',
                       marginBottom: 8,
                     }}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                       <circle cx="8.5" cy="7" r="4"></circle>
                       <polyline points="17 11 19 13 23 9"></polyline>
@@ -1875,20 +1520,20 @@ const AttendanceCalendar: React.FC = () => {
                     value={editStatus}
                     onChange={(e) => setEditStatus(e.target.value)}
                     style={{
-                      width: "100%",
-                      padding: "11px 14px",
-                      border: "2px solid #e2e8f0",
+                      width: '100%',
+                      padding: '11px 14px',
+                      border: '2px solid #e2e8f0',
                       borderRadius: 10,
                       fontSize: 14,
-                      fontFamily: "inherit",
-                      boxSizing: "border-box",
-                      background: "white",
-                      transition: "border-color 0.2s",
-                      outline: "none",
-                      cursor: "pointer",
+                      fontFamily: 'inherit',
+                      boxSizing: 'border-box',
+                      background: 'white',
+                      transition: 'border-color 0.2s',
+                      outline: 'none',
+                      cursor: 'pointer',
                     }}
-                    onFocus={(e) => (e.target.style.borderColor = "#667eea")}
-                    onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")}
+                    onFocus={(e) => (e.target.style.borderColor = '#667eea')}
+                    onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
                   >
                     <option value="Hadir">✅ Hadir</option>
                     <option value="Telat">⏰ Telat</option>
@@ -1908,23 +1553,23 @@ const AttendanceCalendar: React.FC = () => {
                   onClick={closeEdit}
                   style={{
                     flex: 1,
-                    padding: "11px 14px",
-                    background: "white",
-                    border: "2px solid #e2e8f0",
+                    padding: '11px 14px',
+                    background: 'white',
+                    border: '2px solid #e2e8f0',
                     borderRadius: 10,
-                    cursor: "pointer",
+                    cursor: 'pointer',
                     fontSize: 14,
                     fontWeight: 600,
-                    color: "#64748b",
-                    transition: "all 0.2s",
+                    color: '#64748b',
+                    transition: 'all 0.2s',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "#cbd5e1";
-                    e.currentTarget.style.background = "#f8fafc";
+                    e.currentTarget.style.borderColor = '#cbd5e1';
+                    e.currentTarget.style.background = '#f8fafc';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "#e2e8f0";
-                    e.currentTarget.style.background = "white";
+                    e.currentTarget.style.borderColor = '#e2e8f0';
+                    e.currentTarget.style.background = 'white';
                   }}
                 >
                   Batal
@@ -1933,27 +1578,24 @@ const AttendanceCalendar: React.FC = () => {
                   onClick={handleSaveStatus}
                   style={{
                     flex: 1,
-                    padding: "11px 14px",
-                    background:
-                      "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
-                    color: "white",
-                    border: "none",
+                    padding: '11px 14px',
+                    background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                    color: 'white',
+                    border: 'none',
                     borderRadius: 10,
-                    cursor: "pointer",
+                    cursor: 'pointer',
                     fontSize: 14,
                     fontWeight: 600,
-                    boxShadow: "0 4px 12px rgba(34,197,94,0.3)",
-                    transition: "all 0.2s",
+                    boxShadow: '0 4px 12px rgba(34,197,94,0.3)',
+                    transition: 'all 0.2s',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                    e.currentTarget.style.boxShadow =
-                      "0 6px 16px rgba(34,197,94,0.4)";
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(34,197,94,0.4)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow =
-                      "0 4px 12px rgba(34,197,94,0.3)";
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(34,197,94,0.3)';
                   }}
                 >
                   💾 Simpan Perubahan
@@ -1969,36 +1611,36 @@ const AttendanceCalendar: React.FC = () => {
           <div
             className="modal-overlay active"
             style={{
-              position: "fixed",
+              position: 'fixed',
               inset: 0,
-              background: "rgba(0,0,0,0.7)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              background: 'rgba(0,0,0,0.7)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               zIndex: 10000,
             }}
             onClick={() => {
               setViewingPhoto(null);
-              setViewingPhotoName("");
+              setViewingPhotoName('');
             }}
           >
             <div
               style={{
-                background: "white",
+                background: 'white',
                 borderRadius: 12,
                 padding: 20,
                 maxWidth: 500,
-                width: "90%",
-                boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
-                position: "relative",
+                width: '90%',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+                position: 'relative',
               }}
               onClick={(e) => e.stopPropagation()}
             >
               <div
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                   marginBottom: 16,
                 }}
               >
@@ -2007,7 +1649,7 @@ const AttendanceCalendar: React.FC = () => {
                     margin: 0,
                     fontSize: 16,
                     fontWeight: 700,
-                    color: "#1e293b",
+                    color: '#1e293b',
                   }}
                 >
                   Foto Absensi - {viewingPhotoName}
@@ -2015,20 +1657,20 @@ const AttendanceCalendar: React.FC = () => {
                 <button
                   onClick={() => {
                     setViewingPhoto(null);
-                    setViewingPhotoName("");
+                    setViewingPhotoName('');
                   }}
                   style={{
-                    background: "#f1f5f9",
-                    border: "none",
-                    borderRadius: "50%",
+                    background: '#f1f5f9',
+                    border: 'none',
+                    borderRadius: '50%',
                     width: 32,
                     height: 32,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     fontSize: 18,
-                    color: "#64748b",
+                    color: '#64748b',
                   }}
                 >
                   ✕
@@ -2038,10 +1680,10 @@ const AttendanceCalendar: React.FC = () => {
                 src={viewingPhoto}
                 alt={`Foto absensi ${viewingPhotoName}`}
                 style={{
-                  width: "100%",
+                  width: '100%',
                   borderRadius: 8,
-                  maxHeight: "60vh",
-                  objectFit: "contain",
+                  maxHeight: '60vh',
+                  objectFit: 'contain',
                 }}
               />
             </div>
@@ -2055,25 +1697,25 @@ const AttendanceCalendar: React.FC = () => {
           <div
             className="modal-overlay active"
             style={{
-              position: "fixed",
+              position: 'fixed',
               inset: 0,
-              background: "rgba(0,0,0,0.5)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              background: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               zIndex: 10000,
             }}
             onClick={() => setShowHolidayConfirm(false)}
           >
             <div
               style={{
-                background: "white",
+                background: 'white',
                 borderRadius: 12,
                 padding: 24,
                 maxWidth: 420,
-                width: "90%",
-                boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
-                textAlign: "center",
+                width: '90%',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+                textAlign: 'center',
               }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -2081,25 +1723,15 @@ const AttendanceCalendar: React.FC = () => {
                 style={{
                   width: 56,
                   height: 56,
-                  borderRadius: "50%",
-                  background: "#fef3c7",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "0 auto 16px",
+                  borderRadius: '50%',
+                  background: '#fef3c7',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
                 }}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#f59e0b"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                   <line x1="16" y1="2" x2="16" y2="6"></line>
                   <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -2108,53 +1740,48 @@ const AttendanceCalendar: React.FC = () => {
               </div>
               <h3
                 style={{
-                  margin: "0 0 8px",
+                  margin: '0 0 8px',
                   fontSize: 18,
                   fontWeight: 700,
-                  color: "#1e293b",
+                  color: '#1e293b',
                 }}
               >
                 Tandai Hari Libur?
               </h3>
               <p
                 style={{
-                  margin: "0 0 20px",
+                  margin: '0 0 20px',
                   fontSize: 14,
-                  color: "#64748b",
+                  color: '#64748b',
                   lineHeight: 1.5,
                 }}
               >
-                Semua peserta akan ditandai{" "}
-                <strong style={{ color: "#f59e0b" }}>Hari Libur</strong> pada
-                tanggal:
+                Semua peserta akan ditandai <strong style={{ color: '#f59e0b' }}>Hari Libur</strong> pada tanggal:
                 <br />
-                <strong style={{ color: "#1e293b" }}>
+                <strong style={{ color: '#1e293b' }}>
                   {selectedDate
-                    ? new Date(selectedDate + "T00:00:00").toLocaleDateString(
-                        "id-ID",
-                        {
-                          weekday: "long",
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        },
-                      )
-                    : ""}
+                    ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })
+                    : ''}
                 </strong>
               </p>
-              <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ display: 'flex', gap: 10 }}>
                 <button
                   onClick={() => setShowHolidayConfirm(false)}
                   style={{
                     flex: 1,
-                    padding: "10px 14px",
-                    background: "#e2e8f0",
-                    border: "none",
+                    padding: '10px 14px',
+                    background: '#e2e8f0',
+                    border: 'none',
                     borderRadius: 8,
-                    cursor: "pointer",
+                    cursor: 'pointer',
                     fontSize: 14,
                     fontWeight: 600,
-                    color: "#475569",
+                    color: '#475569',
                   }}
                 >
                   Batal
@@ -2164,18 +1791,18 @@ const AttendanceCalendar: React.FC = () => {
                   disabled={holidayLoading}
                   style={{
                     flex: 1,
-                    padding: "10px 14px",
-                    background: "#f59e0b",
-                    color: "white",
-                    border: "none",
+                    padding: '10px 14px',
+                    background: '#f59e0b',
+                    color: 'white',
+                    border: 'none',
                     borderRadius: 8,
-                    cursor: holidayLoading ? "not-allowed" : "pointer",
+                    cursor: holidayLoading ? 'not-allowed' : 'pointer',
                     fontSize: 14,
                     fontWeight: 600,
                     opacity: holidayLoading ? 0.7 : 1,
                   }}
                 >
-                  {holidayLoading ? "Memproses..." : "Ya, Tandai"}
+                  {holidayLoading ? 'Memproses...' : 'Ya, Tandai'}
                 </button>
               </div>
             </div>
@@ -2189,25 +1816,25 @@ const AttendanceCalendar: React.FC = () => {
           <div
             className="modal-overlay active"
             style={{
-              position: "fixed",
+              position: 'fixed',
               inset: 0,
-              background: "rgba(0,0,0,0.5)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              background: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               zIndex: 10000,
             }}
             onClick={() => setShowCancelHolidayConfirm(false)}
           >
             <div
               style={{
-                background: "white",
+                background: 'white',
                 borderRadius: 12,
                 padding: 24,
                 maxWidth: 420,
-                width: "90%",
-                boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
-                textAlign: "center",
+                width: '90%',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+                textAlign: 'center',
               }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -2215,25 +1842,15 @@ const AttendanceCalendar: React.FC = () => {
                 style={{
                   width: 56,
                   height: 56,
-                  borderRadius: "50%",
-                  background: "#fee2e2",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "0 auto 16px",
+                  borderRadius: '50%',
+                  background: '#fee2e2',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
                 }}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#ef4444"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 6h18"></path>
                   <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
                   <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
@@ -2241,54 +1858,50 @@ const AttendanceCalendar: React.FC = () => {
               </div>
               <h3
                 style={{
-                  margin: "0 0 8px",
+                  margin: '0 0 8px',
                   fontSize: 18,
                   fontWeight: 700,
-                  color: "#1e293b",
+                  color: '#1e293b',
                 }}
               >
                 Batalkan Hari Libur?
               </h3>
               <p
                 style={{
-                  margin: "0 0 20px",
+                  margin: '0 0 20px',
                   fontSize: 14,
-                  color: "#64748b",
+                  color: '#64748b',
                   lineHeight: 1.5,
                 }}
               >
-                Status <strong style={{ color: "#ef4444" }}>Hari Libur</strong>{" "}
-                akan dihapus pada tanggal:
+                Status <strong style={{ color: '#ef4444' }}>Hari Libur</strong> akan dihapus pada tanggal:
                 <br />
-                <strong style={{ color: "#1e293b" }}>
+                <strong style={{ color: '#1e293b' }}>
                   {selectedDate
-                    ? new Date(selectedDate + "T00:00:00").toLocaleDateString(
-                        "id-ID",
-                        {
-                          weekday: "long",
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        },
-                      )
-                    : ""}
+                    ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })
+                    : ''}
                 </strong>
                 <br />
                 Peserta akan kembali menjadi "Belum Absen".
               </p>
-              <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ display: 'flex', gap: 10 }}>
                 <button
                   onClick={() => setShowCancelHolidayConfirm(false)}
                   style={{
                     flex: 1,
-                    padding: "10px 14px",
-                    background: "#e2e8f0",
-                    border: "none",
+                    padding: '10px 14px',
+                    background: '#e2e8f0',
+                    border: 'none',
                     borderRadius: 8,
-                    cursor: "pointer",
+                    cursor: 'pointer',
                     fontSize: 14,
                     fontWeight: 600,
-                    color: "#475569",
+                    color: '#475569',
                   }}
                 >
                   Batal
@@ -2298,18 +1911,255 @@ const AttendanceCalendar: React.FC = () => {
                   disabled={holidayLoading}
                   style={{
                     flex: 1,
-                    padding: "10px 14px",
-                    background: "#ef4444",
-                    color: "white",
-                    border: "none",
+                    padding: '10px 14px',
+                    background: '#ef4444',
+                    color: 'white',
+                    border: 'none',
                     borderRadius: 8,
-                    cursor: holidayLoading ? "not-allowed" : "pointer",
+                    cursor: holidayLoading ? 'not-allowed' : 'pointer',
                     fontSize: 14,
                     fontWeight: 600,
                     opacity: holidayLoading ? 0.7 : 1,
                   }}
                 >
-                  {holidayLoading ? "Memproses..." : "Ya, Batalkan"}
+                  {holidayLoading ? 'Memproses...' : 'Ya, Batalkan'}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {/* Modal Pengaturan Jam Telat Hari Ini */}
+      {showThresholdModal &&
+        ReactDOM.createPortal(
+          <div
+            className="modal-overlay active"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10000,
+            }}
+            onClick={() => setShowThresholdModal(false)}
+          >
+            <div
+              style={{
+                background: 'white',
+                borderRadius: 16,
+                maxWidth: 440,
+                width: '90%',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+                overflow: 'hidden',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  padding: '20px 24px',
+                  color: 'white',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Ubah Jam Telat {selectedDate ? 'Tanggal Terpilih' : 'Hari Ini'}</h3>
+                  <p style={{ margin: '4px 0 0', fontSize: 12, opacity: 0.85 }}>
+                    {selectedDate
+                      ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('id-ID', {
+                          weekday: 'long',
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })
+                      : new Date().toLocaleDateString('id-ID', {
+                          weekday: 'long',
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowThresholdModal(false)}
+                  style={{
+                    background: 'rgba(255,255,255,0.15)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: 32,
+                    height: 32,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: 16,
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div style={{ padding: '24px' }}>
+                <div
+                  style={{
+                    background: '#f0f9ff',
+                    border: '1px solid #bae6fd',
+                    borderRadius: 10,
+                    padding: '12px 16px',
+                    marginBottom: 20,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                  </svg>
+                  <div style={{ fontSize: 12, color: '#0369a1', lineHeight: 1.4 }}>
+                    Perubahan ini hanya berlaku untuk <strong>tanggal yang dipilih</strong>. Default jam telat: <strong>{defaultThreshold}</strong>
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 18 }}>
+                  <label
+                    style={{
+                      display: 'block',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: '#475569',
+                      marginBottom: 8,
+                    }}
+                  >
+                    Jam Batas Telat
+                  </label>
+                  <input
+                    type="time"
+                    value={modalThresholdTime}
+                    onChange={(e) => setModalThresholdTime(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '11px 14px',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: 10,
+                      fontSize: 16,
+                      fontFamily: 'inherit',
+                      boxSizing: 'border-box',
+                      transition: 'border-color 0.2s',
+                      outline: 'none',
+                      fontWeight: 600,
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = '#667eea')}
+                    onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+                  />
+                </div>
+
+                <div style={{ marginBottom: 24 }}>
+                  <label
+                    style={{
+                      display: 'block',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: '#475569',
+                      marginBottom: 8,
+                    }}
+                  >
+                    Alasan Perubahan <span style={{ color: '#94a3b8', fontWeight: 400 }}>(opsional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={modalThresholdAlasan}
+                    onChange={(e) => setModalThresholdAlasan(e.target.value)}
+                    placeholder="Contoh: Hujan deras, Banjir, Acara khusus..."
+                    style={{
+                      width: '100%',
+                      padding: '11px 14px',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: 10,
+                      fontSize: 14,
+                      fontFamily: 'inherit',
+                      boxSizing: 'border-box',
+                      transition: 'border-color 0.2s',
+                      outline: 'none',
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = '#667eea')}
+                    onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+                  />
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div
+                style={{
+                  padding: '0 24px 24px',
+                  display: 'flex',
+                  gap: 10,
+                }}
+              >
+                {isCustomThreshold && (
+                  <button
+                    onClick={handleResetThreshold}
+                    disabled={thresholdSaving}
+                    style={{
+                      padding: '11px 14px',
+                      background: 'white',
+                      border: '2px solid #fecaca',
+                      borderRadius: 10,
+                      cursor: thresholdSaving ? 'not-allowed' : 'pointer',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: '#ef4444',
+                      transition: 'all 0.2s',
+                      opacity: thresholdSaving ? 0.7 : 1,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Reset Default
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowThresholdModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: '11px 14px',
+                    background: 'white',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: 10,
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: '#64748b',
+                  }}
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleSaveThreshold}
+                  disabled={thresholdSaving}
+                  style={{
+                    flex: 1,
+                    padding: '11px 14px',
+                    background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 10,
+                    cursor: thresholdSaving ? 'not-allowed' : 'pointer',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    boxShadow: '0 4px 12px rgba(34,197,94,0.3)',
+                    opacity: thresholdSaving ? 0.7 : 1,
+                  }}
+                >
+                  {thresholdSaving ? 'Menyimpan...' : '💾 Simpan'}
                 </button>
               </div>
             </div>

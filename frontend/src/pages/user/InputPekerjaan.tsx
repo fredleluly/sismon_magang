@@ -33,7 +33,7 @@ const InputPekerjaan: React.FC = () => {
     setConfirmModal({ show: true, title, message, confirmText, type, onConfirm });
   };
 
-  const closeConfirm = () => setConfirmModal(prev => ({ ...prev, show: false }));
+  const closeConfirm = () => setConfirmModal((prev) => ({ ...prev, show: false }));
 
   // Add pause/blur effect on modal open
   useEffect(() => {
@@ -120,20 +120,14 @@ const InputPekerjaan: React.FC = () => {
   };
 
   const deletePending = async (id: string) => {
-    showConfirm(
-      'Hapus Log?',
-      'Apakah Anda yakin ingin menghapus log pekerjaan ini? Tindakan ini tidak dapat dibatalkan.',
-      'Ya, Hapus',
-      'danger',
-      async () => {
-        closeConfirm();
-        const res = await WorkLogAPI.delete(id);
-        if (res && res.success) {
-          showToast('Data pending berhasil dihapus', 'success');
-          loadPending();
-        } else showToast(res?.message || 'Gagal menghapus', 'error');
-      }
-    );
+    showConfirm('Hapus Log?', 'Apakah Anda yakin ingin menghapus log pekerjaan ini? Tindakan ini tidak dapat dibatalkan.', 'Ya, Hapus', 'danger', async () => {
+      closeConfirm();
+      const res = await WorkLogAPI.delete(id);
+      if (res && res.success) {
+        showToast('Data pending berhasil dihapus', 'success');
+        loadPending();
+      } else showToast(res?.message || 'Gagal menghapus', 'error');
+    });
   };
 
   const editPending = async (id: string) => {
@@ -175,8 +169,8 @@ const InputPekerjaan: React.FC = () => {
             <select value={jenis} onChange={(e) => setJenis(e.target.value)} required>
               <option value="">Pilih Pekerjaan (Jobdesk)</option>
               <option value="Sortir">Sortir</option>
-              <option value="Register">Register</option>
-              <option value="Pencopotan Steples">Pencopotan Steples</option>
+              <option value="Register">Registrasi</option>
+              <option value="Pencopotan Steples">Pencopotan Staples</option>
               <option value="Scanning">Scanning</option>
               <option value="Rekardus">Rekardus</option>
               <option value="Stikering">Stikering</option>
@@ -238,6 +232,14 @@ const InputPekerjaan: React.FC = () => {
                     </svg>
                   </button>
                 </div>
+                {item.keterangan && (
+                  <div className="pending-item-keterangan" style={{ fontSize: 13, color: '#64748b', marginBottom: 8, padding: '6px 10px', background: '#f8fafc', borderRadius: 6, borderLeft: '3px solid #0ea5e9' }}>
+                    <span className="label" style={{ display: 'block', marginBottom: 2 }}>
+                      Keterangan:
+                    </span>
+                    <span>{item.keterangan}</span>
+                  </div>
+                )}
                 <div className="pending-item-body">
                   <div>
                     <span className="label">Berkas:</span>

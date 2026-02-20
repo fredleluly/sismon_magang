@@ -352,6 +352,9 @@
 .attendance-table thead {
   background: #f8fafc;
   border-bottom: 2px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .attendance-table th {
@@ -1865,6 +1868,8 @@
   position: relative;
   width: 100%;
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: 480px;
   -webkit-overflow-scrolling: touch;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
@@ -1872,6 +1877,7 @@
 
 .attendance-table-wrapper::-webkit-scrollbar {
   height: 8px;
+  width: 6px;
 }
 
 .attendance-table-wrapper::-webkit-scrollbar-track {

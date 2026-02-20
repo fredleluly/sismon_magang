@@ -993,7 +993,7 @@ const AdminDashboard: React.FC = () => {
         </div>
         <div className="admin-stat-card">
           <div className="stat-info">
-            <div className="stat-label">Total Stikering</div>
+            <div className="stat-label">Pencetakan Stiker</div>
             <div
               className="stat-value"
               ref={(el) =>
@@ -1010,7 +1010,7 @@ const AdminDashboard: React.FC = () => {
       <div className="charts-row">
         <div className="chart-card">
           <div className="chart-header">
-            <h3>Grafik Rekardus</h3>
+            <h3>Arsip Tersimpan (rekardus)</h3>
             <p>
               Total Rekardus:{" "}
               <strong>{(data.totalRekardus || 0).toLocaleString()}</strong> item
