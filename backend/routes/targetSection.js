@@ -1,7 +1,36 @@
 const express = require('express');
 const router = express.Router();
 const TargetSection = require('../models/TargetSection');
+const Settings = require('../models/Settings');
 const { auth, adminOnly } = require('../middleware/auth');
+
+// GET /api/target-section/upah-harian — get upah harian value
+router.get('/upah-harian', auth, adminOnly, async (req, res) => {
+  try {
+    const setting = await Settings.findOne({ key: 'upahHarian' });
+    res.json({ success: true, data: { upahHarian: setting ? setting.value : 0 } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// PUT /api/target-section/upah-harian — set upah harian value (admin only)
+router.put('/upah-harian', auth, adminOnly, async (req, res) => {
+  try {
+    const { upahHarian } = req.body;
+    if (upahHarian === undefined || upahHarian === null || isNaN(Number(upahHarian))) {
+      return res.status(400).json({ success: false, message: 'Nilai upah harian harus berupa angka.' });
+    }
+    const setting = await Settings.findOneAndUpdate(
+      { key: 'upahHarian' },
+      { $set: { key: 'upahHarian', value: Number(upahHarian) } },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true, message: 'Upah harian berhasil disimpan.', data: { upahHarian: setting.value } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 // GET /api/target-section — list all targets
 router.get('/', auth, adminOnly, async (req, res) => {

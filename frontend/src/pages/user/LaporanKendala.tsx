@@ -45,7 +45,7 @@ const LaporanKendala: React.FC = () => {
           </div>
           <p className="form-card-subtitle">Isi form di bawah untuk melaporkan kendala</p>
           <form onSubmit={handleSubmit}>
-            <div className="form-group"><label>Judul Kendala *</label><input type="text" value={judul} onChange={e => setJudul(e.target.value)} placeholder="Contoh: Sistem error saat input data" required style={{ width: '100%', padding: '14px 16px', background: 'var(--gray-50)', border: '2px solid var(--gray-200)', borderRadius: 'var(--radius-md)', fontSize: 14 }} /></div>
+            <div className="form-group"><label>Judul Kendala *</label><input type="text" value={judul} onChange={e => setJudul(e.target.value.toUpperCase())} placeholder="Contoh: Sistem error saat input data" required style={{ width: '100%', padding: '14px 16px', background: 'var(--gray-50)', border: '2px solid var(--gray-200)', borderRadius: 'var(--radius-md)', fontSize: 14 }} /></div>
             <div className="form-row">
               <div className="form-group"><label>Kategori</label><select value={kategori} onChange={e => setKategori(e.target.value)}>
                 <option>Sortir</option><option>Register</option><option>Pencopotan Steples</option><option>Scanning</option><option>Rekardus</option><option>Stikering</option><option>Sistem</option><option>Lainnya</option>

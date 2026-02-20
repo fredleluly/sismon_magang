@@ -356,6 +356,10 @@ export const TargetSectionAPI = {
   getAll: () => API.get<TargetSection[]>("/target-section"),
   bulkUpdate: (targets: { jenis: string; targetPerDay: number }[]) =>
     API.put<TargetSection[]>("/target-section", { targets }),
+  getUpahHarian: () =>
+    API.get<{ upahHarian: number }>("/target-section/upah-harian"),
+  setUpahHarian: (upahHarian: number) =>
+    API.put<{ upahHarian: number }>("/target-section/upah-harian", { upahHarian }),
 };
 
 // ===== PERFORMANCE API =====

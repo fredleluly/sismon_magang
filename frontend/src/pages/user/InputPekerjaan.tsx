@@ -27,7 +27,7 @@ const InputPekerjaan: React.FC = () => {
     confirmText: string;
     type: 'danger' | 'primary';
     onConfirm: () => void;
-  }>({ show: false, title: '', message: '', confirmText: '', type: 'primary', onConfirm: () => {} });
+  }>({ show: false, title: '', message: '', confirmText: '', type: 'primary', onConfirm: () => { } });
 
   const showConfirm = (title: string, message: string, confirmText: string, type: 'danger' | 'primary', onConfirm: () => void) => {
     setConfirmModal({ show: true, title, message, confirmText, type, onConfirm });
@@ -94,7 +94,7 @@ const InputPekerjaan: React.FC = () => {
 
   const submitAllPending = async () => {
     if (pendingData.length === 0) return;
-    
+
     showConfirm(
       'Kirim Semua Log?',
       `Apakah Anda yakin ingin mengirim semua ${pendingData.length} log pekerjaan status draft menjadi final? Data yang sudah final tidak dapat diubah lagi.`,
@@ -184,7 +184,7 @@ const InputPekerjaan: React.FC = () => {
           </div>
           <div className="form-group">
             <label>Keterangan Berkas</label>
-            <textarea value={keterangan} onChange={(e) => setKeterangan(e.target.value)} placeholder="Masukkan keterangan berkas..." rows={3} />
+            <textarea value={keterangan} onChange={(e) => setKeterangan(e.target.value.toUpperCase())} placeholder="Masukkan keterangan berkas..." rows={3} />
           </div>
           <div className="form-row-3">
             <div className="form-group">
@@ -266,16 +266,16 @@ const InputPekerjaan: React.FC = () => {
         </div>
       </div>
 
-      
+
       {/* Confirm Modal (Portal) */}
       {confirmModal.show && ReactDOM.createPortal(
         <div className="modal-overlay active" style={{ zIndex: 9999 }}>
           <div className="modal-card" style={{ maxWidth: '400px', textAlign: 'center' }}>
             <div className="modal-body" style={{ padding: '32px 24px 24px' }}>
-              <div className={`confirm-icon-wrap ${confirmModal.type}`} style={{ 
-                margin: '0 auto 16px', 
-                width: 64, height: 64, 
-                borderRadius: '50%', 
+              <div className={`confirm-icon-wrap ${confirmModal.type}`} style={{
+                margin: '0 auto 16px',
+                width: 64, height: 64,
+                borderRadius: '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: confirmModal.type === 'danger' ? '#fee2e2' : '#e0f2fe',
                 color: confirmModal.type === 'danger' ? '#ef4444' : '#0ea5e9'
@@ -292,7 +292,7 @@ const InputPekerjaan: React.FC = () => {
                   </svg>
                 )}
               </div>
-              
+
               <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: '#1e293b' }}>
                 {confirmModal.title}
               </h3>
@@ -301,15 +301,15 @@ const InputPekerjaan: React.FC = () => {
               </p>
 
               <div style={{ display: 'flex', gap: 12 }}>
-                <button 
-                  className="btn-outline" 
+                <button
+                  className="btn-outline"
                   onClick={closeConfirm}
                   style={{ flex: 1, justifyContent: 'center' }}
                 >
                   Batal
                 </button>
-                <button 
-                  className={`btn ${confirmModal.type === 'danger' ? 'btn-danger' : 'btn-primary'}`} 
+                <button
+                  className={`btn ${confirmModal.type === 'danger' ? 'btn-danger' : 'btn-primary'}`}
                   onClick={confirmModal.onConfirm}
                   style={{ flex: 1, justifyContent: 'center' }}
                 >
