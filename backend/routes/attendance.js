@@ -47,7 +47,7 @@ const formatTimeWIB = (date = new Date()) => {
   return `${h}:${m}`;
 };
 
-const isLate = (timeStr, threshold = '08:00') => {
+const isLate = (timeStr, threshold = '08:10') => {
   try {
     const normalized = timeStr.replace('.', ':');
     const [hours, minutes] = normalized.split(':').map(Number);
@@ -134,7 +134,7 @@ router.post('/scan', auth, async (req, res) => {
 
     // Get late threshold for today (per-day from DB, or default)
     const todayThresholdDoc = await LateThreshold.findOne({ tanggal: today });
-    const lateThreshold = todayThresholdDoc ? todayThresholdDoc.threshold : process.env.LATE_THRESHOLD || '08:00';
+    const lateThreshold = todayThresholdDoc ? todayThresholdDoc.threshold : process.env.LATE_THRESHOLD || '08:10';
 
     // Determine status based on time
     const status = isLate(jamMasuk, lateThreshold) ? 'Telat' : 'Hadir';
@@ -205,7 +205,7 @@ router.post('/photo-checkin', auth, upload.single('foto'), async (req, res) => {
 
     // Get late threshold for today (per-day from DB, or default)
     const todayThresholdDoc2 = await LateThreshold.findOne({ tanggal: today });
-    const lateThreshold = todayThresholdDoc2 ? todayThresholdDoc2.threshold : process.env.LATE_THRESHOLD || '08:00';
+    const lateThreshold = todayThresholdDoc2 ? todayThresholdDoc2.threshold : process.env.LATE_THRESHOLD || '08:10';
     const status = isLate(jamMasuk, lateThreshold) ? 'Telat' : 'Hadir';
 
     const fotoTimestamp = timestamp
@@ -609,7 +609,7 @@ router.get('/today', auth, adminOnly, async (req, res) => {
 // GET /api/attendance/settings/late-threshold — get late threshold for a specific date (or today if not specified)
 router.get('/settings/late-threshold', auth, async (req, res) => {
   try {
-    const defaultThreshold = process.env.LATE_THRESHOLD || '08:00';
+    const defaultThreshold = process.env.LATE_THRESHOLD || '08:10';
     // Support ?tanggal=YYYY-MM-DD query param, fallback to today
     const tanggal = req.query.tanggal || new Date().toISOString().split('T')[0];
     const doc = await LateThreshold.findOne({ tanggal });
@@ -706,7 +706,7 @@ router.delete('/settings/today-threshold', auth, adminOnly, async (req, res) => 
     // Support ?tanggal=YYYY-MM-DD query param, fallback to today
     const tanggal = req.query.tanggal || new Date().toISOString().split('T')[0];
     const deleted = await LateThreshold.findOneAndDelete({ tanggal });
-    const defaultThreshold = process.env.LATE_THRESHOLD || '08:00';
+    const defaultThreshold = process.env.LATE_THRESHOLD || '08:10';
     if (!deleted) {
       return res.json({
         success: true,
