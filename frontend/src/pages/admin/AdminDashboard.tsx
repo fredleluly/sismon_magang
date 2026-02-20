@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Chart, registerables } from "chart.js";
-import { exportExcel } from "../../utils/excelExport";
+// ExcelJS and file-saver are dynamically imported in exportToExcel
 import {
   DashboardAPI,
   getToken,
@@ -159,7 +159,7 @@ const AdminDashboard: React.FC = () => {
       });
       const d = await res.json();
       if (d.success) setAttendanceList(d.data || []);
-    } catch {}
+    } catch { }
   };
 
   const exportToExcel = async () => {
@@ -169,125 +169,272 @@ const AdminDashboard: React.FC = () => {
     }
 
     try {
+      const ExcelJS = (await import("exceljs")).default;
+      const { saveAs } = await import("file-saver");
+
+      const wb = new ExcelJS.Workbook();
+      wb.creator = "Admin Dashboard";
+      wb.created = new Date();
+
       const todayStr = new Date().toLocaleDateString("id-ID", {
         weekday: "long",
         day: "numeric",
         month: "long",
         year: "numeric",
       });
-      const sheets: any[] = [];
 
-      // Sheet 1: Ringkasan Dashboard
-      sheets.push({
-        sheetName: "Ringkasan",
-        title: "RINGKASAN DASHBOARD",
-        subtitle: "Laporan Monitoring Peserta Magang",
-        infoLines: [`Tanggal Cetak: ${todayStr}`],
-        columns: [
-          { header: "No", key: "no", width: 6, type: "number" as const },
-          { header: "Indikator", key: "indikator", width: 35 },
-          { header: "Nilai", key: "nilai", width: 20, type: "number" as const },
-          { header: "Keterangan", key: "keterangan", width: 30 },
-        ],
-        data: [
-          {
-            no: 1,
-            indikator: "Total Peserta Magang",
-            nilai: data.totalPeserta || 0,
-            keterangan: "Peserta aktif",
-          },
-          {
-            no: 2,
-            indikator: "Total Kendala/Keluhan",
-            nilai: totalComplaints,
-            keterangan: "Laporan masuk",
-          },
-          {
-            no: 3,
-            indikator: "Rata-rata Produktivitas",
-            nilai: data.avgProductivity || 0,
-            keterangan: "Item/hari per orang",
-          },
-          {
-            no: 4,
-            indikator: "Tingkat Kehadiran Hari Ini",
-            nilai: data.attendanceRate || 0,
-            keterangan: `${data.todayAttendance || 0}/${data.totalPeserta || 0} hadir`,
-          },
-          {
-            no: 5,
-            indikator: "Total Berkas",
-            nilai: data.totalBerkas || 0,
-            keterangan: "Keseluruhan",
-          },
-          {
-            no: 6,
-            indikator: "Total Buku",
-            nilai: data.totalBuku || 0,
-            keterangan: "Keseluruhan",
-          },
-          {
-            no: 7,
-            indikator: "Total Bundle",
-            nilai: data.totalBundle || 0,
-            keterangan: "Keseluruhan",
-          },
-          {
-            no: 8,
-            indikator: "Grand Total Item",
-            nilai:
-              (data.totalBerkas || 0) +
-              (data.totalBuku || 0) +
-              (data.totalBundle || 0),
-            keterangan: "Berkas + Buku + Bundle",
-          },
-        ],
+      // ── Theme constants ──
+      const T = {
+        titleBg: "0D2137",
+        titleFont: "FFFFFF",
+        subtitleBg: "2E86C1",
+        subtitleFont: "FFFFFF",
+        infoBg: "D6EAF8",
+        infoFont: "1B4F72",
+        headerBg: "1B4F72",
+        headerFont: "FFFFFF",
+        zebraLight: "F8FBFD",
+        zebraDark: "EBF5FB",
+        summaryBg: "D4E6F1",
+        summaryFont: "0D2137",
+        border: "B0C4DE",
+        bodyFont: "2C3E50",
+      };
+
+      const thin = (c = T.border) => ({
+        top: { style: "thin" as const, color: { argb: c } },
+        left: { style: "thin" as const, color: { argb: c } },
+        bottom: { style: "thin" as const, color: { argb: c } },
+        right: { style: "thin" as const, color: { argb: c } },
       });
 
-      // Sheet 2: Progres Mingguan
+      const solidFill = (c: string) => ({
+        type: "pattern" as const,
+        pattern: "solid" as const,
+        fgColor: { argb: c },
+      });
+
+      // ── Helper: add a professional styled sheet ──
+      const addStyledSheet = (
+        sheetName: string,
+        title: string,
+        subtitle: string,
+        infoLines: string[],
+        columns: { header: string; key: string; width: number; type?: string }[],
+        rows: Record<string, any>[],
+        summaryRow?: Record<string, any>,
+      ) => {
+        const ws = wb.addWorksheet(sheetName);
+        const colCount = columns.length;
+        let rowNum = 1;
+
+        // Title row
+        ws.mergeCells(rowNum, 1, rowNum, colCount);
+        const titleCell = ws.getCell(rowNum, 1);
+        titleCell.value = title;
+        titleCell.font = { name: "Calibri", bold: true, size: 14, color: { argb: T.titleFont } };
+        titleCell.fill = solidFill(T.titleBg);
+        titleCell.alignment = { horizontal: "center", vertical: "middle" };
+        ws.getRow(rowNum).height = 36;
+        rowNum++;
+
+        // Subtitle row
+        if (subtitle) {
+          ws.mergeCells(rowNum, 1, rowNum, colCount);
+          const subCell = ws.getCell(rowNum, 1);
+          subCell.value = subtitle;
+          subCell.font = { name: "Calibri", italic: true, size: 11, color: { argb: T.subtitleFont } };
+          subCell.fill = solidFill(T.subtitleBg);
+          subCell.alignment = { horizontal: "center", vertical: "middle" };
+          ws.getRow(rowNum).height = 24;
+          rowNum++;
+        }
+
+        // Info lines
+        for (const line of infoLines) {
+          ws.mergeCells(rowNum, 1, rowNum, colCount);
+          const infoCell = ws.getCell(rowNum, 1);
+          infoCell.value = line;
+          infoCell.font = { name: "Calibri", size: 10, color: { argb: T.infoFont } };
+          infoCell.fill = solidFill(T.infoBg);
+          infoCell.alignment = { horizontal: "left", vertical: "middle" };
+          ws.getRow(rowNum).height = 20;
+          rowNum++;
+        }
+
+        // Blank spacer
+        rowNum++;
+
+        // Header row
+        const headerRow = ws.getRow(rowNum);
+        columns.forEach((col, ci) => {
+          const cell = headerRow.getCell(ci + 1);
+          cell.value = col.header;
+          cell.font = { name: "Calibri", bold: true, size: 11, color: { argb: T.headerFont } };
+          cell.fill = solidFill(T.headerBg);
+          cell.alignment = { horizontal: "center", vertical: "middle" };
+          cell.border = thin();
+        });
+        headerRow.height = 28;
+        rowNum++;
+
+        // Data rows with zebra striping
+        rows.forEach((row, ri) => {
+          const r = ws.getRow(rowNum);
+          const bgColor = ri % 2 === 0 ? T.zebraLight : T.zebraDark;
+          columns.forEach((col, ci) => {
+            const cell = r.getCell(ci + 1);
+            cell.value = row[col.key] ?? "";
+            cell.font = { name: "Calibri", size: 10, color: { argb: T.bodyFont } };
+            cell.fill = solidFill(bgColor);
+            cell.border = thin();
+            cell.alignment = {
+              horizontal: col.type === "number" ? "right" : "left",
+              vertical: "middle",
+            };
+            if (col.type === "number" && typeof cell.value === "number") {
+              cell.numFmt = "#,##0";
+            }
+          });
+          r.height = 22;
+          rowNum++;
+        });
+
+        // Summary row
+        if (summaryRow) {
+          const r = ws.getRow(rowNum);
+          columns.forEach((col, ci) => {
+            const cell = r.getCell(ci + 1);
+            const val = summaryRow[col.key];
+            cell.value = ci === 0 ? "TOTAL" : val ?? "";
+            cell.font = { name: "Calibri", bold: true, size: 11, color: { argb: T.summaryFont } };
+            cell.fill = solidFill(T.summaryBg);
+            cell.border = thin();
+            cell.alignment = {
+              horizontal: col.type === "number" ? "right" : ci === 0 ? "center" : "left",
+              vertical: "middle",
+            };
+            if (col.type === "number" && typeof cell.value === "number") {
+              cell.numFmt = "#,##0";
+            }
+          });
+          r.height = 26;
+          rowNum++;
+        }
+
+        // Column widths
+        columns.forEach((col, ci) => {
+          ws.getColumn(ci + 1).width = col.width || 15;
+        });
+
+        return { ws, lastRow: rowNum };
+      };
+
+      // ═══════════════════════════════════════════════════════════════
+      // Sheet 1: DASHBOARD OVERVIEW — Stat cards + embedded chart images
+      // ═══════════════════════════════════════════════════════════════
+      const regStats = (data as any).registerStats || { berkas: 0, buku: 0, bundle: 0 };
+      const grandTotal = (regStats.berkas || 0) + (regStats.buku || 0) + (regStats.bundle || 0);
+
+      const { ws: ws1, lastRow: lr1 } = addStyledSheet(
+        "Dashboard",
+        "DASHBOARD MONITORING",
+        "Overview produktivitas dan kehadiran peserta magang",
+        [`Tanggal Cetak: ${todayStr}`],
+        [
+          { header: "No", key: "no", width: 6, type: "number" },
+          { header: "Indikator", key: "indikator", width: 35 },
+          { header: "Nilai", key: "nilai", width: 18, type: "number" },
+          { header: "Keterangan", key: "keterangan", width: 30 },
+        ],
+        [
+          { no: 1, indikator: "Kehadiran Hari Ini", nilai: attendanceList.length, keterangan: `dari ${data.totalPeserta || 0} peserta` },
+          { no: 2, indikator: "Total Sortir", nilai: data.totalSortir || 0, keterangan: "Item selesai" },
+          { no: 3, indikator: "Total Pencopotan Steples", nilai: data.totalSteples || 0, keterangan: "Item selesai" },
+          { no: 4, indikator: "Total Scanning", nilai: data.totalScanning || 0, keterangan: "Item selesai" },
+          { no: 5, indikator: "Total Register", nilai: data.totalRegister || 0, keterangan: "Item selesai" },
+          { no: 6, indikator: "Pencetakan Stiker", nilai: data.totalStikering || 0, keterangan: "Item selesai" },
+          { no: 7, indikator: "Arsip Tersimpan (Rekardus)", nilai: data.totalRekardus || 0, keterangan: "Total item" },
+          { no: 8, indikator: "Kategori Arsip — Berkas", nilai: regStats.berkas || 0, keterangan: "Total berkas" },
+          { no: 9, indikator: "Kategori Arsip — Buku", nilai: regStats.buku || 0, keterangan: "Total buku" },
+          { no: 10, indikator: "Kategori Arsip — Bundle", nilai: regStats.bundle || 0, keterangan: "Total bundle" },
+          { no: 11, indikator: "Grand Total Kategori Arsip", nilai: grandTotal, keterangan: "Berkas + Buku + Bundle" },
+        ],
+      );
+
+      // Embed chart images from canvas
+      const chartStartRow = lr1 + 1;
+
+      // Chart 1: Rekardus area chart
+      if (weeklyRef.current) {
+        try {
+          const base64 = weeklyRef.current.toDataURL("image/png").split(",")[1];
+          const imgId = wb.addImage({ base64, extension: "png" });
+          // Label above chart
+          ws1.mergeCells(chartStartRow, 1, chartStartRow, 4);
+          const labelCell = ws1.getCell(chartStartRow, 1);
+          labelCell.value = `📊 Arsip Tersimpan (Rekardus) — Total: ${(data.totalRekardus || 0).toLocaleString()} item`;
+          labelCell.font = { name: "Calibri", bold: true, size: 12, color: { argb: T.titleBg } };
+          labelCell.alignment = { horizontal: "left", vertical: "middle" };
+          ws1.getRow(chartStartRow).height = 24;
+
+          ws1.addImage(imgId, {
+            tl: { col: 0.2, row: chartStartRow },
+            ext: { width: 550, height: 280 },
+          });
+        } catch (e) {
+          console.warn("Could not capture weekly chart:", e);
+        }
+      }
+
+      // Chart 2: Donut chart
+      const donutStartRow = chartStartRow + 16;
+      if (donutRef.current) {
+        try {
+          const base64 = donutRef.current.toDataURL("image/png").split(",")[1];
+          const imgId = wb.addImage({ base64, extension: "png" });
+          ws1.mergeCells(donutStartRow, 1, donutStartRow, 4);
+          const labelCell2 = ws1.getCell(donutStartRow, 1);
+          labelCell2.value = `📊 Kategori Arsip — Berkas: ${regStats.berkas || 0} | Buku: ${regStats.buku || 0} | Bundle: ${regStats.bundle || 0}`;
+          labelCell2.font = { name: "Calibri", bold: true, size: 12, color: { argb: T.titleBg } };
+          labelCell2.alignment = { horizontal: "left", vertical: "middle" };
+          ws1.getRow(donutStartRow).height = 24;
+
+          ws1.addImage(imgId, {
+            tl: { col: 0.2, row: donutStartRow },
+            ext: { width: 400, height: 300 },
+          });
+        } catch (e) {
+          console.warn("Could not capture donut chart:", e);
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════════
+      // Sheet 2: PROGRES MINGGUAN (Rekardus chart data)
+      // ═══════════════════════════════════════════════════════════════
       if (data.weeklyProgress && data.weeklyProgress.length > 0) {
         const wp = data.weeklyProgress;
         const totalBerkas = wp.reduce((s, w) => s + (w.berkas || 0), 0);
         const totalBuku = wp.reduce((s, w) => s + (w.buku || 0), 0);
         const totalBundle = wp.reduce((s, w) => s + (w.bundle || 0), 0);
 
-        sheets.push({
-          sheetName: "Progres Mingguan",
-          title: "PROGRES PEKERJAAN MINGGUAN",
-          subtitle: "Tren penyelesaian tugas per kategori",
-          infoLines: [
+        addStyledSheet(
+          "Progres Mingguan",
+          "PROGRES PEKERJAAN MINGGUAN",
+          "Tren penyelesaian tugas per kategori",
+          [
             `Periode: ${wp.length} hari terakhir`,
             `Total: ${totalBerkas + totalBuku + totalBundle} item`,
           ],
-          columns: [
-            { header: "No", key: "no", width: 6, type: "number" as const },
-            {
-              header: "Tanggal",
-              key: "tanggal",
-              width: 22,
-              type: "date" as const,
-            },
-            {
-              header: "Berkas",
-              key: "berkas",
-              width: 12,
-              type: "number" as const,
-            },
-            { header: "Buku", key: "buku", width: 12, type: "number" as const },
-            {
-              header: "Bundle",
-              key: "bundle",
-              width: 12,
-              type: "number" as const,
-            },
-            {
-              header: "Total",
-              key: "total",
-              width: 12,
-              type: "number" as const,
-            },
+          [
+            { header: "No", key: "no", width: 6, type: "number" },
+            { header: "Tanggal", key: "tanggal", width: 28 },
+            { header: "Berkas", key: "berkas", width: 12, type: "number" },
+            { header: "Buku", key: "buku", width: 12, type: "number" },
+            { header: "Bundle", key: "bundle", width: 12, type: "number" },
+            { header: "Total", key: "total", width: 12, type: "number" },
           ],
-          data: wp.map((w, i) => ({
+          wp.map((w, i) => ({
             no: i + 1,
             tanggal: new Date(w._id).toLocaleDateString("id-ID", {
               weekday: "long",
@@ -300,7 +447,7 @@ const AdminDashboard: React.FC = () => {
             bundle: w.bundle || 0,
             total: (w.berkas || 0) + (w.buku || 0) + (w.bundle || 0),
           })),
-          summaryRow: {
+          {
             no: "",
             tanggal: "",
             berkas: totalBerkas,
@@ -308,35 +455,31 @@ const AdminDashboard: React.FC = () => {
             bundle: totalBundle,
             total: totalBerkas + totalBuku + totalBundle,
           },
-          summaryLabel: "TOTAL",
-        });
+        );
       }
 
-      // Sheet 3: Distribusi Tugas
+      // ═══════════════════════════════════════════════════════════════
+      // Sheet 3: DISTRIBUSI TUGAS (donut chart data)
+      // ═══════════════════════════════════════════════════════════════
       if (data.workDistribution && data.workDistribution.length > 0) {
         const wd = data.workDistribution;
         const totalCount = wd.reduce((s, w) => s + (w.count || 0), 0);
 
-        sheets.push({
-          sheetName: "Distribusi Tugas",
-          title: "DISTRIBUSI JENIS PEKERJAAN",
-          subtitle: "Sebaran tugas berdasarkan kategori",
-          infoLines: [
+        addStyledSheet(
+          "Distribusi Tugas",
+          "DISTRIBUSI JENIS PEKERJAAN",
+          "Sebaran tugas berdasarkan kategori",
+          [
             `Total Jenis: ${wd.length} kategori`,
             `Total Pekerjaan: ${totalCount} item`,
           ],
-          columns: [
-            { header: "No", key: "no", width: 6, type: "number" as const },
+          [
+            { header: "No", key: "no", width: 6, type: "number" },
             { header: "Jenis Pekerjaan", key: "jenis", width: 30 },
-            {
-              header: "Jumlah",
-              key: "jumlah",
-              width: 14,
-              type: "number" as const,
-            },
+            { header: "Jumlah", key: "jumlah", width: 14, type: "number" },
             { header: "Persentase", key: "persen", width: 14 },
           ],
-          data: wd.map((w, i) => ({
+          wd.map((w, i) => ({
             no: i + 1,
             jenis: w._id || "Lainnya",
             jumlah: w.count || 0,
@@ -345,65 +488,60 @@ const AdminDashboard: React.FC = () => {
                 ? (((w.count || 0) / totalCount) * 100).toFixed(1) + "%"
                 : "0%",
           })),
-          summaryRow: { no: "", jenis: "", jumlah: totalCount, persen: "100%" },
-          summaryLabel: "TOTAL",
-        });
+          { no: "", jenis: "", jumlah: totalCount, persen: "100%" },
+        );
       }
 
-      // Sheet 4: Top Peserta
-      if (data.topPerformers && data.topPerformers.length > 0) {
-        sheets.push({
-          sheetName: "Top Peserta",
-          title: "PERINGKAT PESERTA TERBAIK",
-          subtitle: "Berdasarkan total item yang diselesaikan",
-          infoLines: [`Total: ${data.topPerformers.length} peserta`],
-          columns: [
-            {
-              header: "Peringkat",
-              key: "rank",
-              width: 12,
-              type: "number" as const,
-            },
+      // ═══════════════════════════════════════════════════════════════
+      // Sheet 4: TOP 3 PESERTA TERBAIK (matches podium on dashboard)
+      // ═══════════════════════════════════════════════════════════════
+      if (rankings.length > 0) {
+        addStyledSheet(
+          "Top Peserta",
+          "🏆 TOP 3 PESERTA TERBAIK",
+          "Berdasarkan penilaian performa bulan ini",
+          [`Total: ${rankings.length} peserta`],
+          [
+            { header: "Peringkat", key: "rank", width: 12, type: "number" },
             { header: "Nama Peserta", key: "nama", width: 28 },
             { header: "Institusi", key: "instansi", width: 30 },
-            {
-              header: "Total Item",
-              key: "totalItems",
-              width: 14,
-              type: "number" as const,
-            },
+            { header: "Skor (%)", key: "skor", width: 12, type: "number" },
+            { header: "Grade", key: "grade", width: 10 },
           ],
-          data: data.topPerformers.map((p, i) => ({
+          rankings.map((r, i) => ({
             rank: i + 1,
-            nama: p.name || "-",
-            instansi: p.instansi || "-",
-            totalItems: p.totalItems || 0,
+            nama: (r.userId as User)?.name || "-",
+            instansi: (r.userId as User)?.instansi || "-",
+            skor: r.hasil || 0,
+            grade: getGrade(r.hasil || 0),
           })),
-        });
+        );
       }
 
-      // Sheet 5: Kehadiran Hari Ini
+      // ═══════════════════════════════════════════════════════════════
+      // Sheet 5: KEHADIRAN HARI INI
+      // ═══════════════════════════════════════════════════════════════
       if (attendanceList.length > 0) {
         const aktif = attendanceList.filter((r: any) => !r.jamKeluar).length;
         const keluar = attendanceList.filter((r: any) => r.jamKeluar).length;
 
-        sheets.push({
-          sheetName: "Kehadiran Hari Ini",
-          title: "DAFTAR KEHADIRAN HARI INI",
-          subtitle: todayStr,
-          infoLines: [
+        addStyledSheet(
+          "Kehadiran Hari Ini",
+          "📋 DAFTAR KEHADIRAN HARI INI",
+          todayStr,
+          [
             `Total Hadir: ${attendanceList.length} peserta`,
             `Aktif: ${aktif} | Sudah Keluar: ${keluar}`,
           ],
-          columns: [
-            { header: "No", key: "no", width: 6, type: "number" as const },
+          [
+            { header: "No", key: "no", width: 6, type: "number" },
             { header: "Nama Peserta", key: "nama", width: 28 },
             { header: "Institusi", key: "instansi", width: 30 },
             { header: "Jam Masuk", key: "jamMasuk", width: 14 },
             { header: "Jam Keluar", key: "jamKeluar", width: 14 },
             { header: "Status", key: "status", width: 14 },
           ],
-          data: attendanceList.map((r: any, i: number) => ({
+          attendanceList.map((r: any, i: number) => ({
             no: i + 1,
             nama: r.userId?.name || "Unknown",
             instansi: r.userId?.instansi || "-",
@@ -411,10 +549,12 @@ const AdminDashboard: React.FC = () => {
             jamKeluar: r.jamKeluar || "Belum Keluar",
             status: r.jamKeluar ? "Selesai" : "Aktif",
           })),
-        });
+        );
       }
 
-      // Sheet 6: Aktivitas Terbaru
+      // ═══════════════════════════════════════════════════════════════
+      // Sheet 6: AKTIVITAS TERBARU
+      // ═══════════════════════════════════════════════════════════════
       if (data.recentActivity && data.recentActivity.length > 0) {
         const ra = data.recentActivity;
         const totalB = ra.reduce((s: number, a: any) => s + (a.berkas || 0), 0);
@@ -424,40 +564,25 @@ const AdminDashboard: React.FC = () => {
           0,
         );
 
-        sheets.push({
-          sheetName: "Aktivitas Terbaru",
-          title: "AKTIVITAS PEKERJAAN TERBARU",
-          subtitle: "Update terkini dari peserta magang",
-          infoLines: [
+        addStyledSheet(
+          "Aktivitas Terbaru",
+          "AKTIVITAS PEKERJAAN TERBARU",
+          "Update terkini dari peserta magang",
+          [
             `Total: ${ra.length} aktivitas`,
             `Berkas: ${totalB} | Buku: ${totalK} | Bundle: ${totalBd}`,
           ],
-          columns: [
-            { header: "No", key: "no", width: 6, type: "number" as const },
+          [
+            { header: "No", key: "no", width: 6, type: "number" },
             { header: "Nama Peserta", key: "nama", width: 24 },
             { header: "Jenis Pekerjaan", key: "jenis", width: 22 },
-            {
-              header: "Berkas",
-              key: "berkas",
-              width: 10,
-              type: "number" as const,
-            },
-            { header: "Buku", key: "buku", width: 10, type: "number" as const },
-            {
-              header: "Bundle",
-              key: "bundle",
-              width: 10,
-              type: "number" as const,
-            },
-            {
-              header: "Tanggal",
-              key: "tanggal",
-              width: 22,
-              type: "date" as const,
-            },
+            { header: "Berkas", key: "berkas", width: 10, type: "number" },
+            { header: "Buku", key: "buku", width: 10, type: "number" },
+            { header: "Bundle", key: "bundle", width: 10, type: "number" },
+            { header: "Tanggal", key: "tanggal", width: 22 },
             { header: "Keterangan", key: "keterangan", width: 28 },
           ],
-          data: ra.map((a: any, i: number) => ({
+          ra.map((a: any, i: number) => ({
             no: i + 1,
             nama:
               typeof a.userId === "string"
@@ -474,7 +599,7 @@ const AdminDashboard: React.FC = () => {
             }),
             keterangan: a.keterangan || "-",
           })),
-          summaryRow: {
+          {
             no: "",
             nama: "",
             jenis: "",
@@ -484,16 +609,19 @@ const AdminDashboard: React.FC = () => {
             tanggal: "",
             keterangan: "",
           },
-          summaryLabel: "TOTAL",
-        });
+        );
       }
 
-      await exportExcel({
-        fileName: "Dashboard_Monitoring",
-        companyName: "SISMON Magang",
-        creator: "Admin Dashboard",
-        sheets,
-      });
+      // ── Save file ──
+      const now = new Date();
+      const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+      const buffer = await wb.xlsx.writeBuffer();
+      saveAs(
+        new Blob([buffer], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }),
+        `Dashboard_Monitoring_${stamp}.xlsx`,
+      );
       showToast("Data berhasil diekspor ke Excel", "success");
     } catch (error) {
       console.error("Export error:", error);
@@ -877,13 +1005,12 @@ const AdminDashboard: React.FC = () => {
                                 }
                               }
                             }}
-                            className={`p-1.5 text-center text-[13px] cursor-pointer rounded ${
-                              isSelected
-                                ? 'bg-primary-500 text-white'
-                                : inRange
-                                  ? 'bg-primary-50'
-                                  : 'hover:bg-gray-100'
-                            }`}
+                            className={`p-1.5 text-center text-[13px] cursor-pointer rounded ${isSelected
+                              ? 'bg-primary-500 text-white'
+                              : inRange
+                                ? 'bg-primary-50'
+                                : 'hover:bg-gray-100'
+                              }`}
                           >
                             {d}
                           </div>
