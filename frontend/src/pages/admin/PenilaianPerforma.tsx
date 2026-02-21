@@ -212,6 +212,40 @@ const PenilaianPerforma: React.FC = () => {
     if (user) handleSelectUser(user as User);
   };
 
+  const handleDirectFinalize = (ev: PerformanceEvaluation) => {
+    const user = typeof ev.userId === 'string' ? null : ev.userId as User;
+    showConfirm(
+      'Finalisasi Penilaian',
+      `Yakin ingin memfinalisasi penilaian ${user?.name || ''}? Penilaian yang sudah final tidak bisa diubah.`,
+      'Ya, Finalisasi',
+      'success',
+      async () => {
+        closeConfirm();
+        setSaving(true);
+        try {
+          const res = await PerformanceAPI.save({
+            userId: typeof ev.userId === 'string' ? ev.userId : (ev.userId as User)._id,
+            bulan: ev.bulan,
+            tahun: ev.tahun,
+            absen: ev.absen,
+            kuantitas: ev.kuantitas,
+            kualitas: ev.kualitas,
+            laporan: ev.laporan,
+            status: 'Final',
+          });
+          if (res && res.success) {
+            showToast('Penilaian berhasil difinalisasi!', 'success');
+            loadEvaluations();
+          } else {
+            showToast(res?.message || 'Gagal memfinalisasi', 'error');
+          }
+        } finally {
+          setSaving(false);
+        }
+      }
+    );
+  };
+
   const getStatusBadge = (status: string) => (
     <span className={`status-badge ${status === 'Final' ? 'badge-final' : 'badge-draft'}`}>
       {status}
@@ -416,6 +450,7 @@ const PenilaianPerforma: React.FC = () => {
             <table className="eval-table">
               <thead className="sticky top-0 z-[1] bg-white">
                 <tr>
+                  <th>No</th>
                   <th>Nama</th>
                   <th>Absen</th>
                   <th>Kuantitas</th>
@@ -427,10 +462,11 @@ const PenilaianPerforma: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {evaluations.map((ev) => {
+                {evaluations.map((ev, idx) => {
                   const user = typeof ev.userId === 'string' ? null : ev.userId as User;
                   return (
                     <tr key={ev._id}>
+                      <td>{idx + 1}</td>
                       <td className="td-name">{user?.name || '-'}</td>
                       <td>{ev.absen}</td>
                       <td>{ev.kuantitas}</td>
@@ -445,6 +481,12 @@ const PenilaianPerforma: React.FC = () => {
                       <td className="td-actions">
                         {ev.status === 'Draft' && (
                           <>
+                            <button className="btn-icon btn-finalize-eval" title="Kirim Final" onClick={() => handleDirectFinalize(ev)}>
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                                <line x1="22" y1="2" x2="11" y2="13" />
+                                <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                              </svg>
+                            </button>
                             <button className="btn-icon btn-edit-eval" title="Edit" onClick={() => handleEditExisting(ev)}>
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />

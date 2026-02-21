@@ -180,7 +180,7 @@ const ManajemenPenilaian: React.FC = () => {
                   <th>Laporan</th>
                   <th>Nilai</th>
                   <th>Grade</th>
-                  <th>Action</th>
+                  <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>

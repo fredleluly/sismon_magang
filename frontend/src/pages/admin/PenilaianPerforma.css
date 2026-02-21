@@ -514,6 +514,15 @@
   background: #bae6fd;
 }
 
+.btn-finalize-eval {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.btn-finalize-eval:hover {
+  background: #a7f3d0;
+}
+
 .btn-delete-eval {
   background: #fee2e2;
   color: #dc2626;
