@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { UsersAPI, PerformanceAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { User, PerformanceEvaluation, PerformanceCalculation } from '../../types';
+import MonthYearSelector from '../../components/MonthYearSelector';
 import './PenilaianPerforma.css';
 
 const MONTHS = [
@@ -242,39 +243,12 @@ const PenilaianPerforma: React.FC = () => {
       </div>
 
       {/* Month Selector */}
-      <div className="perf-month-selector">
-        <button
-          className="perf-month-nav"
-          onClick={() => {
-            const prev = bulan === 1 ? 12 : bulan - 1;
-            const prevYear = bulan === 1 ? tahun - 1 : tahun;
-            setBulan(prev);
-            setTahun(prevYear);
-          }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-        </button>
-        <div className="perf-month-label">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
-          </svg>
-          <span>{MONTHS[bulan - 1]} {tahun}</span>
-        </div>
-        <button
-          className="perf-month-nav"
-          onClick={() => {
-            const next = bulan === 12 ? 1 : bulan + 1;
-            const nextYear = bulan === 12 ? tahun + 1 : tahun;
-            setBulan(next);
-            setTahun(nextYear);
-          }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </button>
-      </div>
+      <MonthYearSelector
+        bulan={bulan}
+        tahun={tahun}
+        onBulanChange={setBulan}
+        onTahunChange={setTahun}
+      />
 
       {/* Evaluation Form */}
       <div className="eval-card">

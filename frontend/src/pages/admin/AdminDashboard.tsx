@@ -1168,7 +1168,57 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
       </div>
-      <div className="mb-7">
+      <div className="dashboard-twin-row">
+        <div className="activity-card">
+          <div className="activity-header">
+            <div>
+              <h3>📋 Daftar Kehadiran Hari Ini</h3>
+              <p>Peserta yang sudah absen</p>
+            </div>
+          </div>
+          {attendanceList.length === 0 ? (
+            <div className="text-center p-6 text-slate-400">
+              Belum ada peserta yang absen hari ini
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {attendanceList.map((r: any, i: number) => {
+                const name = r.userId?.name || "Unknown";
+                const initials = name
+                  .split(" ")
+                  .map((n: string) => n[0])
+                  .join("")
+                  .substring(0, 2)
+                  .toUpperCase();
+                return (
+                  <div
+                    key={r._id}
+                    className="flex items-center justify-between px-3.5 py-2.5 bg-slate-50 rounded-[10px] border border-slate-100"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-300 to-blue-100 text-slate-800 flex items-center justify-center text-xs font-bold">
+                        {initials}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-[13px]">
+                          {name}
+                        </div>
+                        <div className="text-[11px] text-slate-400">
+                          {r.userId?.instansi || "-"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-sm text-[#0a6599]">
+                        {r.jamMasuk || "-"}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
         <div className="chart-card">
           <div className="chart-header">
             <div className="flex items-center gap-2.5 mb-1">
@@ -1244,56 +1294,6 @@ const AdminDashboard: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
-      <div className="activity-card">
-        <div className="activity-header">
-          <div>
-            <h3>📋 Daftar Kehadiran Hari Ini</h3>
-            <p>Peserta yang sudah absen</p>
-          </div>
-        </div>
-        {attendanceList.length === 0 ? (
-          <div className="text-center p-6 text-slate-400">
-            Belum ada peserta yang absen hari ini
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {attendanceList.map((r: any, i: number) => {
-              const name = r.userId?.name || "Unknown";
-              const initials = name
-                .split(" ")
-                .map((n: string) => n[0])
-                .join("")
-                .substring(0, 2)
-                .toUpperCase();
-              return (
-                <div
-                  key={r._id}
-                  className="flex items-center justify-between px-3.5 py-2.5 bg-slate-50 rounded-[10px] border border-slate-100"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-300 to-blue-100 text-slate-800 flex items-center justify-center text-xs font-bold">
-                      {initials}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-[13px]">
-                        {name}
-                      </div>
-                      <div className="text-[11px] text-slate-400">
-                        {r.userId?.instansi || "-"}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-sm text-[#0a6599]">
-                      {r.jamMasuk || "-"}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
       <div className="activity-card">
         <div className="activity-header">

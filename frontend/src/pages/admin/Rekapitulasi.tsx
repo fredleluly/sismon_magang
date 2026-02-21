@@ -110,19 +110,21 @@ const Rekapitulasi: React.FC = () => {
   }, []);
 
   // Update dates when filter type changes or current month changes
+  // Rekapitulasi uses 26th prev month → 25th current month
   useEffect(() => {
     if (filterType === 'bulanan') {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
-      const start = new Date(year, month, 1);
-      const end = new Date(year, month + 1, 0);
+      // Start: 26th of previous month
+      const start = new Date(year, month - 1, 26);
+      // End: 25th of current month
+      const end = new Date(year, month, 25);
 
-      // Format to YYYY-MM-DD
-      const startStr = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
-      const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
+      const fmt = (d: Date) =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-      setDateFrom(startStr);
-      setDateTo(endStr);
+      setDateFrom(fmt(start));
+      setDateTo(fmt(end));
     }
   }, [filterType, currentDate]);
 

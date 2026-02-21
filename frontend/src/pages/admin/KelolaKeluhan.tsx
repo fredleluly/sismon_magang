@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { ComplaintAPI } from '../../services/api';
 import { exportExcel } from '../../utils/excelExport';
 import { useToast } from '../../context/ToastContext';
+import CustomSelect from '../../components/CustomSelect';
 import type { Complaint } from '../../types';
 
 const KelolaKeluhan: React.FC = () => {
@@ -358,18 +359,26 @@ const KelolaKeluhan: React.FC = () => {
 
           {/* Existing search + status + priority filters */}
           <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari laporan..." className="keluhan-search-input" />
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="keluhan-select-filter">
-            <option value="">Semua Status</option>
-            <option>Menunggu</option>
-            <option>Diproses</option>
-            <option>Selesai</option>
-          </select>
-          <select value={prioFilter} onChange={e => setPrioFilter(e.target.value)} className="keluhan-select-filter">
-            <option value="">Semua Prioritas</option>
-            <option>High</option>
-            <option>Medium</option>
-            <option>Low</option>
-          </select>
+          <CustomSelect
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: '', label: 'Semua Status' },
+              { value: 'Menunggu', label: 'Menunggu' },
+              { value: 'Diproses', label: 'Diproses' },
+              { value: 'Selesai', label: 'Selesai' },
+            ]}
+          />
+          <CustomSelect
+            value={prioFilter}
+            onChange={setPrioFilter}
+            options={[
+              { value: '', label: 'Semua Prioritas' },
+              { value: 'High', label: 'High' },
+              { value: 'Medium', label: 'Medium' },
+              { value: 'Low', label: 'Low' },
+            ]}
+          />
         </div>
 
         <div className="rekap-filter-actions">

@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { PerformanceAPI } from "../../services/api";
 import { useToast } from "../../context/ToastContext";
 import type { PerformanceEvaluation, User } from "../../types";
+import MonthYearSelector from "../../components/MonthYearSelector";
 import "./ManajemenPenilaian.css";
 
 const MONTHS = [
@@ -142,35 +143,12 @@ const ManajemenPenilaian: React.FC = () => {
         <p>Kelola penilaian yang sudah difinalisasi (Superadmin)</p>
       </div>
 
-      <div className="manajemen-filter">
-        <div className="filter-group">
-          <label>Bulan</label>
-          <select
-            value={bulan}
-            onChange={(e) => setBulan(parseInt(e.target.value))}
-          >
-            {MONTHS.map((m, i) => (
-              <option key={i} value={i + 1}>
-                {m}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <label>Tahun</label>
-          <select
-            value={tahun}
-            onChange={(e) => setTahun(parseInt(e.target.value))}
-          >
-            {[2024, 2025, 2026, 2027].map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <MonthYearSelector
+        bulan={bulan}
+        tahun={tahun}
+        onBulanChange={setBulan}
+        onTahunChange={setTahun}
+      />
 
       <div className="manajemen-card">
         <div className="card-header">
