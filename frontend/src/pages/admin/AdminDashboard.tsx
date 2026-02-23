@@ -748,7 +748,7 @@ const AdminDashboard: React.FC = () => {
           month: "short",
         }),
       );
-      
+
       // Calculate cumulative sum for Rekardus
       let cumulativeSum = 0;
       const datasetData = wp.map((w) => {
@@ -1288,7 +1288,10 @@ const AdminDashboard: React.FC = () => {
               Belum ada peserta yang absen hari ini
             </div>
           ) : (
-            <div className="flex flex-col gap-2 overflow-y-auto pr-2" style={{ maxHeight: "320px" }}>
+            <div
+              className="flex flex-col gap-2 overflow-y-auto pr-2"
+              style={{ maxHeight: "320px" }}
+            >
               {attendanceList.map((r: any, i: number) => {
                 const name = r.userId?.name || "Unknown";
                 const initials = name
