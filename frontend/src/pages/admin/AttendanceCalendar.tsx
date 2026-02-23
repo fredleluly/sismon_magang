@@ -1157,11 +1157,10 @@ const AttendanceCalendar: React.FC = () => {
           {/* Filter Controls */}
           {/* Filter Controls (Rekapitulasi Style) */}
           <div className="work-filter-bar">
-            <div className="work-filter-left">
-              <div className="filter-buttons">
-                {(
-                  ["harian", "mingguan", "bulanan", "custom"] as FilterMode[]
-                ).map((mode) => (
+            <div className="filter-buttons" style={{ width: "100%" }}>
+              {(
+                ["harian", "mingguan", "bulanan", "custom"] as FilterMode[]
+              ).map((mode) => (
                   <button
                     key={mode}
                     className={`filter-btn ${filterMode === mode ? "active" : ""}`}
@@ -1184,10 +1183,12 @@ const AttendanceCalendar: React.FC = () => {
                     {mode.charAt(0).toUpperCase() + mode.slice(1)}
                   </button>
                 ))}
-              </div>
+            </div>
 
-              {/* Dynamic Filter Input */}
-              {filterMode === "bulanan" && (
+            <div className="filter-action-row">
+              <div className="work-filter-left" style={{ width: "auto", minWidth: 0 }}>
+                {/* Dynamic Filter Input */}
+                {filterMode === "bulanan" && (
                 <div className="month-picker-container">
                   <button
                     onClick={handlePreviousMonth}
@@ -1340,12 +1341,12 @@ const AttendanceCalendar: React.FC = () => {
                   {filterLoading ? "Memuat..." : "Terapkan Filter"}
                 </button>
               )}
-            </div>
+              </div>
 
-            {/* Action Buttons (Right Aligned) */}
-            <div className="rekap-filter-actions">
-              {/* Holiday Buttons */}
-              {filterMode === "harian" && selectedDate && (
+              {/* Action Buttons (Right Aligned) */}
+              <div className="rekap-filter-actions" style={{ width: "auto", justifyContent: "flex-end" }}>
+                {/* Holiday Buttons */}
+                {filterMode === "harian" && selectedDate && (
                 <>
                   {selectedDayData.length > 0 &&
                   selectedDayData.every((a) => a.status === "Hari Libur") ? (
@@ -1453,6 +1454,7 @@ const AttendanceCalendar: React.FC = () => {
                 </svg>
                 Export Excel
               </button>
+              </div>
             </div>
           </div>
 
