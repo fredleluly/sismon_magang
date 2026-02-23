@@ -1043,6 +1043,7 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+      <div style={{ maxHeight: 'calc(100vh - 160px)', overflowY: 'auto', overflowX: 'hidden', paddingRight: '4px' }}>
       <div className="admin-stats-grid">
         <div className="admin-stat-card">
           <div className="stat-info">
@@ -1341,6 +1342,7 @@ const AdminDashboard: React.FC = () => {
             })
           )}
         </div>
+      </div>
       </div>
     </>
   );
