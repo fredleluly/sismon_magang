@@ -752,29 +752,21 @@ const AttendanceCalendar: React.FC = () => {
               `Hadir: ${hadir} | Izin: ${izin} | Sakit: ${sakit} | Alpha: ${alpha}`,
             ],
             columns: [
-              { header: "No", key: "no", width: 6, type: "number" },
-              { header: "Nama", key: "nama", width: 24 },
-              { header: "Institusi", key: "instansi", width: 24 },
-              { header: "Tanggal", key: "tanggal", width: 22, type: "date" },
-              { header: "Jam Masuk", key: "jamMasuk", width: 14 },
-              { header: "Jam Keluar", key: "jamKeluar", width: 14 },
-              { header: "Status", key: "status", width: 14 },
-              { header: "Alasan Pulang Cepat", key: "keterangan", width: 30 },
+              { header: 'No', key: 'no', width: 6, type: 'number' },
+              { header: 'Nama', key: 'nama', width: 24 },
+              { header: 'Tanggal', key: 'tanggal', width: 22, type: 'date' },
+              { header: 'Jam Masuk', key: 'jamMasuk', width: 14 },
+              { header: 'Jam Keluar', key: 'jamKeluar', width: 14 },
+              { header: 'Status', key: 'status', width: 14 },
+              { header: 'Alasan Pulang Cepat', key: 'keterangan', width: 30 },
             ],
             data: dataToExport.map((att, index) => ({
               no: index + 1,
-              nama:
-                typeof att.userId === "string"
-                  ? "Unknown"
-                  : att.userId?.name || "Unknown",
-              instansi:
-                typeof att.userId === "string"
-                  ? "-"
-                  : att.userId?.instansi || "-",
-              tanggal: new Date(att.tanggal).toLocaleDateString("id-ID", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
+              nama: typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown',
+              tanggal: new Date(att.tanggal).toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
               }),
               jamMasuk: att.jamMasuk || "-",
               jamKeluar: att.jamKeluar || "-",
@@ -1485,8 +1477,7 @@ const AttendanceCalendar: React.FC = () => {
                     <tr>
                       <th>No</th>
                       <th>Nama</th>
-                      <th>Institusi</th>
-                      {filterMode !== "harian" && <th>Tanggal</th>}
+                      {filterMode !== 'harian' && <th>Tanggal</th>}
                       <th>Jam Masuk</th>
                       <th>Jam Keluar</th>
                       <th>Status</th>
@@ -1495,17 +1486,8 @@ const AttendanceCalendar: React.FC = () => {
                   </thead>
                   <tbody>
                     {displayData.map((att, i) => {
-                      const userName =
-                        typeof att.userId === "string"
-                          ? "Unknown"
-                          : att.userId?.name || "Unknown";
-                      const userInstansi =
-                        typeof att.userId === "string"
-                          ? "-"
-                          : att.userId?.instansi || "-";
-                      const isDeletedUser =
-                        typeof att.userId === "object" &&
-                        (att.userId as any)?._deleted;
+                      const userName = typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown';
+                      const isDeletedUser = typeof att.userId === 'object' && (att.userId as any)?._deleted;
                       return (
                         <tr key={att._id}>
                           <td>{i + 1}</td>
@@ -1524,8 +1506,7 @@ const AttendanceCalendar: React.FC = () => {
                               </span>
                             )}
                           </td>
-                          <td>{userInstansi}</td>
-                          {filterMode !== "harian" && (
+                          {filterMode !== 'harian' && (
                             <td style={{ fontSize: 12 }}>
                               {new Date(att.tanggal).toLocaleDateString(
                                 "id-ID",
