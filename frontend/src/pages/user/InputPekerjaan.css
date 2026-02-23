@@ -24,7 +24,7 @@
 .form-icon {
   width: 32px;
   height: 32px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -82,9 +82,9 @@
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--primary-500);
   background: white;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(10, 101, 153, 0.1);
 }
 
 .form-group textarea {
@@ -124,7 +124,7 @@
 }
 
 .pending-count {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
   color: white;
   font-size: 12px;
   font-weight: 700;
@@ -308,17 +308,17 @@
 }
 
 .btn-edit {
-  background: #e0e7ff;
-  color: #667eea;
-  border: 1px solid #c7d2fe;
+  background: var(--primary-50);
+  color: var(--primary-600);
+  border: 1px solid var(--primary-200);
 }
 
 .btn-edit:hover {
-  background: #667eea;
+  background: var(--primary-500);
   color: white;
-  border-color: #667eea;
+  border-color: var(--primary-500);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(10, 101, 153, 0.3);
 }
 
 .btn-edit:active {
@@ -345,14 +345,14 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
   color: white;
   border: 1px solid transparent;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 16px rgba(10, 101, 153, 0.4);
 }
 
 .btn-primary:active {

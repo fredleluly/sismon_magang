@@ -18,7 +18,7 @@
 .date-icon {
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -460,8 +460,8 @@
 }
 
 .calendar-nav-btn:hover {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: #667eea;
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
+  border-color: var(--primary-500);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
   transform: scale(1.05);
 }
@@ -563,8 +563,8 @@
 }
 
 .calendar-day.selected {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: #667eea;
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
+  border-color: var(--primary-500);
   box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
   animation:
     glow 1.5s ease-in-out infinite,
@@ -590,7 +590,7 @@
 
 .calendar-day.selected .day-badge {
   background: white;
-  color: #667eea;
+  color: var(--primary-500);
   position: relative;
   z-index: 1;
 }
@@ -821,7 +821,7 @@
 .stat-value {
   font-size: 24px;
   font-weight: 800;
-  color: #667eea;
+  color: var(--primary-500);
   position: relative;
   z-index: 1;
 }

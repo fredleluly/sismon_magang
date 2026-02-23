@@ -39,8 +39,8 @@
 }
 
 .filter-btn.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: #667eea;
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
+  border-color: var(--primary-500);
   color: white;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
@@ -91,7 +91,7 @@
 
 .date-input-group input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--primary-500);
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
 }
 
@@ -129,7 +129,7 @@
 }
 
 .custom-date-range-toggle:hover {
-  border-color: #667eea;
+  border-color: var(--primary-500);
   background: #f8fafc;
 }
 
@@ -183,8 +183,8 @@
 
 .custom-date-nav-btn:hover {
   background: #f8fafc;
-  border-color: #667eea;
-  color: #667eea;
+  border-color: var(--primary-500);
+  color: var(--primary-500);
 }
 
 .custom-calendars-container {
@@ -311,7 +311,7 @@
 
 .custom-date-apply-btn {
   padding: 7px 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
   color: white;
   border: none;
   border-radius: 6px;
@@ -404,8 +404,8 @@
 }
 
 .date-picker-nav:hover {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: #667eea;
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
+  border-color: var(--primary-500);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
@@ -618,8 +618,8 @@
 }
 
 .calendar-nav-btn:hover {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: #667eea;
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
+  border-color: var(--primary-500);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
   transform: scale(1.05);
 }
@@ -721,8 +721,8 @@
 }
 
 .calendar-day.selected {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: #667eea;
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
+  border-color: var(--primary-500);
   box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
   animation:
     glow 1.5s ease-in-out infinite,
@@ -748,7 +748,7 @@
 
 .calendar-day.selected .day-badge {
   background: white;
-  color: #667eea;
+  color: var(--primary-500);
   position: relative;
   z-index: 1;
 }
@@ -826,7 +826,7 @@
   padding: 14px;
   background: linear-gradient(135deg, #f0f9ff 0%, #f0fdf4 100%);
   border-radius: 8px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--primary-500);
   animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
 }
@@ -1246,8 +1246,8 @@
 
 .export-harian-nav-btn:hover {
   background: #f8fafc;
-  border-color: #667eea;
-  color: #667eea;
+  border-color: var(--primary-500);
+  color: var(--primary-500);
 }
 
 .export-harian-weekdays {
@@ -1331,8 +1331,8 @@
 }
 
 .export-harian-calendar-cell.selected {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: #667eea;
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
+  border-color: var(--primary-500);
   color: white;
   font-weight: 700;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
@@ -1391,7 +1391,7 @@
 }
 
 .export-date-range-toggle:hover {
-  border-color: #667eea;
+  border-color: var(--primary-500);
 }
 
 .export-date-range-toggle:focus {
@@ -1436,8 +1436,8 @@
 
 .export-date-nav-btn:hover {
   background: #e2e8f0;
-  border-color: #667eea;
-  color: #667eea;
+  border-color: var(--primary-500);
+  color: var(--primary-500);
 }
 
 .export-calendars-container {
@@ -1547,7 +1547,7 @@
 .export-date-apply-btn {
   width: 100%;
   padding: 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
   color: white;
   border: none;
   border-radius: 6px;

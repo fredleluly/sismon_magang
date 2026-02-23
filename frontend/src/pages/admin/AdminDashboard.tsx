@@ -725,7 +725,7 @@ const AdminDashboard: React.FC = () => {
             {
               label: 'Rekardus',
               data: datasetData,
-              backgroundColor: 'rgba(59, 130, 246, 0.2)', // Area fill color
+              backgroundColor: 'rgba(59, 130, 246, 0.15)', // Area fill color
               borderColor: '#3b82f6', // Line color
               borderWidth: 2,
               pointBackgroundColor: '#fff',
@@ -764,6 +764,36 @@ const AdminDashboard: React.FC = () => {
             },
           },
         },
+        plugins: [
+          {
+            id: 'backgroundText',
+            beforeDraw(chart) {
+              const { ctx, width, height } = chart;
+              ctx.save();
+              const totalAmount = cumulativeSum;
+              const totalFromData = (data.weeklyProgress || []).reduce(
+                (sum, w) => sum + (w.berkas || 0) + (w.buku || 0) + (w.bundle || 0),
+                0
+              );
+              const displayTotal = totalFromData > 0 ? totalFromData : cumulativeSum;
+
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              const centerX = width / 2;
+              const centerY = height / 2;
+
+              ctx.font = 'bold 100px sans-serif';
+              ctx.fillStyle = 'rgba(59, 130, 246, 0.5)';
+              ctx.fillText(displayTotal.toLocaleString(), centerX, centerY - 10);
+
+              ctx.font = 'bold 24px sans-serif';
+              ctx.fillStyle = 'rgba(100, 116, 139, 0.15)';
+              ctx.fillText('Total Item', centerX, centerY + 50);
+
+              ctx.restore();
+            },
+          },
+        ],
       });
       charts.current.push(c);
     }
@@ -1052,9 +1082,9 @@ const AdminDashboard: React.FC = () => {
           <div className="chart-card">
             <div className="chart-header">
               <h3>Arsip Tersimpan</h3>
-              <p>
+              {/* <p>
                 Total Rekardus: <strong>{(data.weeklyProgress || []).reduce((sum, w) => sum + (w.berkas || 0) + (w.buku || 0) + (w.bundle || 0), 0).toLocaleString()}</strong> item
-              </p>
+              </p> */}
             </div>
             <div className="chart-canvas-wrapper">
               <canvas ref={weeklyRef} />

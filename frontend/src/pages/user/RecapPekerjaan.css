@@ -37,8 +37,8 @@
 }
 
 .recap-filter-bar .filter-btn.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: #667eea;
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
+  border-color: var(--primary-500);
   color: white;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
@@ -67,7 +67,7 @@
 }
 
 .custom-date-range-toggle:hover {
-  border-color: #667eea;
+  border-color: var(--primary-500);
 }
 
 .custom-date-picker-dropdown {
@@ -129,8 +129,8 @@
 
 .custom-date-nav-btn:hover {
   background: #f8fafc;
-  border-color: #667eea;
-  color: #667eea;
+  border-color: var(--primary-500);
+  color: var(--primary-500);
 }
 
 .custom-calendars-container {
@@ -210,14 +210,14 @@
 
 .calendar-cell.start-date,
 .calendar-cell.end-date {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
   color: white;
-  border-color: #667eea;
+  border-color: var(--primary-500);
   font-weight: 700;
 }
 
 .calendar-cell:hover:not(.empty) {
-  border-color: #667eea;
+  border-color: var(--primary-500);
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
 }
 
@@ -292,14 +292,14 @@
 
 .calendar-cell-sm.start-date,
 .calendar-cell-sm.end-date {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
   color: white;
-  border-color: #667eea;
+  border-color: var(--primary-500);
   font-weight: 700;
 }
 
 .calendar-cell-sm:hover:not(.empty) {
-  border-color: #667eea;
+  border-color: var(--primary-500);
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
 }
 
@@ -337,7 +337,7 @@
 }
 
 .custom-date-apply-btn {
-  background: #667eea;
+  background: var(--primary-500);
   color: white;
 }
 
@@ -510,7 +510,7 @@
 }
 
 .stat-box.grand-total {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
   border: none;
   color: white;
 }
@@ -587,7 +587,7 @@
 }
 
 .export-date-range-toggle:hover {
-  border-color: #667eea;
+  border-color: var(--primary-500);
 }
 
 .export-date-picker-dropdown {
@@ -632,8 +632,8 @@
 
 .export-date-nav-btn:hover {
   background: #f8fafc;
-  border-color: #667eea;
-  color: #667eea;
+  border-color: var(--primary-500);
+  color: var(--primary-500);
 }
 
 .export-calendars-container {
@@ -661,7 +661,7 @@
 .export-date-apply-btn {
   width: 100%;
   padding: 8px 12px;
-  background: #667eea;
+  background: var(--primary-500);
   color: white;
   border: none;
   border-radius: 6px;
@@ -786,12 +786,12 @@
 }
 
 .btn {
-  background: #667eea;
+  background: var(--primary-500);
   color: white;
 }
 
 .btn.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
 }
 
 .btn.btn-primary:hover {
