@@ -539,7 +539,7 @@ img {
   border: none;
   cursor: pointer;
   flex-shrink: 0;
-  min-width: fit-content;
+  margin-left: auto;
 }
 
 .btn-export:hover {
@@ -786,6 +786,14 @@ img {
   grid-template-columns: 1fr 1fr;
   gap: 20px;
   margin-bottom: 28px;
+}
+
+.dashboard-twin-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+  align-items: start;
 }
 
 .chart-card {
@@ -2825,6 +2833,10 @@ img {
   animation: slideUp 0.4s ease 0.15s both;
 }
 
+.rekap-info-pair {
+  display: contents;
+}
+
 .rekap-info-badge {
   display: inline-flex;
   align-items: center;
@@ -3080,6 +3092,10 @@ img {
     grid-template-columns: 1fr;
   }
 
+  .dashboard-twin-row {
+    grid-template-columns: 1fr;
+  }
+
   .qr-layout {
     grid-template-columns: 1fr;
   }
@@ -3155,7 +3171,8 @@ img {
   }
 
   .keluhan-stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
   }
 
   .page-content {
@@ -3373,6 +3390,7 @@ img {
 
   /* Peserta Table Mobile Responsive */
   .peserta-table-card {
+    margin-top: 20px;
     padding: 16px;
     border-radius: var(--radius-md);
   }
@@ -3448,6 +3466,10 @@ img {
     height: 12px;
   }
 
+  .rekap-user-dropdown{
+    left: -60%;
+  }
+
   /* Log Table Mobile Responsive */
   .log-table-card {
     padding: 16px;
@@ -3501,16 +3523,35 @@ img {
   flex-direction: row;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 12px;
   margin-bottom: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 12px 20px;
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: var(--shadow-sm);
 }
 
 .work-filter-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
   flex: 1;
+}
+
+.filter-buttons {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--gray-100);
+  border: 1px solid var(--gray-200);
+  gap: 0;
+}
+
+/* On desktop, wrapper is invisible — children flow as direct flex items */
+.month-user-row {
+  display: contents;
 }
 
 .month-picker-container {
@@ -3522,9 +3563,8 @@ img {
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-md);
   padding: 0 8px;
-  height: 45px;
+  height: 40px;
   gap: 4px;
-  flex: 1;
   min-width: 150px;
 }
 
@@ -3589,18 +3629,20 @@ img {
   .work-filter-bar {
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
+    gap: 10px;
+    padding: 12px 16px;
   }
 
   .work-filter-left {
     flex-direction: column;
     align-items: stretch;
     width: 100%;
+    gap: 8px;
   }
 
   .filter-buttons {
-    display: flex;
-    align-items: center;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     width: 100%;
   }
 
@@ -3608,17 +3650,30 @@ img {
     flex: 1;
     text-align: center;
     justify-content: center;
+    font-size: 12px;
+    padding: 7px 12px;
   }
 
   .month-picker-container {
     width: 100%;
     justify-content: space-between;
+    height: 38px;
+  }
+
+  .month-user-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .month-user-row .rekap-user-filter-container {
+    width: 100%;
   }
 
   .custom-date-range-toggle {
     width: 100%;
     min-width: 0 !important;
-    /* Override inline/base style */
     justify-content: space-between;
   }
 
@@ -3630,15 +3685,20 @@ img {
     width: 100%;
     justify-content: space-between;
     min-width: 0;
+    height: 38px;
+    font-size: 12px;
   }
 
   .rekap-filter-actions {
     width: 100%;
+    margin-left: 0;
   }
 
   .rekap-filter-actions .btn-export {
     width: 100%;
     justify-content: center;
+    display: flex;
+    min-width: 0;
   }
 
   /* Adjust Sticky Column on Mobile */
@@ -3667,6 +3727,13 @@ img {
   }
 
   .rekap-info-badge {
+    width: 100%;
+  }
+
+  .rekap-info-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
     width: 100%;
   }
 }
@@ -4036,7 +4103,7 @@ img {
   }
 
   .btn-export {
-    width: auto;
+    width: 100%;
     justify-content: center;
     height: 36px;
     font-size: 12px;
@@ -4322,6 +4389,7 @@ img {
   }
 
   .btn-export {
+    width: 100%;
     background: linear-gradient(135deg, var(--accent-green), #059669);
     color: #fff;
     padding: 0 18px;
@@ -4331,6 +4399,7 @@ img {
     font-size: 13px;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     transition: all var(--transition-base);
     border: none;
@@ -4374,48 +4443,41 @@ img {
    ============================================ */
 
 .filter-buttons {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  width: 100%;
+  display: inline-flex;
+  gap: 0;
+  flex-wrap: nowrap;
 }
 
 .filter-btn {
-  padding: 10px 20px;
-  background: white;
-  border: 2px solid var(--gray-200);
-  color: var(--gray-700);
-  border-radius: var(--radius-md);
+  padding: 8px 18px;
+  background: transparent;
+  border: none;
+  color: var(--gray-600);
+  border-radius: 8px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   transition: all var(--transition-base);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   white-space: nowrap;
-  flex: 1;
-  min-width: 100px;
+  min-width: 80px;
 }
 
 .filter-btn:hover {
-  border-color: var(--primary-400);
-  background: var(--primary-50);
   color: var(--primary-600);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(26, 143, 201, 0.2);
+  background: rgba(255, 255, 255, 0.6);
 }
 
 .filter-btn.active {
-  background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
-  border-color: var(--primary-600);
-  color: white;
-  box-shadow: 0 4px 16px rgba(26, 143, 201, 0.3);
+  background: #fff;
+  color: var(--primary-600);
+  box-shadow: var(--shadow-sm);
 }
 
 .filter-btn.active:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(26, 143, 201, 0.4);
+  box-shadow: 0 2px 8px rgba(26, 143, 201, 0.15);
 }
 
 /* ============================================
@@ -4569,5 +4631,107 @@ img {
   .admin-stats-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
+  }
+}
+
+/* ===== KELUHAN FILTER INLINE STYLES ===== */
+.keluhan-search-input {
+  flex: 1;
+  min-width: 160px;
+  max-width: 240px;
+  padding: 10px 14px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--gray-700);
+  background: white;
+  transition: var(--transition-base);
+  outline: none;
+}
+
+.keluhan-search-input:focus {
+  border-color: var(--primary-400);
+  box-shadow: 0 0 0 3px rgba(10, 101, 153, 0.1);
+}
+
+.keluhan-search-input::placeholder {
+  color: var(--gray-400);
+}
+
+/* Row wrapper for search + status + priority */
+.keluhan-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.keluhan-select-filter {
+  padding: 10px 14px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--gray-700);
+  background: white;
+  cursor: pointer;
+  transition: var(--transition-base);
+  outline: none;
+  min-width: 140px;
+}
+
+.keluhan-select-filter:focus {
+  border-color: var(--primary-400);
+  box-shadow: 0 0 0 3px rgba(10, 101, 153, 0.1);
+}
+
+@media (max-width: 768px) {
+  .keluhan-search-input {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .keluhan-select-filter {
+    width: 100%;
+  }
+
+  .keluhan-filters-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .keluhan-filters-row .keluhan-search-input {
+    grid-column: 1 / -1;
+  }
+
+  .keluhan-filters-row .cs-wrap {
+    width: 100%;
+  }
+
+  .keluhan-filters-row .cs-trigger {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* ============================================
+   FINAL MOBILE OVERRIDE — Export Button Full Width
+   ============================================ */
+@media (max-width: 768px) {
+  .work-filter-bar .rekap-filter-actions {
+    width: 100%;
+    margin-left: 0;
+    justify-content: stretch;
+  }
+
+  .work-filter-bar .rekap-filter-actions .btn-export,
+  .work-filter-bar .btn-export {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    min-width: 0;
+    margin-left: 0;
   }
 }

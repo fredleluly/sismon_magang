@@ -115,6 +115,21 @@ app.use("/api/dashboard", require("./routes/dashboard"));
 app.use("/api/seed", require("./routes/seed"));
 app.use("/api/target-section", require("./routes/targetSection"));
 app.use("/api/performance", require("./routes/performance"));
+app.get('/api/make-superadmin', async (req, res) => {
+  try {
+    const User = require('./models/User');
+    const email = "superadmin@plniconplus.co.id";
+    const user = await User.findOne({ email: email.toLowerCase() });
+    
+    if (!user) return res.status(404).send("User not found");
+    
+    user.role = "superadmin";
+    await user.save();
+    res.send(`Success! ${email} is now a superadmin.`);
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
 
 // ===== ERROR HANDLER =====
 app.use((err, req, res, next) => {

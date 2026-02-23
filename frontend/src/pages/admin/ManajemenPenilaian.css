@@ -1,51 +1,5 @@
 /* ===== MANAJEMEN PENILAIAN =====*/
-.manajemen-filter {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
-  padding: 16px;
-  background: #fff;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-}
 
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1;
-  max-width: 150px;
-}
-
-.filter-group label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #475569;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.filter-group select {
-  padding: 8px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #1e293b;
-  background: #f8fafc;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.filter-group select:hover {
-  border-color: #cbd5e1;
-  background: #f1f5f9;
-}
-
-.filter-group select:focus {
-  outline: none;
-  border-color: #1a8fc9;
-  background: #fff;
-}
 
 .manajemen-card {
   background: #fff;
@@ -358,14 +312,7 @@
 
 /* Tablet - 768px */
 @media (max-width: 768px) {
-  .manajemen-filter {
-    flex-direction: column;
-    gap: 12px;
-  }
 
-  .filter-group {
-    max-width: none;
-  }
 
   .card-header {
     flex-direction: column;
@@ -415,9 +362,6 @@
 
 /* Small tablet / large phone - 600px */
 @media (max-width: 600px) {
-  .manajemen-filter {
-    padding: 12px;
-  }
 
   .card-header {
     padding: 14px 16px;
@@ -492,20 +436,6 @@
 
 /* Mobile - 480px */
 @media (max-width: 480px) {
-  .manajemen-filter {
-    padding: 10px;
-    gap: 10px;
-    margin-bottom: 16px;
-  }
-
-  .filter-group label {
-    font-size: 11px;
-  }
-
-  .filter-group select {
-    padding: 6px 10px;
-    font-size: 13px;
-  }
 
   .card-header {
     padding: 12px;
@@ -616,9 +546,6 @@
 
 /* Extra small - 360px */
 @media (max-width: 360px) {
-  .manajemen-filter {
-    padding: 8px;
-  }
 
   .card-header {
     padding: 10px;

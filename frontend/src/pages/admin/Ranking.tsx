@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { PerformanceAPI } from '../../services/api';
 import type { PerformanceEvaluation, User } from '../../types';
+import MonthYearSelector from '../../components/MonthYearSelector';
 import './Ranking.css';
 
 const MONTHS = [
@@ -70,24 +71,12 @@ const Ranking: React.FC = () => {
       </div>
 
       {/* Filter */}
-      <div className="filter-bar-rank">
-        <div className="filter-group-rank">
-          <label>Bulan</label>
-          <select value={bulan} onChange={(e) => setBulan(+e.target.value)}>
-            {MONTHS.map((m, i) => (
-              <option key={i} value={i + 1}>{m}</option>
-            ))}
-          </select>
-        </div>
-        <div className="filter-group-rank">
-          <label>Tahun</label>
-          <select value={tahun} onChange={(e) => setTahun(+e.target.value)}>
-            {[2024, 2025, 2026, 2027].map(y => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <MonthYearSelector
+        bulan={bulan}
+        tahun={tahun}
+        onBulanChange={setBulan}
+        onTahunChange={setTahun}
+      />
 
       {loading ? (
         <div className="rank-loading">Memuat ranking...</div>
@@ -148,7 +137,7 @@ const Ranking: React.FC = () => {
                   <tr>
                     <th className="th-rank">Rank</th>
                     <th>Nama</th>
-                    <th>Instansi</th>
+
                     <th>Absen</th>
                     <th>Kuantitas</th>
                     <th>Kualitas</th>
@@ -164,7 +153,7 @@ const Ranking: React.FC = () => {
                       <tr key={ev._id} className={i < 3 ? `top-${i + 1}` : ''}>
                         <td className="td-rank">{getMedalEmoji(i + 1)}</td>
                         <td className="td-rank-name">{user?.name || '-'}</td>
-                        <td>{user?.instansi || '-'}</td>
+
                         <td>{ev.absen}%</td>
                         <td>{ev.kuantitas}%</td>
                         <td>{ev.kualitas}%</td>

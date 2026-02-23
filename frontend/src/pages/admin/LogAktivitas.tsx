@@ -250,31 +250,34 @@ const LogAktivitas: React.FC = () => {
       {/* Filters (Rekapitulasi Style) */}
       <div className="work-filter-bar">
         <div className="work-filter-left">
-          <button
-            className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`}
-            onClick={() => setFilterType('bulanan')}
-          >
-            Bulanan
-          </button>
-          <button
-            className={`filter-btn ${filterType === 'custom' ? 'active' : ''}`}
-            onClick={() => {
-              setFilterType('custom');
-              if (!isSelectingDateRange) setIsSelectingStart(true);
-            }}
-          >
-            Custom
-          </button>
+          <div className="filter-buttons">
+            <button
+              className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`}
+              onClick={() => setFilterType('bulanan')}
+            >
+              Bulanan
+            </button>
+            <button
+              className={`filter-btn ${filterType === 'custom' ? 'active' : ''}`}
+              onClick={() => {
+                setFilterType('custom');
+                if (!isSelectingDateRange) setIsSelectingStart(true);
+              }}
+            >
+              Custom
+            </button>
+          </div>
 
+          <div className="month-user-row">
           {filterType === 'bulanan' ? (
             <div className="month-picker-container">
-              <button onClick={handlePrevMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
+              <button className="month-nav-btn" onClick={handlePrevMonth}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
               </button>
               <span className="month-display">
                 {currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
               </span>
-              <button onClick={handleNextMonth} style={{ background: 'none', color: 'var(--gray-500)', padding: 4 }}>
+              <button className="month-nav-btn" onClick={handleNextMonth}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
               </button>
             </div>
@@ -392,9 +395,8 @@ const LogAktivitas: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
+          </div>
 
-        <div className="rekap-filter-actions">
           <button className="btn-export" onClick={exportToExcel}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
             Export Excel

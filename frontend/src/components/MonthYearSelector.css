@@ -1,0 +1,222 @@
+/* ===== MonthYearSelector ===== */
+.mys-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Nav arrows */
+.mys-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.mys-nav:hover {
+  background: #f1f5f9;
+  color: #0f4c75;
+}
+
+.mys-nav:active {
+  background: #e2e8f0;
+  transform: scale(0.95);
+}
+
+/* Center section */
+.mys-center {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+}
+
+.mys-icon {
+  color: #3282b8;
+  flex-shrink: 0;
+}
+
+/* Dropdown wrapper */
+.mys-dropdown-wrap {
+  position: relative;
+}
+
+/* Trigger button */
+.mys-trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #1e293b;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.mys-trigger:hover {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.mys-trigger.active {
+  background: #eef4ff;
+  border-color: #3282b8;
+  color: #0f4c75;
+}
+
+.mys-chevron {
+  color: #94a3b8;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.mys-trigger.active .mys-chevron {
+  transform: rotate(180deg);
+  color: #3282b8;
+}
+
+/* Dropdown panel */
+.mys-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 160px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
+  z-index: 100;
+  animation: mysSlideIn 0.15s ease-out;
+  overflow: hidden;
+}
+
+.mys-panel-narrow {
+  min-width: 120px;
+}
+
+@keyframes mysSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.mys-panel-list {
+  padding: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+/* Option items */
+.mys-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #475569;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  text-align: left;
+  line-height: 1.4;
+}
+
+.mys-option:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.mys-option.selected {
+  background: #eef4ff;
+  color: #0f4c75;
+  font-weight: 600;
+}
+
+.mys-check {
+  color: #3282b8;
+  flex-shrink: 0;
+}
+
+/* Scrollbar styling */
+.mys-panel-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.mys-panel-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mys-panel-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.mys-panel-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .mys-container {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .mys-center {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .mys-nav {
+    width: 28px;
+    height: 28px;
+  }
+
+  .mys-trigger {
+    padding: 3px 8px;
+    font-size: 0.75rem;
+  }
+
+  .mys-center {
+    gap: 4px;
+    padding: 0 2px;
+  }
+
+  .mys-icon {
+    display: none;
+  }
+}
