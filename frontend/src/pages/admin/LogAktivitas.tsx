@@ -9,6 +9,12 @@ const LogAktivitas: React.FC = () => {
   const [logs, setLogs] = useState<WorkLog[]>([]);
   const [search, setSearch] = useState('');
 
+  // Edit & Delete State
+  const [editedLogs, setEditedLogs] = useState<Record<string, Partial<WorkLog>>>({});
+  const [deletedLogIds, setDeletedLogIds] = useState<Set<string>>(new Set());
+  const [editingRowIds, setEditingRowIds] = useState<Set<string>>(new Set());
+  const [isSaving, setIsSaving] = useState(false);
+
   // Filter State
   const [filterType, setFilterType] = useState<'bulanan' | 'custom'>('bulanan');
   const [currentDate, setCurrentDate] = useState(new Date()); // For monthly view
@@ -81,6 +87,64 @@ const LogAktivitas: React.FC = () => {
       showToast('Gagal memuat data', 'error');
     }
   }, [filterType, currentDate, dateFrom, dateTo, selectedUsers]);
+
+  // Handle Save edits and deletes
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      // 1. Process deletions
+      for (const id of Array.from(deletedLogIds)) {
+        await WorkLogAPI.delete(id);
+      }
+      
+      // 2. Process updates
+      for (const [id, data] of Object.entries(editedLogs)) {
+        if (!deletedLogIds.has(id)) {
+          await WorkLogAPI.update(id, data);
+        }
+      }
+      
+      showToast('Perubahan berhasil disimpan', 'success');
+      setEditedLogs({});
+      setDeletedLogIds(new Set());
+      setEditingRowIds(new Set());
+      load();
+    } catch (err) {
+      showToast('Gagal menyimpan perubahan', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditChange = (id: string, field: keyof WorkLog, value: any) => {
+    setEditedLogs(prev => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        [field]: value
+      }
+    }));
+  };
+
+  const toggleDelete = (id: string) => {
+    setDeletedLogIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleEditRow = (id: string) => {
+    setEditingRowIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const hasChanges = Object.keys(editedLogs).length > 0 || deletedLogIds.size > 0;
 
   useEffect(() => { load(); }, [load]);
 
@@ -408,18 +472,31 @@ const LogAktivitas: React.FC = () => {
       <div className="log-table-card">
         <div className="peserta-table-header">
           <div className="pth-left"><h3>Aktivitas Terbaru</h3></div>
-          <div className="peserta-search"><input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari aktivitas..." /></div>
+          <div className="peserta-search" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            {hasChanges && (
+              <button 
+                className="btn btn-primary" 
+                onClick={handleSave} 
+                disabled={isSaving}
+                style={{ height: '40px', padding: '0 16px', fontSize: '13px', borderRadius: '8px' }}
+              >
+                {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
+              </button>
+            )}
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari aktivitas..." />
+          </div>
         </div>
         <div className="log-table-header-wrapper">
           <table className="log-table">
             <colgroup>
               <col style={{ width: '15%' }} />
-              <col style={{ width: '12%' }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '15%' }} />
               <col style={{ width: '20%' }} />
-              <col style={{ width: '23%' }} />
-              <col style={{ width: '10%' }} />
-              <col style={{ width: '10%' }} />
-              <col style={{ width: '10%' }} />
+              <col style={{ width: '8%' }} />
+              <col style={{ width: '8%' }} />
+              <col style={{ width: '8%' }} />
+              <col style={{ width: '16%' }} />
             </colgroup>
             <thead>
               <tr>
@@ -430,6 +507,7 @@ const LogAktivitas: React.FC = () => {
                 <th>Berkas</th>
                 <th>Buku</th>
                 <th>Bundle</th>
+                <th style={{ textAlign: 'center' }}>Aksi</th>
               </tr>
             </thead>
           </table>
@@ -438,17 +516,18 @@ const LogAktivitas: React.FC = () => {
           <table className="log-table">
             <colgroup>
               <col style={{ width: '15%' }} />
-              <col style={{ width: '12%' }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '15%' }} />
               <col style={{ width: '20%' }} />
-              <col style={{ width: '23%' }} />
-              <col style={{ width: '10%' }} />
-              <col style={{ width: '10%' }} />
-              <col style={{ width: '10%' }} />
+              <col style={{ width: '8%' }} />
+              <col style={{ width: '8%' }} />
+              <col style={{ width: '8%' }} />
+              <col style={{ width: '16%' }} />
             </colgroup>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--gray-400)' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: 40, color: 'var(--gray-400)' }}>
                     Belum ada data
                   </td>
                 </tr>
@@ -456,26 +535,109 @@ const LogAktivitas: React.FC = () => {
                 filtered.map((l, i) => {
                   const name = (l.userId as any)?.name || 'Unknown';
                   const dateStr = l.tanggal ? new Date(l.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+                  const isDeleted = deletedLogIds.has(l._id);
+                  const isEditing = editingRowIds.has(l._id);
                   return (
-                    <tr key={l._id}>
+                    <tr key={l._id} style={{ opacity: isDeleted ? 0.5 : 1 }}>
                       <td>
                         <div className="user-cell">
-                          <span className="user-name">{name}</span>
+                          <span className="user-name" style={{ textDecoration: isDeleted ? 'line-through' : 'none' }}>{name}</span>
                         </div>
                       </td>
-                      <td>{dateStr}</td>
+                      <td style={{ textDecoration: isDeleted ? 'line-through' : 'none' }}>{dateStr}</td>
                       <td>
-                        <span className="job-badge">{l.jenis || '-'}</span>
+                        {isDeleted ? (
+                          <span className="job-badge" style={{ textDecoration: 'line-through' }}>{l.jenis || '-'}</span>
+                        ) : isEditing ? (
+                          <input 
+                            type="text" 
+                            value={editedLogs[l._id]?.jenis ?? l.jenis ?? ''}
+                            onChange={(e) => handleEditChange(l._id, 'jenis', e.target.value)}
+                            style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--gray-300)' }}
+                          />
+                        ) : (
+                          <span className="job-badge">{editedLogs[l._id]?.jenis ?? l.jenis ?? '-'}</span>
+                        )}
                       </td>
-                      <td style={{ maxWidth: 300, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={l.keterangan || '-'}>{l.keterangan || '-'}</td>
-                      <td>
-                        <span className="data-highlight">{l.berkas || 0}</span>
+                      <td style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={editedLogs[l._id]?.keterangan ?? l.keterangan ?? '-'}>
+                        {isDeleted ? (
+                          <span style={{ textDecoration: 'line-through' }}>{l.keterangan || '-'}</span>
+                        ) : isEditing ? (
+                          <input 
+                            type="text" 
+                            value={editedLogs[l._id]?.keterangan ?? l.keterangan ?? ''}
+                            onChange={(e) => handleEditChange(l._id, 'keterangan', e.target.value)}
+                            style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--gray-300)' }}
+                          />
+                        ) : (
+                          <>{editedLogs[l._id]?.keterangan ?? l.keterangan ?? '-'}</>
+                        )}
                       </td>
                       <td>
-                        <span className="data-highlight">{l.buku || 0}</span>
+                        {isDeleted ? (
+                          <span className="data-highlight" style={{ textDecoration: 'line-through' }}>{l.berkas || 0}</span>
+                        ) : isEditing ? (
+                          <input 
+                            type="number" 
+                            min="0"
+                            value={editedLogs[l._id]?.berkas ?? l.berkas ?? 0}
+                            onChange={(e) => handleEditChange(l._id, 'berkas', Number(e.target.value))}
+                            style={{ width: '60px', padding: '6px', borderRadius: '4px', border: '1px solid var(--gray-300)', textAlign: 'center' }}
+                          />
+                        ) : (
+                          <span className="data-highlight">{editedLogs[l._id]?.berkas ?? l.berkas ?? 0}</span>
+                        )}
                       </td>
                       <td>
-                        <span className="data-highlight">{l.bundle || 0}</span>
+                        {isDeleted ? (
+                          <span className="data-highlight" style={{ textDecoration: 'line-through' }}>{l.buku || 0}</span>
+                        ) : isEditing ? (
+                          <input 
+                            type="number" 
+                            min="0"
+                            value={editedLogs[l._id]?.buku ?? l.buku ?? 0}
+                            onChange={(e) => handleEditChange(l._id, 'buku', Number(e.target.value))}
+                            style={{ width: '60px', padding: '6px', borderRadius: '4px', border: '1px solid var(--gray-300)', textAlign: 'center' }}
+                          />
+                        ) : (
+                          <span className="data-highlight">{editedLogs[l._id]?.buku ?? l.buku ?? 0}</span>
+                        )}
+                      </td>
+                      <td>
+                        {isDeleted ? (
+                          <span className="data-highlight" style={{ textDecoration: 'line-through' }}>{l.bundle || 0}</span>
+                        ) : isEditing ? (
+                          <input 
+                            type="number" 
+                            min="0"
+                            value={editedLogs[l._id]?.bundle ?? l.bundle ?? 0}
+                            onChange={(e) => handleEditChange(l._id, 'bundle', Number(e.target.value))}
+                            style={{ width: '60px', padding: '6px', borderRadius: '4px', border: '1px solid var(--gray-300)', textAlign: 'center' }}
+                          />
+                        ) : (
+                          <span className="data-highlight">{editedLogs[l._id]?.bundle ?? l.bundle ?? 0}</span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                          {!isDeleted && (
+                            <button 
+                              onClick={() => toggleEditRow(l._id)}
+                              className="btn btn-outline"
+                              style={{ padding: '6px 12px', fontSize: '12px', height: '32px' }}
+                              title={isEditing ? 'Batal Edit' : 'Edit'}
+                            >
+                              {isEditing ? 'Batal' : 'Edit'}
+                            </button>
+                          )}
+                          <button 
+                            onClick={() => toggleDelete(l._id)}
+                            className={`btn ${isDeleted ? 'btn-outline' : 'btn-danger'}`}
+                            style={{ padding: '6px 12px', fontSize: '12px', height: '32px' }}
+                          >
+                            {isDeleted ? 'Batal Hapus' : 'Hapus'}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
