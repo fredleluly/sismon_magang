@@ -609,7 +609,6 @@ const AttendanceCalendar: React.FC = () => {
             columns: [
               { header: 'No', key: 'no', width: 6, type: 'number' },
               { header: 'Nama', key: 'nama', width: 24 },
-              { header: 'Institusi', key: 'instansi', width: 24 },
               { header: 'Tanggal', key: 'tanggal', width: 22, type: 'date' },
               { header: 'Jam Masuk', key: 'jamMasuk', width: 14 },
               { header: 'Jam Keluar', key: 'jamKeluar', width: 14 },
@@ -619,7 +618,6 @@ const AttendanceCalendar: React.FC = () => {
             data: dataToExport.map((att, index) => ({
               no: index + 1,
               nama: typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown',
-              instansi: typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-',
               tanggal: new Date(att.tanggal).toLocaleDateString('id-ID', {
                 day: 'numeric',
                 month: 'long',
@@ -1159,7 +1157,6 @@ const AttendanceCalendar: React.FC = () => {
                     <tr>
                       <th>No</th>
                       <th>Nama</th>
-                      <th>Institusi</th>
                       {filterMode !== 'harian' && <th>Tanggal</th>}
                       <th>Jam Masuk</th>
                       <th>Jam Keluar</th>
@@ -1170,7 +1167,6 @@ const AttendanceCalendar: React.FC = () => {
                   <tbody>
                     {displayData.map((att, i) => {
                       const userName = typeof att.userId === 'string' ? 'Unknown' : att.userId?.name || 'Unknown';
-                      const userInstansi = typeof att.userId === 'string' ? '-' : att.userId?.instansi || '-';
                       const isDeletedUser = typeof att.userId === 'object' && (att.userId as any)?._deleted;
                       return (
                         <tr key={att._id}>
@@ -1179,7 +1175,6 @@ const AttendanceCalendar: React.FC = () => {
                             {userName}
                             {isDeletedUser && <span style={{ fontSize: 10, color: '#ef4444', marginLeft: 4, fontWeight: 600 }}>(Dihapus)</span>}
                           </td>
-                          <td>{userInstansi}</td>
                           {filterMode !== 'harian' && (
                             <td style={{ fontSize: 12 }}>
                               {new Date(att.tanggal).toLocaleDateString('id-ID', {
