@@ -96,14 +96,14 @@ const LogAktivitas: React.FC = () => {
       for (const id of Array.from(deletedLogIds)) {
         await WorkLogAPI.delete(id);
       }
-      
+
       // 2. Process updates
       for (const [id, data] of Object.entries(editedLogs)) {
         if (!deletedLogIds.has(id)) {
           await WorkLogAPI.update(id, data);
         }
       }
-      
+
       showToast('Perubahan berhasil disimpan', 'success');
       setEditedLogs({});
       setDeletedLogIds(new Set());
@@ -117,17 +117,17 @@ const LogAktivitas: React.FC = () => {
   };
 
   const handleEditChange = (id: string, field: keyof WorkLog, value: any) => {
-    setEditedLogs(prev => ({
+    setEditedLogs((prev) => ({
       ...prev,
       [id]: {
         ...prev[id],
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
   const toggleDelete = (id: string) => {
-    setDeletedLogIds(prev => {
+    setDeletedLogIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -136,7 +136,7 @@ const LogAktivitas: React.FC = () => {
   };
 
   const toggleEditRow = (id: string) => {
-    setEditingRowIds(prev => {
+    setEditingRowIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -146,7 +146,9 @@ const LogAktivitas: React.FC = () => {
 
   const hasChanges = Object.keys(editedLogs).length > 0 || deletedLogIds.size > 0;
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const toggleUser = (id: string) => {
     setSelectedUsers((prev) => (prev.includes(id) ? prev.filter((u) => u !== id) : [...prev, id]));
@@ -218,23 +220,25 @@ const LogAktivitas: React.FC = () => {
       const isEnd = startEnd === 'end';
 
       days.push(
-        <div
-          key={day}
-          className={`calendar-cell ${inRange ? 'in-range' : ''} ${isStart ? 'start-date' : ''} ${isEnd ? 'end-date' : ''}`}
-          onClick={() => handleCalendarDateClick(year, monthIndex, day)}
-        >
+        <div key={day} className={`calendar-cell ${inRange ? 'in-range' : ''} ${isStart ? 'start-date' : ''} ${isEnd ? 'end-date' : ''}`} onClick={() => handleCalendarDateClick(year, monthIndex, day)}>
           {day}
-        </div>
+        </div>,
       );
     }
 
     return (
       <div className="calendar-month-picker">
         <div className="calendar-month-header">
-          <h3>{monthName} {year}</h3>
+          <h3>
+            {monthName} {year}
+          </h3>
         </div>
         <div className="calendar-weekdays">
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <div key={d} className="calendar-weekday">{d}</div>)}
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d) => (
+            <div key={d} className="calendar-weekday">
+              {d}
+            </div>
+          ))}
         </div>
         <div className="calendar-days">{days}</div>
       </div>
@@ -242,10 +246,16 @@ const LogAktivitas: React.FC = () => {
   };
   // -------------------------
 
-  const filtered = logs.filter(l => {
-    const q = search.toLowerCase();
-    return (l.userId as any)?.name?.toLowerCase().includes(q) || (l.jenis || '').toLowerCase().includes(q) || (l.keterangan || '').toLowerCase().includes(q);
-  });
+  const filtered = logs
+    .filter((l) => {
+      const q = search.toLowerCase();
+      return (l.userId as any)?.name?.toLowerCase().includes(q) || (l.jenis || '').toLowerCase().includes(q) || (l.keterangan || '').toLowerCase().includes(q);
+    })
+    .sort((a, b) => {
+      const dateA = a.tanggal ? new Date(a.tanggal).getTime() : 0;
+      const dateB = b.tanggal ? new Date(b.tanggal).getTime() : 0;
+      return dateB - dateA;
+    });
 
   const avColors = ['av-a', 'av-b', 'av-c', 'av-d', 'av-e'];
 
@@ -279,26 +289,25 @@ const LogAktivitas: React.FC = () => {
     try {
       await exportExcel({
         fileName: 'Log_Aktivitas',
-        sheets: [{
-          sheetName: 'Log Aktivitas',
-          title: 'LOG AKTIVITAS PEKERJAAN',
-          subtitle: 'Data aktivitas pekerjaan peserta magang',
-          infoLines: [
-            `Total Data: ${filtered.length}`,
-            ...(filterInfoStr ? [`Filter: ${filterInfoStr}`] : []),
-          ],
-          columns: [
-            { header: 'No', key: 'no', type: 'number', width: 6 },
-            { header: 'Nama Peserta', key: 'namaPeserta', type: 'string', width: 22 },
-            { header: 'Tanggal', key: 'tanggal', type: 'string', width: 20 },
-            { header: 'Jenis Pekerjaan', key: 'jenisPekerjaan', type: 'string', width: 18 },
-            { header: 'Keterangan', key: 'keterangan', type: 'string', width: 30 },
-            { header: 'Berkas', key: 'berkas', type: 'number', width: 10 },
-            { header: 'Buku', key: 'buku', type: 'number', width: 10 },
-            { header: 'Bundle', key: 'bundle', type: 'number', width: 10 },
-          ],
-          data,
-        }],
+        sheets: [
+          {
+            sheetName: 'Log Aktivitas',
+            title: 'LOG AKTIVITAS PEKERJAAN',
+            subtitle: 'Data aktivitas pekerjaan peserta magang',
+            infoLines: [`Total Data: ${filtered.length}`, ...(filterInfoStr ? [`Filter: ${filterInfoStr}`] : [])],
+            columns: [
+              { header: 'No', key: 'no', type: 'number', width: 6 },
+              { header: 'Nama Peserta', key: 'namaPeserta', type: 'string', width: 22 },
+              { header: 'Tanggal', key: 'tanggal', type: 'string', width: 20 },
+              { header: 'Jenis Pekerjaan', key: 'jenisPekerjaan', type: 'string', width: 18 },
+              { header: 'Keterangan', key: 'keterangan', type: 'string', width: 30 },
+              { header: 'Berkas', key: 'berkas', type: 'number', width: 10 },
+              { header: 'Buku', key: 'buku', type: 'number', width: 10 },
+              { header: 'Bundle', key: 'bundle', type: 'number', width: 10 },
+            ],
+            data,
+          },
+        ],
       });
       showToast('Berhasil mengekspor data ke Excel', 'success');
     } catch (err) {
@@ -309,16 +318,18 @@ const LogAktivitas: React.FC = () => {
 
   return (
     <>
-      <div className="page-header-row"><div className="page-header"><h1>Log Aktivitas</h1><p>Pantau aktivitas pekerjaan seluruh peserta magang</p></div></div>
+      <div className="page-header-row">
+        <div className="page-header">
+          <h1>Log Aktivitas</h1>
+          <p>Pantau aktivitas pekerjaan seluruh peserta magang</p>
+        </div>
+      </div>
 
       {/* Filters (Rekapitulasi Style) */}
       <div className="work-filter-bar">
         <div className="work-filter-left">
           <div className="filter-buttons">
-            <button
-              className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`}
-              onClick={() => setFilterType('bulanan')}
-            >
+            <button className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`} onClick={() => setFilterType('bulanan')}>
               Bulanan
             </button>
             <button
@@ -333,136 +344,136 @@ const LogAktivitas: React.FC = () => {
           </div>
 
           <div className="month-user-row">
-          {filterType === 'bulanan' ? (
-            <div className="month-picker-container">
-              <button className="month-nav-btn" onClick={handlePrevMonth}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-              </button>
-              <span className="month-display">
-                {currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
-              </span>
-              <button className="month-nav-btn" onClick={handleNextMonth}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-              </button>
-            </div>
-          ) : (
-            <div className="custom-date-range-container">
-              <button
-                className="custom-date-range-toggle"
-                onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
-              >
-                {dateFrom && dateTo
-                  ? `${dateFrom} - ${dateTo}`
-                  : 'Pilih Rentang Tanggal'}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  style={{
-                    width: '16px',
-                    height: '16px',
-                    transform: isSelectingDateRange ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s',
-                  }}
-                >
+            {filterType === 'bulanan' ? (
+              <div className="month-picker-container">
+                <button className="month-nav-btn" onClick={handlePrevMonth}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                </button>
+                <span className="month-display">{currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</span>
+                <button className="month-nav-btn" onClick={handleNextMonth}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <div className="custom-date-range-container">
+                <button className="custom-date-range-toggle" onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}>
+                  {dateFrom && dateTo ? `${dateFrom} - ${dateTo}` : 'Pilih Rentang Tanggal'}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    style={{
+                      width: '16px',
+                      height: '16px',
+                      transform: isSelectingDateRange ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s',
+                    }}
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+
+                {isSelectingDateRange && (
+                  <div className="custom-date-picker-dropdown">
+                    <div className="custom-date-picker-header">
+                      <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>
+                        ←
+                      </button>
+                      <span>Pilih Rentang Tanggal</span>
+                      <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>
+                        →
+                      </button>
+                    </div>
+
+                    <div className="custom-calendars-container">
+                      {renderCalendarMonth(0)}
+                      {renderCalendarMonth(1)}
+                    </div>
+
+                    <div className="custom-date-range-info">
+                      {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
+                      {tempDateRangeStart && tempDateRangeEnd && (
+                        <p>
+                          {tempDateRangeStart} sampai {tempDateRangeEnd}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="custom-date-picker-footer">
+                      <button
+                        className="custom-date-apply-btn"
+                        onClick={() => {
+                          if (tempDateRangeStart && tempDateRangeEnd) {
+                            setDateFrom(tempDateRangeStart);
+                            setDateTo(tempDateRangeEnd);
+                            setIsSelectingDateRange(false);
+                            setIsSelectingStart(true);
+                          } else {
+                            showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
+                          }
+                        }}
+                      >
+                        Terapkan
+                      </button>
+                      <button
+                        className="custom-date-cancel-btn"
+                        onClick={() => {
+                          setIsSelectingDateRange(false);
+                          setTempDateRangeStart('');
+                          setTempDateRangeEnd('');
+                          setIsSelectingStart(true);
+                        }}
+                      >
+                        Batal
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* User Filter Dropdown */}
+            <div className="rekap-filter-group rekap-user-filter rekap-user-filter-container" ref={filterRef}>
+              <button className="rekap-user-btn" onClick={() => setShowUserFilter(!showUserFilter)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                </svg>
+                {selectedUsers.length === 0 ? 'Semua Peserta' : selectedUsers.length === users.length ? 'Semua Peserta' : `${selectedUsers.length} Peserta`}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rekap-user-btn-icon-right">
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               </button>
-
-              {isSelectingDateRange && (
-                <div className="custom-date-picker-dropdown">
-                  <div className="custom-date-picker-header">
-                    <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>←</button>
-                    <span>Pilih Rentang Tanggal</span>
-                    <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>→</button>
+              {showUserFilter && (
+                <div className="rekap-user-dropdown">
+                  <div className="rekap-user-option" onClick={selectAllUsers}>
+                    <input type="checkbox" checked={selectedUsers.length === users.length && users.length > 0} readOnly />
+                    <span style={{ fontWeight: 600 }}>Pilih Semua</span>
                   </div>
-
-                  <div className="custom-calendars-container">
-                    {renderCalendarMonth(0)}
-                    {renderCalendarMonth(1)}
-                  </div>
-
-                  <div className="custom-date-range-info">
-                    {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
-                    {tempDateRangeStart && tempDateRangeEnd && (
-                      <p>{tempDateRangeStart} sampai {tempDateRangeEnd}</p>
-                    )}
-                  </div>
-
-                  <div className="custom-date-picker-footer">
-                    <button
-                      className="custom-date-apply-btn"
-                      onClick={() => {
-                        if (tempDateRangeStart && tempDateRangeEnd) {
-                          setDateFrom(tempDateRangeStart);
-                          setDateTo(tempDateRangeEnd);
-                          setIsSelectingDateRange(false);
-                          setIsSelectingStart(true);
-                        } else {
-                          showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
-                        }
-                      }}
-                    >
-                      Terapkan
-                    </button>
-                    <button
-                      className="custom-date-cancel-btn"
-                      onClick={() => {
-                        setIsSelectingDateRange(false);
-                        setTempDateRangeStart('');
-                        setTempDateRangeEnd('');
-                        setIsSelectingStart(true);
-                      }}
-                    >
-                      Batal
-                    </button>
-                  </div>
+                  <div className="rekap-user-dropdown-divider" />
+                  {users.map((u) => (
+                    <div key={u._id} className="rekap-user-option" onClick={() => toggleUser(u._id)}>
+                      <input type="checkbox" checked={selectedUsers.includes(u._id)} readOnly />
+                      <span>{u.name}</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
-          )}
-
-          {/* User Filter Dropdown */}
-          <div className="rekap-filter-group rekap-user-filter rekap-user-filter-container" ref={filterRef}>
-            <button
-              className="rekap-user-btn"
-              onClick={() => setShowUserFilter(!showUserFilter)}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-              </svg>
-              {selectedUsers.length === 0
-                ? 'Semua Peserta'
-                : selectedUsers.length === users.length
-                  ? 'Semua Peserta'
-                  : `${selectedUsers.length} Peserta`}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rekap-user-btn-icon-right">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-            {showUserFilter && (
-              <div className="rekap-user-dropdown">
-                <div className="rekap-user-option" onClick={selectAllUsers}>
-                  <input type="checkbox" checked={selectedUsers.length === users.length && users.length > 0} readOnly />
-                  <span style={{ fontWeight: 600 }}>Pilih Semua</span>
-                </div>
-                <div className="rekap-user-dropdown-divider" />
-                {users.map((u) => (
-                  <div key={u._id} className="rekap-user-option" onClick={() => toggleUser(u._id)}>
-                    <input type="checkbox" checked={selectedUsers.includes(u._id)} readOnly />
-                    <span>{u.name}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
           </div>
 
           <button className="btn-export" onClick={exportToExcel}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
             Export Excel
           </button>
         </div>
@@ -471,19 +482,16 @@ const LogAktivitas: React.FC = () => {
       {/* Search Bar */}
       <div className="log-table-card">
         <div className="peserta-table-header">
-          <div className="pth-left"><h3>Aktivitas Terbaru</h3></div>
+          <div className="pth-left">
+            <h3>Aktivitas Terbaru</h3>
+          </div>
           <div className="peserta-search" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             {hasChanges && (
-              <button 
-                className="btn btn-primary" 
-                onClick={handleSave} 
-                disabled={isSaving}
-                style={{ height: '40px', padding: '0 16px', fontSize: '13px', borderRadius: '8px' }}
-              >
+              <button className="btn btn-primary" onClick={handleSave} disabled={isSaving} style={{ height: '40px', padding: '0 16px', fontSize: '13px', borderRadius: '8px' }}>
                 {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
               </button>
             )}
-            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari aktivitas..." />
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari aktivitas..." />
           </div>
         </div>
         <div className="log-table-header-wrapper">
@@ -541,16 +549,20 @@ const LogAktivitas: React.FC = () => {
                     <tr key={l._id} style={{ opacity: isDeleted ? 0.5 : 1 }}>
                       <td>
                         <div className="user-cell">
-                          <span className="user-name" style={{ textDecoration: isDeleted ? 'line-through' : 'none' }}>{name}</span>
+                          <span className="user-name" style={{ textDecoration: isDeleted ? 'line-through' : 'none' }}>
+                            {name}
+                          </span>
                         </div>
                       </td>
                       <td style={{ textDecoration: isDeleted ? 'line-through' : 'none' }}>{dateStr}</td>
                       <td>
                         {isDeleted ? (
-                          <span className="job-badge" style={{ textDecoration: 'line-through' }}>{l.jenis || '-'}</span>
+                          <span className="job-badge" style={{ textDecoration: 'line-through' }}>
+                            {l.jenis || '-'}
+                          </span>
                         ) : isEditing ? (
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             value={editedLogs[l._id]?.jenis ?? l.jenis ?? ''}
                             onChange={(e) => handleEditChange(l._id, 'jenis', e.target.value)}
                             style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--gray-300)' }}
@@ -563,8 +575,8 @@ const LogAktivitas: React.FC = () => {
                         {isDeleted ? (
                           <span style={{ textDecoration: 'line-through' }}>{l.keterangan || '-'}</span>
                         ) : isEditing ? (
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             value={editedLogs[l._id]?.keterangan ?? l.keterangan ?? ''}
                             onChange={(e) => handleEditChange(l._id, 'keterangan', e.target.value)}
                             style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--gray-300)' }}
@@ -575,10 +587,12 @@ const LogAktivitas: React.FC = () => {
                       </td>
                       <td>
                         {isDeleted ? (
-                          <span className="data-highlight" style={{ textDecoration: 'line-through' }}>{l.berkas || 0}</span>
+                          <span className="data-highlight" style={{ textDecoration: 'line-through' }}>
+                            {l.berkas || 0}
+                          </span>
                         ) : isEditing ? (
-                          <input 
-                            type="number" 
+                          <input
+                            type="number"
                             min="0"
                             value={editedLogs[l._id]?.berkas ?? l.berkas ?? 0}
                             onChange={(e) => handleEditChange(l._id, 'berkas', Number(e.target.value))}
@@ -590,10 +604,12 @@ const LogAktivitas: React.FC = () => {
                       </td>
                       <td>
                         {isDeleted ? (
-                          <span className="data-highlight" style={{ textDecoration: 'line-through' }}>{l.buku || 0}</span>
+                          <span className="data-highlight" style={{ textDecoration: 'line-through' }}>
+                            {l.buku || 0}
+                          </span>
                         ) : isEditing ? (
-                          <input 
-                            type="number" 
+                          <input
+                            type="number"
                             min="0"
                             value={editedLogs[l._id]?.buku ?? l.buku ?? 0}
                             onChange={(e) => handleEditChange(l._id, 'buku', Number(e.target.value))}
@@ -605,10 +621,12 @@ const LogAktivitas: React.FC = () => {
                       </td>
                       <td>
                         {isDeleted ? (
-                          <span className="data-highlight" style={{ textDecoration: 'line-through' }}>{l.bundle || 0}</span>
+                          <span className="data-highlight" style={{ textDecoration: 'line-through' }}>
+                            {l.bundle || 0}
+                          </span>
                         ) : isEditing ? (
-                          <input 
-                            type="number" 
+                          <input
+                            type="number"
                             min="0"
                             value={editedLogs[l._id]?.bundle ?? l.bundle ?? 0}
                             onChange={(e) => handleEditChange(l._id, 'bundle', Number(e.target.value))}
@@ -621,20 +639,11 @@ const LogAktivitas: React.FC = () => {
                       <td style={{ textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                           {!isDeleted && (
-                            <button 
-                              onClick={() => toggleEditRow(l._id)}
-                              className="btn btn-outline"
-                              style={{ padding: '6px 12px', fontSize: '12px', height: '32px' }}
-                              title={isEditing ? 'Batal Edit' : 'Edit'}
-                            >
+                            <button onClick={() => toggleEditRow(l._id)} className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '12px', height: '32px' }} title={isEditing ? 'Batal Edit' : 'Edit'}>
                               {isEditing ? 'Batal' : 'Edit'}
                             </button>
                           )}
-                          <button 
-                            onClick={() => toggleDelete(l._id)}
-                            className={`btn ${isDeleted ? 'btn-outline' : 'btn-danger'}`}
-                            style={{ padding: '6px 12px', fontSize: '12px', height: '32px' }}
-                          >
+                          <button onClick={() => toggleDelete(l._id)} className={`btn ${isDeleted ? 'btn-outline' : 'btn-danger'}`} style={{ padding: '6px 12px', fontSize: '12px', height: '32px' }}>
                             {isDeleted ? 'Batal Hapus' : 'Hapus'}
                           </button>
                         </div>

@@ -41,14 +41,9 @@ const AdminDashboard: React.FC = () => {
   const donutRef = useRef<HTMLCanvasElement>(null);
   const charts = useRef<Chart[]>([]);
 
-  // All Time chart state
-  const [isAllTimeChart, setIsAllTimeChart] = useState(false);
-  const [allTimeChartData, setAllTimeChartData] = useState<any[] | null>(null);
-  const [allTimeLoading, setAllTimeLoading] = useState(false);
-
   // Filter States
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [filterType, setFilterType] = useState<'bulanan' | 'custom'>('bulanan');
+  const [filterType, setFilterType] = useState<'alltime' | 'bulanan' | 'custom'>('alltime');
   const [dateRangeStart, setDateRangeStart] = useState<string>('');
   const [dateRangeEnd, setDateRangeEnd] = useState<string>('');
   const [isSelectingDateRange, setIsSelectingDateRange] = useState(false);
@@ -65,7 +60,9 @@ const AdminDashboard: React.FC = () => {
 
   const loadDashboardData = async () => {
     let q = '';
-    if (filterType === 'bulanan') {
+    if (filterType === 'alltime') {
+      q = '?allTime=true';
+    } else if (filterType === 'bulanan') {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
       const start = new Date(year, month, 1);
@@ -98,29 +95,9 @@ const AdminDashboard: React.FC = () => {
     };
   }, []);
 
-  const handleFilterChange = (type: 'bulanan' | 'custom') => {
+  const handleFilterChange = (type: 'alltime' | 'bulanan' | 'custom') => {
     setFilterType(type);
-    setIsAllTimeChart(false);
     if (type === 'bulanan') setCurrentDate(new Date());
-  };
-
-  const loadAllTimeChart = async () => {
-    if (allTimeChartData) {
-      setIsAllTimeChart(true);
-      return;
-    }
-    setAllTimeLoading(true);
-    try {
-      const res = await DashboardAPI.getAdmin('?allTime=true');
-      if (res && res.success) {
-        setAllTimeChartData((res.data as any).weeklyProgress || []);
-        setIsAllTimeChart(true);
-      }
-    } catch {
-      showToast('Gagal memuat data all time', 'error');
-    } finally {
-      setAllTimeLoading(false);
-    }
   };
 
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
@@ -723,7 +700,7 @@ const AdminDashboard: React.FC = () => {
 
     // Weekly chart (Rekardus Area Chart)
     if (weeklyRef.current) {
-      const wp = (isAllTimeChart && allTimeChartData ? allTimeChartData : data.weeklyProgress) || [];
+      const wp = data.weeklyProgress || [];
       const labels = wp.map((w) =>
         new Date(w._id).toLocaleDateString('id-ID', {
           weekday: 'short',
@@ -855,7 +832,7 @@ const AdminDashboard: React.FC = () => {
       });
       charts.current.push(c);
     }
-  }, [data, isAllTimeChart, allTimeChartData]);
+  }, [data]);
 
   if (!data) return <div className="text-center p-16 text-gray-400">Memuat dashboard...</div>;
 
@@ -877,6 +854,9 @@ const AdminDashboard: React.FC = () => {
         <div className="dashboard-filter-bar">
           {/* Filter UI */}
           <div className="dashboard-filter-group">
+            <button onClick={() => handleFilterChange('alltime')} className={`dashboard-filter-btn ${filterType === 'alltime' ? 'active' : ''}`}>
+              All Time
+            </button>
             <button onClick={() => handleFilterChange('bulanan')} className={`dashboard-filter-btn ${filterType === 'bulanan' ? 'active' : ''}`}>
               Bulanan
             </button>
@@ -892,7 +872,9 @@ const AdminDashboard: React.FC = () => {
           </div>
 
           <div className="dashboard-month-export-row">
-            {filterType === 'bulanan' ? (
+            {filterType === 'alltime' ? (
+              <div />
+            ) : filterType === 'bulanan' ? (
               <div className="month-picker-container">
                 <button onClick={handlePrevMonth} className="month-nav-btn">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1068,45 +1050,11 @@ const AdminDashboard: React.FC = () => {
 
         <div className="charts-row">
           <div className="chart-card">
-            <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <h3>Arsip Tersimpan</h3>
-                <p>
-                  Total Rekardus:{' '}
-                  <strong>
-                    {(() => {
-                      const wp = (isAllTimeChart && allTimeChartData ? allTimeChartData : data.weeklyProgress) || [];
-                      return wp.reduce((sum, w) => sum + (w.berkas || 0) + (w.buku || 0) + (w.bundle || 0), 0).toLocaleString();
-                    })()}
-                  </strong>{' '}
-                  item
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  if (isAllTimeChart) {
-                    setIsAllTimeChart(false);
-                  } else {
-                    loadAllTimeChart();
-                  }
-                }}
-                disabled={allTimeLoading}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: 8,
-                  border: isAllTimeChart ? '2px solid #3b82f6' : '1px solid #e2e8f0',
-                  background: isAllTimeChart ? '#3b82f6' : '#f8fafc',
-                  color: isAllTimeChart ? '#fff' : '#64748b',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: allTimeLoading ? 'wait' : 'pointer',
-                  transition: 'all 0.2s ease',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                }}
-              >
-                {allTimeLoading ? 'Memuat...' : isAllTimeChart ? '✓ All Time' : 'All Time'}
-              </button>
+            <div className="chart-header">
+              <h3>Arsip Tersimpan</h3>
+              <p>
+                Total Rekardus: <strong>{(data.weeklyProgress || []).reduce((sum, w) => sum + (w.berkas || 0) + (w.buku || 0) + (w.bundle || 0), 0).toLocaleString()}</strong> item
+              </p>
             </div>
             <div className="chart-canvas-wrapper">
               <canvas ref={weeklyRef} />
