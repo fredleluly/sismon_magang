@@ -294,6 +294,88 @@ img {
   height: 20px;
 }
 
+/* ===== SIDEBAR COLLAPSE TOGGLE BUTTON ===== */
+.sidebar-collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 8px auto;
+  flex-shrink: 0;
+}
+
+.sidebar-collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.sidebar-collapse-btn .collapse-icon {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.3s ease;
+}
+
+.sidebar.collapsed .sidebar-collapse-btn .collapse-icon {
+  transform: rotate(180deg);
+}
+
+/* ===== SIDEBAR COLLAPSED STATE (Desktop Only) ===== */
+.sidebar.collapsed {
+  width: 68px;
+  padding: 16px 8px;
+}
+
+.sidebar.collapsed .brand-text {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar-brand {
+  justify-content: center;
+  padding: 0 0 16px;
+}
+
+.sidebar.collapsed .sidebar-brand .brand-logo {
+  width: 36px;
+  height: 36px;
+}
+
+.sidebar.collapsed .sidebar-menu .menu-item {
+  justify-content: center;
+  padding: 12px;
+  gap: 0;
+}
+
+.sidebar.collapsed .menu-label {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar-menu .menu-item.active::after {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar-footer .menu-item {
+  justify-content: center;
+  padding: 12px;
+  gap: 0;
+}
+
+/* Adjust topbar and main-content when sidebar is collapsed */
+.sidebar-collapsed .topbar {
+  left: 68px;
+}
+
+.sidebar-collapsed .main-content {
+  margin-left: 68px;
+}
+
 /* ===== TOPBAR ===== */
 .topbar {
   display: flex;
@@ -3140,6 +3222,48 @@ img {
     background: rgba(255, 255, 255, 0.15);
   }
 
+  /* Hide desktop collapse button on mobile */
+  .sidebar-collapse-btn {
+    display: none;
+  }
+
+  /* Reset collapsed state on mobile — always show full drawer */
+  .sidebar.collapsed {
+    width: 280px;
+    max-width: 85vw;
+    padding: 24px 16px;
+  }
+
+  .sidebar.collapsed .brand-text {
+    display: flex;
+  }
+
+  .sidebar.collapsed .menu-label {
+    display: inline;
+  }
+
+  .sidebar.collapsed .sidebar-menu .menu-item {
+    justify-content: flex-start;
+    padding: 13px 16px;
+    gap: 14px;
+  }
+
+  .sidebar.collapsed .sidebar-footer .menu-item {
+    justify-content: flex-start;
+    padding: 13px 16px;
+    gap: 14px;
+  }
+
+  .sidebar.collapsed .sidebar-brand {
+    justify-content: flex-start;
+    padding: 0 8px 24px;
+  }
+
+  .sidebar.collapsed .sidebar-brand .brand-logo {
+    width: 42px;
+    height: 42px;
+  }
+
   .main-content {
     margin-left: 0;
     padding-top: 65px;
@@ -3155,6 +3279,14 @@ img {
     gap: 8px;
     left: 0;
     /* Full width on mobile */
+  }
+
+  .sidebar-collapsed .topbar {
+    left: 0;
+  }
+
+  .sidebar-collapsed .main-content {
+    margin-left: 0;
   }
 
   .topbar-title {
