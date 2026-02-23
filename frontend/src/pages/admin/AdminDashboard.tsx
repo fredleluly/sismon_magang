@@ -1012,15 +1012,6 @@ const AdminDashboard: React.FC = () => {
         <div className="admin-stats-grid">
           <div className="admin-stat-card">
             <div className="stat-info">
-              <div className="stat-label">Total Rekardus</div>
-              <div className="stat-value" ref={(el) => el && data && animateCounter(el, data.totalRekardus || 0)}>
-                0
-              </div>
-              <div className="stat-change">Item selesai</div>
-            </div>
-          </div>
-          <div className="admin-stat-card">
-            <div className="stat-info">
               <div className="stat-label">Total Sortir</div>
               <div className="stat-value" ref={(el) => el && data && animateCounter(el, data.totalSortir || 0)}>
                 0
@@ -1064,43 +1055,51 @@ const AdminDashboard: React.FC = () => {
               <div className="stat-change">Item selesai</div>
             </div>
           </div>
+          <div className="admin-stat-card">
+            <div className="stat-info">
+              <div className="stat-label">Total Rekardus</div>
+              <div className="stat-value" ref={(el) => el && data && animateCounter(el, data.totalRekardus || 0)}>
+                0
+              </div>
+              <div className="stat-change">Item selesai</div>
+            </div>
+          </div>
         </div>
 
         <div className="charts-row">
           <div className="chart-card">
-            <div className="chart-header">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h3 style={{ margin: 0 }}>Arsip Tersimpan</h3>
-                  <p style={{ margin: '4px 0 0' }}>
-                    Total Rekardus: <strong>{(data.totalRekardus || 0).toLocaleString()}</strong> item
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    if (isAllTimeChart) {
-                      setIsAllTimeChart(false);
-                    } else {
-                      loadAllTimeChart();
-                    }
-                  }}
-                  disabled={allTimeLoading}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 8,
-                    border: isAllTimeChart ? '2px solid #3b82f6' : '1px solid #e2e8f0',
-                    background: isAllTimeChart ? '#3b82f6' : '#f8fafc',
-                    color: isAllTimeChart ? '#fff' : '#64748b',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: allTimeLoading ? 'wait' : 'pointer',
-                    transition: 'all 0.2s ease',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {allTimeLoading ? 'Memuat...' : isAllTimeChart ? '✓ All Time' : 'All Time'}
-                </button>
+            <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h3>Arsip Tersimpan</h3>
+                <p>
+                  Total Rekardus: <strong>{(data.totalRekardus || 0).toLocaleString()}</strong> item
+                </p>
               </div>
+              <button
+                onClick={() => {
+                  if (isAllTimeChart) {
+                    setIsAllTimeChart(false);
+                  } else {
+                    loadAllTimeChart();
+                  }
+                }}
+                disabled={allTimeLoading}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 8,
+                  border: isAllTimeChart ? '2px solid #3b82f6' : '1px solid #e2e8f0',
+                  background: isAllTimeChart ? '#3b82f6' : '#f8fafc',
+                  color: isAllTimeChart ? '#fff' : '#64748b',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: allTimeLoading ? 'wait' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >
+                {allTimeLoading ? 'Memuat...' : isAllTimeChart ? '✓ All Time' : 'All Time'}
+              </button>
             </div>
             <div className="chart-canvas-wrapper">
               <canvas ref={weeklyRef} />

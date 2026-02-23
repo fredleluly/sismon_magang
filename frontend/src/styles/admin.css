@@ -681,7 +681,6 @@ img {
 
 .admin-stat-card:nth-child(1) {
   animation-delay: 0.05s;
-  background: linear-gradient(135deg, rgba(24, 217, 255, 0.5), rgba(255, 213, 0, 0.5));
 }
 
 .admin-stat-card:nth-child(2) {
@@ -738,7 +737,6 @@ img {
 }
 
 .admin-stat-card:nth-child(1) .stat-info .stat-change {
-  color: var(--accent-red);
 }
 
 .admin-stat-card:hover {
