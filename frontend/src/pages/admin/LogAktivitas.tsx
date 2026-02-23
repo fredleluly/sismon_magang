@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { exportExcel } from '../../utils/excelExport';
-import { WorkLogAPI, UsersAPI } from '../../services/api';
+import { WorkLogAPI, UsersAPI, TargetSectionAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
-import type { WorkLog, User } from '../../types';
+import type { WorkLog, User, TargetSection } from '../../types';
 
 const LogAktivitas: React.FC = () => {
   const { showToast } = useToast();
@@ -30,6 +30,8 @@ const LogAktivitas: React.FC = () => {
 
   // User Filter State
   const [users, setUsers] = useState<User[]>([]);
+  // Job Desk State
+  const [jobDesks, setJobDesks] = useState<TargetSection[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [showUserFilter, setShowUserFilter] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -43,6 +45,14 @@ const LogAktivitas: React.FC = () => {
       }
     };
     loadUsers();
+
+    const loadJobDesks = async () => {
+      const res = await TargetSectionAPI.getAll();
+      if (res && res.success) {
+        setJobDesks(res.data || []);
+      }
+    };
+    loadJobDesks();
 
     // Click outside to close dropdowns
     const handleClickOutside = (event: MouseEvent) => {
@@ -561,12 +571,16 @@ const LogAktivitas: React.FC = () => {
                             {l.jenis || '-'}
                           </span>
                         ) : isEditing ? (
-                          <input
-                            type="text"
+                          <select
                             value={editedLogs[l._id]?.jenis ?? l.jenis ?? ''}
                             onChange={(e) => handleEditChange(l._id, 'jenis', e.target.value)}
-                            style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--gray-300)' }}
-                          />
+                            style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--gray-300)', backgroundColor: 'white' }}
+                          >
+                            <option value="">Pilih Jenis Pekerjaan</option>
+                            {jobDesks.map(jd => (
+                              <option key={jd.jenis} value={jd.jenis}>{jd.jenis}</option>
+                            ))}
+                          </select>
                         ) : (
                           <span className="job-badge">{editedLogs[l._id]?.jenis ?? l.jenis ?? '-'}</span>
                         )}
