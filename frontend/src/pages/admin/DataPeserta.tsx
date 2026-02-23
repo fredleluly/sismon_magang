@@ -52,8 +52,6 @@ const DataPeserta: React.FC = () => {
     };
   }, [modal]);
 
-
-
   const filtered = peserta.filter((p) => (p.name || '').toLowerCase().includes(search.toLowerCase()) || (p.username || '').toLowerCase().includes(search.toLowerCase()));
 
   const openAdd = () => {
@@ -150,134 +148,130 @@ const DataPeserta: React.FC = () => {
         </div>
         <div className="peserta-table-wrapper">
           <table className="peserta-table">
-          <thead>
-            <tr>
-              <th>Nama</th>
-              <th>Username</th>
-              <th>Berkas</th>
-              <th>Buku</th>
-              <th>Bundle</th>
-              <th>Status</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((p, i) => {
-              const initials = (p.name || '')
-                .split(' ')
-                .map((n) => n[0])
-                .join('')
-                .substring(0, 2)
-                .toUpperCase();
-              return (
-                <tr key={p._id}>
-                  <td>
-                    <div className="user-cell">
-                      <div className={`user-avatar ${avColors[i % 5]}`}>{initials}</div>
-                      <div>
-                        <div className="user-name">{p.name}</div>
-                        <div className="user-email">{p.email}</div>
+            <thead>
+              <tr>
+                <th>Nama</th>
+                <th>Username</th>
+                <th>Berkas</th>
+                <th>Buku</th>
+                <th>Bundle</th>
+                <th>Status</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((p, i) => {
+                const initials = (p.name || '')
+                  .split(' ')
+                  .map((n) => n[0])
+                  .join('')
+                  .substring(0, 2)
+                  .toUpperCase();
+                return (
+                  <tr key={p._id}>
+                    <td>
+                      <div className="user-cell">
+                        <div className={`user-avatar ${avColors[i % 5]}`}>{initials}</div>
+                        <div>
+                          <div className="user-name">{p.name}</div>
+                          <div className="user-email">{p.email}</div>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span className="data-highlight username">{p.username || '-'}</span>
-                  </td>
-                  <td>
-                    <span className="data-highlight">{(p.totalBerkas || 0).toLocaleString()}</span>
-                  </td>
-                  <td>
-                    <span className="data-highlight">{p.totalBuku || 0}</span>
-                  </td>
-                  <td>
-                    <span className="data-highlight">{p.totalBundle || 0}</span>
-                  </td>
-                  <td>
-                    <span className={`status-badge ${(p.status || 'Aktif').toLowerCase()}`}>{p.status || 'Aktif'}</span>
-                  </td>
-                  <td>
-                    <div className="action-btns">
-                      <button className="action-btn edit" onClick={() => openEdit(p._id)} title="Edit Peserta">
-                        ✏️
-                      </button>
-                      <button className="action-btn warning" onClick={() => openResetPassword(p._id, p.name)} title="Reset Password" style={{ background: '#f59e0b', color: 'white' }}>
-                        🔑
-                      </button>
-                      <button className="action-btn delete" onClick={() => del(p._id)} title="Hapus Peserta">
-                        🗑️
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
+                    </td>
+                    <td>
+                      <span className="data-highlight username">{p.username || '-'}</span>
+                    </td>
+                    <td>
+                      <span className="data-highlight">{(p.totalBerkas || 0).toLocaleString()}</span>
+                    </td>
+                    <td>
+                      <span className="data-highlight">{p.totalBuku || 0}</span>
+                    </td>
+                    <td>
+                      <span className="data-highlight">{p.totalBundle || 0}</span>
+                    </td>
+                    <td>
+                      <span className={`status-badge ${(p.status || 'Aktif').toLowerCase()}`}>{p.status || 'Aktif'}</span>
+                    </td>
+                    <td>
+                      <div className="action-btns">
+                        <button className="action-btn edit" onClick={() => openEdit(p._id)} title="Edit Peserta">
+                          ✏️
+                        </button>
+                        <button className="action-btn warning" onClick={() => openResetPassword(p._id, p.name)} title="Reset Password" style={{ background: '#f59e0b', color: 'white' }}>
+                          🔑
+                        </button>
+                        <button className="action-btn delete" onClick={() => del(p._id)} title="Hapus Peserta">
+                          🗑️
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
           </table>
           {deleteConfirm.show &&
-              ReactDOM.createPortal(
-                <div className="modal-overlay active">
-                  <div className="modal-card modal-delete-confirm">
-                    <div className="modal-header">
-                      <h3>Konfirmasi Penghapusan</h3>
-                      <div className="modal-close" onClick={() => setDeleteConfirm({ show: false, id: null })}>
-                        ✕
-                      </div>
-                    </div>
-                    <div className="modal-body">
-                      <p style={{ textAlign: 'center', color: '#666', marginBottom: '20px' }}>Apakah Anda yakin ingin menghapus peserta ini? Tindakan ini tidak dapat dibatalkan.</p>
-                    </div>
-                    <div className="modal-footer">
-                      <button className="btn-outline" onClick={() => setDeleteConfirm({ show: false, id: null })}>Batal</button>
-                      <button className="btn btn-danger" onClick={confirmDelete}>Hapus Peserta</button>
+            ReactDOM.createPortal(
+              <div className="modal-overlay active">
+                <div className="modal-card modal-delete-confirm">
+                  <div className="modal-header">
+                    <h3>Konfirmasi Penghapusan</h3>
+                    <div className="modal-close" onClick={() => setDeleteConfirm({ show: false, id: null })}>
+                      ✕
                     </div>
                   </div>
-                </div>,
-                document.body
-              )}
-            {resetPassword.show &&
-              ReactDOM.createPortal(
-                <div className="modal-overlay active">
-                  <div className="modal-card">
-                    <div className="modal-header">
-                      <h3>Reset Password</h3>
-                      <div className="modal-close" onClick={() => setResetPassword({ show: false, id: null, name: '' })}>
-                        ✕
-                      </div>
-                    </div>
-                    <div className="modal-body">
-                      <p style={{ marginBottom: '15px' }}>
-                        Masukkan password baru untuk pengguna <strong>{resetPassword.name}</strong>.
-                      </p>
-                      <div className="form-group">
-                        <label>Password Baru</label>
-                        <input
-                          type="password"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="Minimal 6 karakter"
-                          autoFocus
-                        />
-                      </div>
-                    </div>
-                    <div className="modal-footer">
-                      <button className="btn-outline" onClick={() => setResetPassword({ show: false, id: null, name: '' })}>
-                        Batal
-                      </button>
-                      <button className="btn btn-primary" onClick={handleResetPassword}>
-                        Simpan Password Baru
-                      </button>
+                  <div className="modal-body">
+                    <p style={{ textAlign: 'center', color: '#666', marginBottom: '20px' }}>Apakah Anda yakin ingin menghapus peserta ini? Tindakan ini tidak dapat dibatalkan.</p>
+                  </div>
+                  <div className="modal-footer">
+                    <button className="btn-outline" onClick={() => setDeleteConfirm({ show: false, id: null })}>
+                      Batal
+                    </button>
+                    <button className="btn btn-danger" onClick={confirmDelete}>
+                      Hapus Peserta
+                    </button>
+                  </div>
+                </div>
+              </div>,
+              document.body,
+            )}
+          {resetPassword.show &&
+            ReactDOM.createPortal(
+              <div className="modal-overlay active">
+                <div className="modal-card">
+                  <div className="modal-header">
+                    <h3>Reset Password</h3>
+                    <div className="modal-close" onClick={() => setResetPassword({ show: false, id: null, name: '' })}>
+                      ✕
                     </div>
                   </div>
-                </div>,
-                document.body
-              )}
+                  <div className="modal-body">
+                    <p style={{ marginBottom: '15px' }}>
+                      Masukkan password baru untuk pengguna <strong>{resetPassword.name}</strong>.
+                    </p>
+                    <div className="form-group">
+                      <label>Password Baru</label>
+                      <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Minimal 6 karakter" autoFocus />
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button className="btn-outline" onClick={() => setResetPassword({ show: false, id: null, name: '' })}>
+                      Batal
+                    </button>
+                    <button className="btn btn-primary" onClick={handleResetPassword}>
+                      Simpan Password Baru
+                    </button>
+                  </div>
+                </div>
+              </div>,
+              document.body,
+            )}
         </div>
       </div>
       {modal &&
         ReactDOM.createPortal(
-          <div
-              className="modal-overlay active"
-          >
+          <div className="modal-overlay active">
             <div className="modal-card">
               <div className="modal-header">
                 <h3>{editingId ? 'Edit Data Peserta' : 'Tambah Peserta'}</h3>
@@ -305,7 +299,11 @@ const DataPeserta: React.FC = () => {
                 {!editingId && user?.role === 'superadmin' && (
                   <div className="form-group">
                     <label>Role</label>
-                    <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} style={{ width: '100%', padding: '12px 16px', background: 'var(--gray-50)', border: '2px solid var(--gray-200)', borderRadius: 'var(--radius-md)', fontSize: '14px' }}>
+                    <select
+                      value={form.role}
+                      onChange={(e) => setForm({ ...form, role: e.target.value })}
+                      style={{ width: '100%', padding: '12px 16px', background: 'var(--gray-50)', border: '2px solid var(--gray-200)', borderRadius: 'var(--radius-md)', fontSize: '14px' }}
+                    >
                       <option value="user">User (Peserta Magang)</option>
                       <option value="admin">Admin</option>
                     </select>
@@ -328,7 +326,7 @@ const DataPeserta: React.FC = () => {
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </>
   );
