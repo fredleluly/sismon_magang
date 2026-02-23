@@ -6,6 +6,7 @@ import {
   getToken,
   ComplaintAPI,
   PerformanceAPI,
+  AttendanceAPI,
 } from "../../services/api";
 import { useToast } from "../../context/ToastContext";
 import type {
@@ -154,12 +155,11 @@ const AdminDashboard: React.FC = () => {
 
   const loadAttendance = async () => {
     try {
-      const res = await fetch("/api/attendance/today", {
-        headers: { Authorization: "Bearer " + getToken() },
-      });
-      const d = await res.json();
-      if (d.success) setAttendanceList(d.data || []);
-    } catch { }
+      const res = await AttendanceAPI.getToday();
+      if (res && res.success) setAttendanceList(res.data || []);
+    } catch (error) {
+      console.error("Error loading attendance:", error);
+    }
   };
 
   const exportToExcel = async () => {
@@ -220,7 +220,12 @@ const AdminDashboard: React.FC = () => {
         title: string,
         subtitle: string,
         infoLines: string[],
-        columns: { header: string; key: string; width: number; type?: string }[],
+        columns: {
+          header: string;
+          key: string;
+          width: number;
+          type?: string;
+        }[],
         rows: Record<string, any>[],
         summaryRow?: Record<string, any>,
       ) => {
@@ -232,7 +237,12 @@ const AdminDashboard: React.FC = () => {
         ws.mergeCells(rowNum, 1, rowNum, colCount);
         const titleCell = ws.getCell(rowNum, 1);
         titleCell.value = title;
-        titleCell.font = { name: "Calibri", bold: true, size: 14, color: { argb: T.titleFont } };
+        titleCell.font = {
+          name: "Calibri",
+          bold: true,
+          size: 14,
+          color: { argb: T.titleFont },
+        };
         titleCell.fill = solidFill(T.titleBg);
         titleCell.alignment = { horizontal: "center", vertical: "middle" };
         ws.getRow(rowNum).height = 36;
@@ -243,7 +253,12 @@ const AdminDashboard: React.FC = () => {
           ws.mergeCells(rowNum, 1, rowNum, colCount);
           const subCell = ws.getCell(rowNum, 1);
           subCell.value = subtitle;
-          subCell.font = { name: "Calibri", italic: true, size: 11, color: { argb: T.subtitleFont } };
+          subCell.font = {
+            name: "Calibri",
+            italic: true,
+            size: 11,
+            color: { argb: T.subtitleFont },
+          };
           subCell.fill = solidFill(T.subtitleBg);
           subCell.alignment = { horizontal: "center", vertical: "middle" };
           ws.getRow(rowNum).height = 24;
@@ -255,7 +270,11 @@ const AdminDashboard: React.FC = () => {
           ws.mergeCells(rowNum, 1, rowNum, colCount);
           const infoCell = ws.getCell(rowNum, 1);
           infoCell.value = line;
-          infoCell.font = { name: "Calibri", size: 10, color: { argb: T.infoFont } };
+          infoCell.font = {
+            name: "Calibri",
+            size: 10,
+            color: { argb: T.infoFont },
+          };
           infoCell.fill = solidFill(T.infoBg);
           infoCell.alignment = { horizontal: "left", vertical: "middle" };
           ws.getRow(rowNum).height = 20;
@@ -270,7 +289,12 @@ const AdminDashboard: React.FC = () => {
         columns.forEach((col, ci) => {
           const cell = headerRow.getCell(ci + 1);
           cell.value = col.header;
-          cell.font = { name: "Calibri", bold: true, size: 11, color: { argb: T.headerFont } };
+          cell.font = {
+            name: "Calibri",
+            bold: true,
+            size: 11,
+            color: { argb: T.headerFont },
+          };
           cell.fill = solidFill(T.headerBg);
           cell.alignment = { horizontal: "center", vertical: "middle" };
           cell.border = thin();
@@ -285,7 +309,11 @@ const AdminDashboard: React.FC = () => {
           columns.forEach((col, ci) => {
             const cell = r.getCell(ci + 1);
             cell.value = row[col.key] ?? "";
-            cell.font = { name: "Calibri", size: 10, color: { argb: T.bodyFont } };
+            cell.font = {
+              name: "Calibri",
+              size: 10,
+              color: { argb: T.bodyFont },
+            };
             cell.fill = solidFill(bgColor);
             cell.border = thin();
             cell.alignment = {
@@ -306,12 +334,18 @@ const AdminDashboard: React.FC = () => {
           columns.forEach((col, ci) => {
             const cell = r.getCell(ci + 1);
             const val = summaryRow[col.key];
-            cell.value = ci === 0 ? "TOTAL" : val ?? "";
-            cell.font = { name: "Calibri", bold: true, size: 11, color: { argb: T.summaryFont } };
+            cell.value = ci === 0 ? "TOTAL" : (val ?? "");
+            cell.font = {
+              name: "Calibri",
+              bold: true,
+              size: 11,
+              color: { argb: T.summaryFont },
+            };
             cell.fill = solidFill(T.summaryBg);
             cell.border = thin();
             cell.alignment = {
-              horizontal: col.type === "number" ? "right" : ci === 0 ? "center" : "left",
+              horizontal:
+                col.type === "number" ? "right" : ci === 0 ? "center" : "left",
               vertical: "middle",
             };
             if (col.type === "number" && typeof cell.value === "number") {
@@ -333,8 +367,13 @@ const AdminDashboard: React.FC = () => {
       // ═══════════════════════════════════════════════════════════════
       // Sheet 1: DASHBOARD OVERVIEW — Stat cards + embedded chart images
       // ═══════════════════════════════════════════════════════════════
-      const regStats = (data as any).registerStats || { berkas: 0, buku: 0, bundle: 0 };
-      const grandTotal = (regStats.berkas || 0) + (regStats.buku || 0) + (regStats.bundle || 0);
+      const regStats = (data as any).registerStats || {
+        berkas: 0,
+        buku: 0,
+        bundle: 0,
+      };
+      const grandTotal =
+        (regStats.berkas || 0) + (regStats.buku || 0) + (regStats.bundle || 0);
 
       const { ws: ws1, lastRow: lr1 } = addStyledSheet(
         "Dashboard",
@@ -348,17 +387,72 @@ const AdminDashboard: React.FC = () => {
           { header: "Keterangan", key: "keterangan", width: 30 },
         ],
         [
-          { no: 1, indikator: "Kehadiran Hari Ini", nilai: attendanceList.length, keterangan: `dari ${data.totalPeserta || 0} peserta` },
-          { no: 2, indikator: "Total Sortir", nilai: data.totalSortir || 0, keterangan: "Item selesai" },
-          { no: 3, indikator: "Total Pencopotan Steples", nilai: data.totalSteples || 0, keterangan: "Item selesai" },
-          { no: 4, indikator: "Total Scanning", nilai: data.totalScanning || 0, keterangan: "Item selesai" },
-          { no: 5, indikator: "Total Register", nilai: data.totalRegister || 0, keterangan: "Item selesai" },
-          { no: 6, indikator: "Pencetakan Stiker", nilai: data.totalStikering || 0, keterangan: "Item selesai" },
-          { no: 7, indikator: "Arsip Tersimpan (Rekardus)", nilai: data.totalRekardus || 0, keterangan: "Total item" },
-          { no: 8, indikator: "Kategori Arsip — Berkas", nilai: regStats.berkas || 0, keterangan: "Total berkas" },
-          { no: 9, indikator: "Kategori Arsip — Buku", nilai: regStats.buku || 0, keterangan: "Total buku" },
-          { no: 10, indikator: "Kategori Arsip — Bundle", nilai: regStats.bundle || 0, keterangan: "Total bundle" },
-          { no: 11, indikator: "Grand Total Kategori Arsip", nilai: grandTotal, keterangan: "Berkas + Buku + Bundle" },
+          {
+            no: 1,
+            indikator: "Kehadiran Hari Ini",
+            nilai: attendanceList.length,
+            keterangan: `dari ${data.totalPeserta || 0} peserta`,
+          },
+          {
+            no: 2,
+            indikator: "Total Sortir",
+            nilai: data.totalSortir || 0,
+            keterangan: "Item selesai",
+          },
+          {
+            no: 3,
+            indikator: "Total Pencopotan Steples",
+            nilai: data.totalSteples || 0,
+            keterangan: "Item selesai",
+          },
+          {
+            no: 4,
+            indikator: "Total Scanning",
+            nilai: data.totalScanning || 0,
+            keterangan: "Item selesai",
+          },
+          {
+            no: 5,
+            indikator: "Total Register",
+            nilai: data.totalRegister || 0,
+            keterangan: "Item selesai",
+          },
+          {
+            no: 6,
+            indikator: "Pencetakan Stiker",
+            nilai: data.totalStikering || 0,
+            keterangan: "Item selesai",
+          },
+          {
+            no: 7,
+            indikator: "Arsip Tersimpan (Rekardus)",
+            nilai: data.totalRekardus || 0,
+            keterangan: "Total item",
+          },
+          {
+            no: 8,
+            indikator: "Kategori Arsip — Berkas",
+            nilai: regStats.berkas || 0,
+            keterangan: "Total berkas",
+          },
+          {
+            no: 9,
+            indikator: "Kategori Arsip — Buku",
+            nilai: regStats.buku || 0,
+            keterangan: "Total buku",
+          },
+          {
+            no: 10,
+            indikator: "Kategori Arsip — Bundle",
+            nilai: regStats.bundle || 0,
+            keterangan: "Total bundle",
+          },
+          {
+            no: 11,
+            indikator: "Grand Total Kategori Arsip",
+            nilai: grandTotal,
+            keterangan: "Berkas + Buku + Bundle",
+          },
         ],
       );
 
@@ -374,7 +468,12 @@ const AdminDashboard: React.FC = () => {
           ws1.mergeCells(chartStartRow, 1, chartStartRow, 4);
           const labelCell = ws1.getCell(chartStartRow, 1);
           labelCell.value = `📊 Arsip Tersimpan (Rekardus) — Total: ${(data.totalRekardus || 0).toLocaleString()} item`;
-          labelCell.font = { name: "Calibri", bold: true, size: 12, color: { argb: T.titleBg } };
+          labelCell.font = {
+            name: "Calibri",
+            bold: true,
+            size: 12,
+            color: { argb: T.titleBg },
+          };
           labelCell.alignment = { horizontal: "left", vertical: "middle" };
           ws1.getRow(chartStartRow).height = 24;
 
@@ -396,7 +495,12 @@ const AdminDashboard: React.FC = () => {
           ws1.mergeCells(donutStartRow, 1, donutStartRow, 4);
           const labelCell2 = ws1.getCell(donutStartRow, 1);
           labelCell2.value = `📊 Kategori Arsip — Berkas: ${regStats.berkas || 0} | Buku: ${regStats.buku || 0} | Bundle: ${regStats.bundle || 0}`;
-          labelCell2.font = { name: "Calibri", bold: true, size: 12, color: { argb: T.titleBg } };
+          labelCell2.font = {
+            name: "Calibri",
+            bold: true,
+            size: 12,
+            color: { argb: T.titleBg },
+          };
           labelCell2.alignment = { horizontal: "left", vertical: "middle" };
           ws1.getRow(donutStartRow).height = 24;
 
@@ -644,10 +748,14 @@ const AdminDashboard: React.FC = () => {
           month: "short",
         }),
       );
-      // Backend now sends 'total' in weeklyProgress for Rekardus
-      const datasetData = wp.map(
-        (w) => (w as any).total || w.berkas + w.buku + w.bundle,
-      );
+
+      // Calculate cumulative sum for Rekardus
+      let cumulativeSum = 0;
+      const datasetData = wp.map((w) => {
+        const dailyTotal = (w as any).total || w.berkas + w.buku + w.bundle;
+        cumulativeSum += dailyTotal;
+        return cumulativeSum;
+      });
 
       const c = new Chart(weeklyRef.current, {
         type: "line",
@@ -772,9 +880,7 @@ const AdminDashboard: React.FC = () => {
 
   if (!data)
     return (
-      <div className="text-center p-16 text-gray-400">
-        Memuat dashboard...
-      </div>
+      <div className="text-center p-16 text-gray-400">Memuat dashboard...</div>
     );
 
   const ra = data.recentActivity || [];
@@ -1005,12 +1111,13 @@ const AdminDashboard: React.FC = () => {
                                 }
                               }
                             }}
-                            className={`p-1.5 text-center text-[13px] cursor-pointer rounded ${isSelected
-                              ? 'bg-primary-500 text-white'
-                              : inRange
-                                ? 'bg-primary-50'
-                                : 'hover:bg-gray-100'
-                              }`}
+                            className={`p-1.5 text-center text-[13px] cursor-pointer rounded ${
+                              isSelected
+                                ? "bg-primary-500 text-white"
+                                : inRange
+                                  ? "bg-primary-50"
+                                  : "hover:bg-gray-100"
+                            }`}
                           >
                             {d}
                           </div>
@@ -1182,7 +1289,10 @@ const AdminDashboard: React.FC = () => {
               Belum ada peserta yang absen hari ini
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div
+              className="flex flex-col gap-2 overflow-y-auto pr-2"
+              style={{ maxHeight: "320px" }}
+            >
               {attendanceList.map((r: any, i: number) => {
                 const name = r.userId?.name || "Unknown";
                 const initials = name
@@ -1201,9 +1311,7 @@ const AdminDashboard: React.FC = () => {
                         {initials}
                       </div>
                       <div>
-                        <div className="font-semibold text-[13px]">
-                          {name}
-                        </div>
+                        <div className="font-semibold text-[13px]">{name}</div>
                         <div className="text-[11px] text-slate-400">
                           {r.userId?.instansi || "-"}
                         </div>
@@ -1305,9 +1413,7 @@ const AdminDashboard: React.FC = () => {
         </div>
         <div className="activity-feed">
           {ra.length === 0 ? (
-            <p className="text-center text-gray-400 p-8">
-              Belum ada aktivitas
-            </p>
+            <p className="text-center text-gray-400 p-8">Belum ada aktivitas</p>
           ) : (
             ra.map((a: any, i: number) => {
               const name = a.userId?.name || "Unknown";
