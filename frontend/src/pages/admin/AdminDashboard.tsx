@@ -6,6 +6,7 @@ import {
   getToken,
   ComplaintAPI,
   PerformanceAPI,
+  AttendanceAPI,
 } from "../../services/api";
 import { useToast } from "../../context/ToastContext";
 import type {
@@ -154,12 +155,11 @@ const AdminDashboard: React.FC = () => {
 
   const loadAttendance = async () => {
     try {
-      const res = await fetch("/api/attendance/today", {
-        headers: { Authorization: "Bearer " + getToken() },
-      });
-      const d = await res.json();
-      if (d.success) setAttendanceList(d.data || []);
-    } catch { }
+      const res = await AttendanceAPI.getToday();
+      if (res && res.success) setAttendanceList(res.data || []);
+    } catch (error) {
+      console.error("Error loading attendance:", error);
+    }
   };
 
   const exportToExcel = async () => {
