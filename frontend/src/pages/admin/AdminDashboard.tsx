@@ -1072,7 +1072,10 @@ const AdminDashboard: React.FC = () => {
               <div>
                 <h3>Arsip Tersimpan</h3>
                 <p>
-                  Total Rekardus: <strong>{(data.totalRekardus || 0).toLocaleString()}</strong> item
+                  Total Rekardus: <strong>{(() => {
+                    const wp = (isAllTimeChart && allTimeChartData ? allTimeChartData : data.weeklyProgress) || [];
+                    return wp.reduce((sum, w) => sum + (w.berkas || 0) + (w.buku || 0) + (w.bundle || 0), 0).toLocaleString();
+                  })()}</strong> item
                 </p>
               </div>
               <button
