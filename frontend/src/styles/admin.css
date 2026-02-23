@@ -4867,3 +4867,43 @@ img {
     margin-left: 0;
   }
 }
+
+/* ============================================
+   REKAPITULASI TABS
+   ============================================ */
+.rekap-tabs {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--gray-100);
+  padding: 5px;
+  border-radius: var(--radius-lg);
+  margin-bottom: 24px;
+  border: 1px solid var(--gray-200);
+}
+
+.rekap-tab-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-500);
+  cursor: pointer;
+  border-radius: calc(var(--radius-lg) - 4px);
+  transition: all 0.2s ease;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rekap-tab-btn:hover {
+  color: var(--gray-800);
+}
+
+.rekap-tab-btn.active {
+  background-color: #fff;
+  color: var(--gray-900);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
