@@ -96,6 +96,10 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ success: false, message: 'Email/username atau password salah.' });
     }
 
+    if (user.status === 'Nonaktif') {
+      return res.status(403).json({ success: false, message: 'Akun Anda sedang dinonaktifkan. Silakan hubungi admin.' });
+    }
+
     const token = generateToken(user);
 
     res.json({

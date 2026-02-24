@@ -52,7 +52,9 @@ const DataPeserta: React.FC = () => {
     };
   }, [modal]);
 
-  const filtered = peserta.filter((p) => (p.name || '').toLowerCase().includes(search.toLowerCase()) || (p.username || '').toLowerCase().includes(search.toLowerCase()));
+  const filtered = peserta
+    .filter((p) => (p.name || '').toLowerCase().includes(search.toLowerCase()) || (p.username || '').toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
   const openAdd = () => {
     setEditingId(null);
@@ -100,7 +102,7 @@ const DataPeserta: React.FC = () => {
     if (editingId) {
       res = await UsersAPI.update(editingId, { name: form.name, email: form.email, username: form.username, instansi: form.instansi, status: form.status });
     } else {
-      res = await UsersAPI.create({ name: form.name, email: form.email, username: form.username, instansi: form.instansi, password: form.password || 'magang123' } as any);
+      res = await UsersAPI.create({ name: form.name, email: form.email, username: form.username, instansi: form.instansi, status: form.status, password: form.password || 'magang123' } as any);
     }
     if (res && res.success) {
       showToast(res.message || 'Berhasil', 'success');
@@ -295,6 +297,17 @@ const DataPeserta: React.FC = () => {
                 <div className="form-group">
                   <label>Instansi</label>
                   <input type="text" value={form.instansi} onChange={(e) => setForm({ ...form, instansi: e.target.value })} placeholder="Universitas" />
+                </div>
+                <div className="form-group">
+                  <label>Status Peserta</label>
+                  <select
+                    value={form.status}
+                    onChange={(e) => setForm({ ...form, status: e.target.value })}
+                    style={{ width: '100%', padding: '12px 16px', background: 'var(--gray-50)', border: '2px solid var(--gray-200)', borderRadius: 'var(--radius-md)', fontSize: '14px' }}
+                  >
+                    <option value="Aktif">Aktif</option>
+                    <option value="Nonaktif">Nonaktif</option>
+                  </select>
                 </div>
                 {!editingId && user?.role === 'superadmin' && (
                   <div className="form-group">
