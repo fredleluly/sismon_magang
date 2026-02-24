@@ -43,6 +43,15 @@ const ProfilePopup: React.FC<Props> = ({ user, onClose, onViewProfile, onLogout 
   }, [onClose]);
 
   if (!user) return null;
+
+  const calculateDuration = (dateStr?: string) => {
+    if (!dateStr) return "0 hari";
+    const start = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    return `${diff + 1} hari`;
+  };
+
   const initials = getInitials(user.name);
 
   return (
@@ -52,6 +61,11 @@ const ProfilePopup: React.FC<Props> = ({ user, onClose, onViewProfile, onLogout 
         <div className="profile-popup-info">
           <h4>{user.name}</h4>
           <p>{user.email}</p>
+          <div style={{ marginTop: '4px' }}>
+            <span className="badge-pln" style={{ padding: '2px 10px', fontSize: '11px', borderRadius: '12px', background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', display: 'inline-block', fontWeight: '700' }}>
+              {calculateDuration(user.createdAt)}
+            </span>
+          </div>
         </div>
       </div>
       <div className="profile-popup-body">

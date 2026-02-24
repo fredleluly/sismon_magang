@@ -136,6 +136,14 @@ const DataPeserta: React.FC = () => {
 
   const avColors = ['av-a', 'av-b', 'av-c', 'av-d', 'av-e'];
 
+  const calculateDuration = (dateStr?: string) => {
+    if (!dateStr) return '0 hari';
+    const start = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    return `${diff + 1} hari`;
+  };
+
   return (
     <>
       <div className="page-header-row">
@@ -165,6 +173,7 @@ const DataPeserta: React.FC = () => {
                 <th>Berkas</th>
                 <th>Buku</th>
                 <th>Bundle</th>
+                <th>Lama Magang</th>
                 <th>Status</th>
                 <th>Aksi</th>
               </tr>
@@ -199,6 +208,11 @@ const DataPeserta: React.FC = () => {
                     </td>
                     <td>
                       <span className="data-highlight">{p.totalBundle || 0}</span>
+                    </td>
+                    <td>
+                      <span className="data-highlight" style={{ color: '#0369a1', fontWeight: '700' }}>
+                        {calculateDuration(p.createdAt)}
+                      </span>
                     </td>
                     <td>
                       <span className={`status-badge ${(p.status || 'Aktif').toLowerCase()}`}>{p.status || 'Aktif'}</span>
