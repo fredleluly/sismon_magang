@@ -1042,29 +1042,8 @@ const AttendanceCalendar: React.FC = () => {
                 setModalThresholdAlasan(thresholdAlasan);
                 setShowThresholdModal(true);
               }}
-              style={{
-                padding: "8px 18px",
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                color: "white",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontSize: 12,
-                fontWeight: 600,
-                width: "100%",
-                transition: "transform 0.2s, box-shadow 0.2s",
-                boxShadow: "0 2px 8px rgba(102,126,234,0.3)",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-1px)";
-                e.currentTarget.style.boxShadow =
-                  "0 4px 12px rgba(102,126,234,0.4)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow =
-                  "0 2px 8px rgba(102,126,234,0.3)";
-              }}
+              className="btn-apply-filter"
+              style={{ width: "100%", fontSize: 12 }}
             >
               ✏️ Ubah Jam Telat {selectedDate ? "Tanggal Ini" : "Hari Ini"}
             </button>
