@@ -739,6 +739,593 @@ router.delete('/settings/today-threshold', auth, adminOnly, async (req, res) => 
   }
 });
 
+// =============================================
+// CLEANUP PHOTOS — HTML Page + API (no auth)
+// =============================================
+
+// GET /api/attendance/cleanup-photos — serves HTML page for photo cleanup
+router.get('/cleanup-photos', (req, res) => {
+  const html = `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cleanup Foto Absensi</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      background: linear-gradient(135deg, #1e293b 0%, #1a2332 100%);
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .header .icon {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+    }
+    .header h1 { font-size: 20px; font-weight: 700; color: #f1f5f9; }
+    .header p { font-size: 13px; color: #94a3b8; margin-top: 2px; }
+    .info-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #94a3b8;
+    }
+    .info-box strong { color: #60a5fa; }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 10px 14px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+    .date-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .btn-preview {
+      width: 100%;
+      padding: 10px;
+      background: #1e40af;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 12px;
+    }
+    .btn-preview:hover { background: #1d4ed8; transform: translateY(-1px); }
+    .btn-preview:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-delete {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: none;
+    }
+    .btn-delete:hover { background: linear-gradient(135deg, #ef4444, #dc2626); transform: translateY(-1px); }
+    .btn-delete:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .preview-result {
+      background: #172033;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .preview-result h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fbbf24;
+      margin-bottom: 10px;
+    }
+    .stat { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+    .stat .label { color: #94a3b8; }
+    .stat .value { color: #f1f5f9; font-weight: 600; }
+    .result-box {
+      background: #172033;
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 16px;
+      display: none;
+    }
+    .result-box.success { border: 1px solid #22c55e; }
+    .result-box.error { border: 1px solid #ef4444; }
+    .result-box h3 { font-size: 14px; margin-bottom: 8px; }
+    .result-box.success h3 { color: #22c55e; }
+    .result-box.error h3 { color: #ef4444; }
+    .result-box p { font-size: 13px; color: #94a3b8; line-height: 1.5; }
+    .btn-download {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #059669, #047857);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 20px;
+    }
+    .btn-download:hover { background: linear-gradient(135deg, #10b981, #059669); transform: translateY(-1px); }
+    .btn-download:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .divider {
+      border: none;
+      border-top: 1px solid #334155;
+      margin: 20px 0;
+    }
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="icon">🗑️</div>
+      <div>
+        <h1>Cleanup Foto Absensi</h1>
+        <p>Hapus foto absensi masuk &amp; keluar dari database</p>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <strong>ℹ️ Cara kerja:</strong><br>
+      Foto absensi (masuk &amp; keluar) dalam rentang tanggal yang dipilih akan dihapus dari database dan disk.
+      <strong>Data absensi (jam, status, dll) tetap aman</strong> — hanya foto yang dihapus.
+    </div>
+
+    <button class="btn-download" id="btnDownload" onclick="downloadAll()">
+      \u2b07\ufe0f Backup Database (ZIP)
+    </button>
+
+    <hr class="divider">
+
+    <div class="date-row">
+      <div class="form-group">
+        <label>📅 Dari Tanggal</label>
+        <input type="date" id="fromDate">
+      </div>
+      <div class="form-group">
+        <label>📅 Sampai Tanggal</label>
+        <input type="date" id="toDate">
+      </div>
+    </div>
+
+    <button class="btn-preview" id="btnPreview" onclick="previewCleanup()">
+      🔍 Preview — Lihat Data yang Terdampak
+    </button>
+
+    <div class="preview-result" id="previewResult">
+      <h3>⚠️ Data yang akan dihapus fotonya:</h3>
+      <div class="stat"><span class="label">Jumlah record:</span><span class="value" id="previewCount">0</span></div>
+      <div class="stat"><span class="label">Foto masuk (base64):</span><span class="value" id="previewMasukB64">0</span></div>
+      <div class="stat"><span class="label">Foto masuk (file):</span><span class="value" id="previewMasukFile">0</span></div>
+      <div class="stat"><span class="label">Foto pulang (base64):</span><span class="value" id="previewPulangB64">0</span></div>
+      <div class="stat"><span class="label">Foto pulang (file):</span><span class="value" id="previewPulangFile">0</span></div>
+      <div class="stat"><span class="label">Rentang:</span><span class="value" id="previewRange">-</span></div>
+    </div>
+
+    <button class="btn-delete" id="btnDelete" onclick="executeCleanup()">
+      🗑️ HAPUS FOTO SEKARANG
+    </button>
+
+    <div class="result-box" id="resultBox">
+      <h3 id="resultTitle"></h3>
+      <p id="resultMessage"></p>
+    </div>
+  </div>
+
+  <script>
+    const today = new Date();
+    const wibNow = new Date(today.getTime() + 7 * 60 * 60 * 1000);
+    const dayBeforeYesterday = new Date(wibNow);
+    dayBeforeYesterday.setUTCDate(dayBeforeYesterday.getUTCDate() - 2);
+    const toDateStr = dayBeforeYesterday.toISOString().split('T')[0];
+    const thirtyDaysAgo = new Date(wibNow);
+    thirtyDaysAgo.setUTCDate(thirtyDaysAgo.getUTCDate() - 30);
+    const fromDateStr = thirtyDaysAgo.toISOString().split('T')[0];
+
+    document.getElementById('fromDate').value = fromDateStr;
+    document.getElementById('toDate').value = toDateStr;
+
+    const API_BASE = window.location.origin + '/api/attendance/cleanup-photos';
+
+    async function previewCleanup() {
+      const from = document.getElementById('fromDate').value;
+      const to = document.getElementById('toDate').value;
+      if (!from || !to) { alert('Pilih rentang tanggal!'); return; }
+
+      const btn = document.getElementById('btnPreview');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Memuat preview...';
+
+      try {
+        const resp = await fetch(API_BASE + '/preview?from=' + from + '&to=' + to);
+        const data = await resp.json();
+
+        if (!data.success) {
+          alert('Error: ' + data.message);
+          return;
+        }
+
+        const d = data.data;
+        document.getElementById('previewCount').textContent = d.totalRecords;
+        document.getElementById('previewMasukB64').textContent = d.fotoMasukBase64;
+        document.getElementById('previewMasukFile').textContent = d.fotoMasukFile;
+        document.getElementById('previewPulangB64').textContent = d.fotoPulangBase64;
+        document.getElementById('previewPulangFile').textContent = d.fotoPulangFile;
+        document.getElementById('previewRange').textContent = from + '  →  ' + to;
+
+        document.getElementById('previewResult').style.display = 'block';
+        document.getElementById('btnDelete').style.display = d.totalRecords > 0 ? 'block' : 'none';
+        document.getElementById('resultBox').style.display = 'none';
+      } catch (err) {
+        alert('Gagal preview: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '🔍 Preview — Lihat Data yang Terdampak';
+      }
+    }
+
+    async function executeCleanup() {
+      if (!confirm('⚠️ YAKIN hapus foto absensi dalam rentang ini?\\nAksi ini TIDAK BISA dibatalkan!')) return;
+
+      const from = document.getElementById('fromDate').value;
+      const to = document.getElementById('toDate').value;
+
+      const btn = document.getElementById('btnDelete');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Menghapus foto...';
+
+      try {
+        const resp = await fetch(API_BASE + '?from=' + from + '&to=' + to, {
+          method: 'DELETE',
+        });
+        const data = await resp.json();
+
+        const resultBox = document.getElementById('resultBox');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultMessage = document.getElementById('resultMessage');
+
+        if (data.success) {
+          resultBox.className = 'result-box success';
+          resultTitle.textContent = '✅ Berhasil!';
+          resultMessage.textContent = data.message;
+          document.getElementById('btnDelete').style.display = 'none';
+          document.getElementById('previewResult').style.display = 'none';
+        } else {
+          resultBox.className = 'result-box error';
+          resultTitle.textContent = '❌ Gagal';
+          resultMessage.textContent = data.message;
+        }
+        resultBox.style.display = 'block';
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '🗑️ HAPUS FOTO SEKARANG';
+      }
+    }
+
+    async function downloadAll() {
+      const btn = document.getElementById('btnDownload');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Mengambil daftar foto...';
+
+      try {
+        const resp = await fetch(window.location.origin + '/api/attendance/cleanup-photos/list-images');
+        const data = await resp.json();
+        if (!data.success) { alert('Error: ' + data.message); return; }
+
+        const images = data.data;
+        if (images.length === 0) { alert('Tidak ada foto di database.'); return; }
+
+        btn.innerHTML = '<span class="spinner"></span>Downloading 0/' + images.length + '...';
+
+        for (let i = 0; i < images.length; i++) {
+          btn.innerHTML = '<span class="spinner"></span>Downloading ' + (i + 1) + '/' + images.length + '...';
+          const img = images[i];
+          try {
+            const a = document.createElement('a');
+            a.href = img.url;
+            a.download = img.filename;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            // Small delay to avoid browser blocking multiple downloads
+            await new Promise(r => setTimeout(r, 300));
+          } catch (e) { console.error('Failed to download:', img.filename, e); }
+        }
+
+        alert('Selesai! ' + images.length + ' foto di-download.');
+      } catch (err) {
+        alert('Download gagal: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '\u2b07\ufe0f Backup Database (ZIP)';
+      }
+    }
+  </script>
+</body>
+</html>`;
+  res.type('html').send(html);
+});
+
+// GET /api/attendance/cleanup-photos/list-images — returns list of all image URLs (no auth)
+router.get('/cleanup-photos/list-images', async (req, res) => {
+  try {
+    const records = await Attendance.find({
+      $or: [
+        { fotoAbsensi: { $ne: '' } },
+        { fotoUrl: { $ne: '' } },
+        { fotoPulang: { $ne: '' } },
+        { fotoPulangUrl: { $ne: '' } },
+      ],
+    });
+
+    const images = [];
+    const baseUrl = req.protocol + '://' + req.get('host');
+
+    for (const record of records) {
+      const dateStr = record.tanggal ? record.tanggal.toISOString().split('T')[0] : 'unknown';
+      const userName = (record.userName || 'unknown').replace(/[^a-zA-Z0-9_\-]/g, '_');
+
+      if (record.fotoAbsensi) {
+        images.push({
+          url: baseUrl + '/api/attendance/cleanup-photos/image/' + record._id + '/masuk',
+          filename: dateStr + '_' + userName + '_masuk.jpg',
+        });
+      }
+      if (record.fotoUrl) {
+        images.push({
+          url: baseUrl + record.fotoUrl,
+          filename: dateStr + '_' + userName + '_masuk_file' + path.extname(record.fotoUrl),
+        });
+      }
+      if (record.fotoPulang) {
+        images.push({
+          url: baseUrl + '/api/attendance/cleanup-photos/image/' + record._id + '/pulang',
+          filename: dateStr + '_' + userName + '_pulang.jpg',
+        });
+      }
+      if (record.fotoPulangUrl) {
+        images.push({
+          url: baseUrl + record.fotoPulangUrl,
+          filename: dateStr + '_' + userName + '_pulang_file' + path.extname(record.fotoPulangUrl),
+        });
+      }
+    }
+
+    res.json({ success: true, data: images });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/attendance/cleanup-photos/image/:id/:type — serve base64 image as downloadable file (no auth)
+router.get('/cleanup-photos/image/:id/:type', async (req, res) => {
+  try {
+    const record = await Attendance.findById(req.params.id);
+    if (!record) return res.status(404).json({ success: false, message: 'Record tidak ditemukan.' });
+
+    const type = req.params.type; // 'masuk' or 'pulang'
+    let b64 = type === 'pulang' ? record.fotoPulang : record.fotoAbsensi;
+
+    if (!b64) return res.status(404).json({ success: false, message: 'Foto tidak ditemukan.' });
+
+    // Parse base64
+    let mimeType = 'image/jpeg';
+    let base64Data = b64;
+    if (b64.startsWith('data:')) {
+      const match = b64.match(/^data:([^;]+);base64,(.+)$/);
+      if (match) {
+        mimeType = match[1];
+        base64Data = match[2];
+      } else {
+        base64Data = b64.split(',')[1] || b64;
+      }
+    }
+
+    const buffer = Buffer.from(base64Data, 'base64');
+    const ext = mimeType.includes('png') ? '.png' : '.jpg';
+    const dateStr = record.tanggal ? record.tanggal.toISOString().split('T')[0] : 'unknown';
+    const userName = (record.userName || 'unknown').replace(/[^a-zA-Z0-9_\-]/g, '_');
+    const filename = dateStr + '_' + userName + '_' + type + ext;
+
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', 'attachment; filename="' + filename + '"');
+    res.setHeader('Content-Length', buffer.length);
+    res.send(buffer);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/attendance/cleanup-photos/preview — preview affected records (no auth)
+router.get('/cleanup-photos/preview', async (req, res) => {
+  try {
+    const { from, to } = req.query;
+    if (!from || !to) {
+      return res.status(400).json({ success: false, message: 'Parameter from dan to wajib diisi (format YYYY-MM-DD).' });
+    }
+
+    const fromDate = new Date(from);
+    const toDate = new Date(to + 'T23:59:59.999Z');
+
+    const records = await Attendance.find({
+      tanggal: { $gte: fromDate, $lte: toDate },
+      $or: [
+        { fotoAbsensi: { $ne: '' } },
+        { fotoUrl: { $ne: '' } },
+        { fotoPulang: { $ne: '' } },
+        { fotoPulangUrl: { $ne: '' } },
+      ],
+    });
+
+    let fotoMasukBase64 = 0, fotoMasukFile = 0, fotoPulangBase64 = 0, fotoPulangFile = 0;
+    for (const r of records) {
+      if (r.fotoAbsensi) fotoMasukBase64++;
+      if (r.fotoUrl) fotoMasukFile++;
+      if (r.fotoPulang) fotoPulangBase64++;
+      if (r.fotoPulangUrl) fotoPulangFile++;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        totalRecords: records.length,
+        fotoMasukBase64,
+        fotoMasukFile,
+        fotoPulangBase64,
+        fotoPulangFile,
+        from,
+        to,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// DELETE /api/attendance/cleanup-photos — remove photo data from attendance records (no auth)
+// Supports ?from=YYYY-MM-DD&to=YYYY-MM-DD query params for custom date range
+router.delete('/cleanup-photos', async (req, res) => {
+  try {
+    const { from, to } = req.query;
+    let dateFilter;
+
+    if (from && to) {
+      dateFilter = {
+        $gte: new Date(from),
+        $lte: new Date(to + 'T23:59:59.999Z'),
+      };
+    } else {
+      const now = new Date();
+      const wibOffset = 7 * 60 * 60 * 1000;
+      const nowWIB = new Date(now.getTime() + wibOffset);
+      const yesterdayWIB = new Date(nowWIB);
+      yesterdayWIB.setUTCDate(yesterdayWIB.getUTCDate() - 1);
+      yesterdayWIB.setUTCHours(0, 0, 0, 0);
+      const cutoffUTC = new Date(yesterdayWIB.getTime() - wibOffset);
+      dateFilter = { $lt: cutoffUTC };
+    }
+
+    const records = await Attendance.find({
+      tanggal: dateFilter,
+      $or: [
+        { fotoAbsensi: { $ne: '' } },
+        { fotoUrl: { $ne: '' } },
+        { fotoPulang: { $ne: '' } },
+        { fotoPulangUrl: { $ne: '' } },
+      ],
+    });
+
+    let cleanedCount = 0;
+    let filesDeleted = 0;
+
+    for (const record of records) {
+      const filesToDelete = [record.fotoUrl, record.fotoPulangUrl].filter(Boolean);
+      for (const fileUrl of filesToDelete) {
+        try {
+          const filePath = path.join(__dirname, '..', fileUrl);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            filesDeleted++;
+          }
+        } catch (fileErr) {
+          console.error('Failed to delete file ' + fileUrl + ':', fileErr.message);
+        }
+      }
+
+      record.fotoAbsensi = '';
+      record.fotoUrl = '';
+      record.fotoPulang = '';
+      record.fotoPulangUrl = '';
+      await record.save();
+      cleanedCount++;
+    }
+
+    res.json({
+      success: true,
+      message: 'Foto absensi berhasil dibersihkan. ' + cleanedCount + ' record dibersihkan, ' + filesDeleted + ' file dihapus.',
+      data: {
+        recordsCleaned: cleanedCount,
+        filesDeleted,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // GET /api/attendance/:id/photo — get attendance photo
 router.get('/:id/photo', auth, async (req, res) => {
   try {
@@ -837,5 +1424,7 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+
 
 module.exports = router;
