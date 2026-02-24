@@ -10,6 +10,7 @@ const DataPeserta: React.FC = () => {
   const { user } = useAuth();
   const [peserta, setPeserta] = useState<User[]>([]);
   const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState<'aktif' | 'nonaktif'>('aktif');
   const [modal, setModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif', role: 'user', nonaktifDate: '' });
@@ -53,6 +54,10 @@ const DataPeserta: React.FC = () => {
   }, [modal]);
 
   const filtered = peserta
+    .filter((p) => {
+      const pStatus = p.status || 'Aktif';
+      return (activeTab === 'aktif' && pStatus === 'Aktif') || (activeTab === 'nonaktif' && pStatus === 'Nonaktif');
+    })
     .filter((p) => (p.name || '').toLowerCase().includes(search.toLowerCase()) || (p.username || '').toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
@@ -156,6 +161,24 @@ const DataPeserta: React.FC = () => {
           Tambah Peserta
         </button>
       </div>
+
+      <div className="rekap-tabs" style={{ marginBottom: '20px' }}>
+        <button
+          className={`rekap-tab-btn ${activeTab === 'aktif' ? 'active' : ''}`}
+          onClick={() => setActiveTab('aktif')}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Peserta Aktif
+        </button>
+        <button
+          className={`rekap-tab-btn ${activeTab === 'nonaktif' ? 'active' : ''}`}
+          onClick={() => setActiveTab('nonaktif')}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg>
+          Peserta Nonaktif
+        </button>
+      </div>
+
       <div className="peserta-table-card">
         <div className="peserta-table-header">
           <div className="pth-left">
@@ -216,7 +239,14 @@ const DataPeserta: React.FC = () => {
                       </span>
                     </td>
                     <td>
-                      <span className={`status-badge ${(p.status || 'Aktif').toLowerCase()}`}>{p.status || 'Aktif'}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                        <span className={`status-badge ${(p.status || 'Aktif').toLowerCase()}`}>{p.status || 'Aktif'}</span>
+                        {p.status === 'Nonaktif' && p.nonaktifDate && (
+                          <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>
+                            dari {new Date(p.nonaktifDate).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <div className="action-btns">
