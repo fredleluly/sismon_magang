@@ -5,7 +5,7 @@ const { auth, adminOnly } = require('../middleware/auth');
 // GET /api/complaints — user: own, admin: all
 router.get('/', auth, async (req, res) => {
   try {
-    const filter = req.user.role === 'admin' ? {} : { userId: req.userId };
+    const filter = (req.user.role === 'admin' || req.user.role === 'superadmin') ? {} : { userId: req.userId };
     if (req.query.status) filter.status = req.query.status;
     if (req.query.prioritas) filter.prioritas = req.query.prioritas;
 

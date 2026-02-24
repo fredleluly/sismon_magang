@@ -104,7 +104,7 @@ const AttendanceCalendar: React.FC = () => {
     try {
       const users = await UsersAPI.getAll();
       if (users && users.success) {
-        const nonAdmin = users.data.filter((u: User) => u.role !== "admin");
+        const nonAdmin = users.data.filter((u: User) => u.role !== "admin" && u.role !== "superadmin");
         setAllUsers(nonAdmin);
         setTotalPeserta(nonAdmin.length);
       }
