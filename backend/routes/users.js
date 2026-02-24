@@ -108,7 +108,9 @@ router.put('/admins/:id', auth, superadminOnly, async (req, res) => {
 
     if (name) user.name = name;
     if (email) user.email = email;
-    if (username !== undefined) user.username = username ? username.trim().toLowerCase() : '';
+    if (username !== undefined) {
+      user.username = username && username.trim() !== '' ? username.trim().toLowerCase() : undefined;
+    }
 
     await user.save();
     res.json({
@@ -219,11 +221,23 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
 
+    if (email && email !== user.email) {
+      const existingEmail = await User.findOne({ email });
+      if (existingEmail) return res.status(400).json({ success: false, message: 'Email sudah terdaftar.' });
+    }
+
+    if (username && username !== user.username) {
+      const existingUsername = await User.findOne({ username: username.trim().toLowerCase() });
+      if (existingUsername) return res.status(400).json({ success: false, message: 'Username sudah digunakan.' });
+    }
+
     if (name) user.name = name;
     if (email) user.email = email;
     if (instansi) user.instansi = instansi;
     if (status) user.status = status;
-    if (username !== undefined) user.username = username ? username.trim().toLowerCase() : '';
+    if (username !== undefined) {
+      user.username = username && username.trim() !== '' ? username.trim().toLowerCase() : undefined;
+    }
 
     await user.save();
     res.json({
