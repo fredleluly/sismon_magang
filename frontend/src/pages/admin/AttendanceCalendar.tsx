@@ -444,11 +444,21 @@ const AttendanceCalendar: React.FC = () => {
       .filter((u) => {
         if (attendedUserIds.has(u._id)) return false;
         
+        const currentTarget = new Date(targetDate);
+        currentTarget.setHours(0, 0, 0, 0);
+
+        // Filter out if currently viewed date is before the user was registered
+        if (u.createdAt) {
+          const createdAtDate = new Date(u.createdAt);
+          createdAtDate.setHours(0, 0, 0, 0);
+          if (currentTarget < createdAtDate) {
+            return false;
+          }
+        }
+
         if (u.status === "Nonaktif" && u.nonaktifDate) {
           const nonaktifDate = new Date(u.nonaktifDate);
           nonaktifDate.setHours(0, 0, 0, 0);
-          const currentTarget = new Date(targetDate);
-          currentTarget.setHours(0, 0, 0, 0);
           
           if (currentTarget > nonaktifDate) {
             return false;
