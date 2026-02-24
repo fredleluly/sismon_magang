@@ -65,10 +65,7 @@ router.get('/', auth, async (req, res) => {
   try {
     let filter = {};
     if (req.user.role === 'admin' || req.user.role === 'superadmin') {
-      // Find active user IDs to filter attendance
-      const activeUsers = await User.find({ status: 'Aktif' }).select('_id');
-      const activeUserIds = activeUsers.map(u => u._id);
-      filter = { userId: { $in: activeUserIds } };
+      filter = {};
     } else {
       filter = { userId: req.userId };
     }
@@ -598,12 +595,8 @@ router.post('/cancel-holiday', auth, adminOnly, async (req, res) => {
 // NOTE: Static routes MUST be defined before parameterized routes (/:id)
 router.get('/today', auth, adminOnly, async (req, res) => {
   try {
-    const activeUsers = await User.find({ status: 'Aktif' }).select('_id');
-    const activeUserIds = activeUsers.map(u => u._id);
-
     const today = new Date().toISOString().split('T')[0];
     const records = await Attendance.find({
-      userId: { $in: activeUserIds },
       tanggal: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59') },
     }).populate('userId', 'name email instansi');
 

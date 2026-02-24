@@ -217,7 +217,7 @@ router.post('/', auth, adminOnly, async (req, res) => {
 // PUT /api/users/:id — admin update user
 router.put('/:id', auth, adminOnly, async (req, res) => {
   try {
-    const { name, email, instansi, status, username } = req.body;
+    const { name, email, instansi, status, username, nonaktifDate } = req.body;
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
 
@@ -233,8 +233,9 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
 
     if (name) user.name = name;
     if (email) user.email = email;
-    if (instansi) user.instansi = instansi;
+    if (instansi !== undefined) user.instansi = instansi;
     if (status) user.status = status;
+    if (nonaktifDate !== undefined) user.nonaktifDate = nonaktifDate ? new Date(nonaktifDate) : null;
     if (username !== undefined) {
       user.username = username && username.trim() !== '' ? username.trim().toLowerCase() : undefined;
     }

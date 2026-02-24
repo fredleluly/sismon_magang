@@ -104,9 +104,10 @@ const AttendanceCalendar: React.FC = () => {
     try {
       const users = await UsersAPI.getAll();
       if (users && users.success) {
-        const nonAdmin = users.data.filter((u: User) => u.role !== "admin" && u.role !== "superadmin" && u.status === "Aktif");
+        const nonAdmin = users.data.filter((u: User) => u.role !== "admin" && u.role !== "superadmin");
         setAllUsers(nonAdmin);
-        setTotalPeserta(nonAdmin.length);
+        const activeCount = nonAdmin.filter((u: User) => u.status === "Aktif").length;
+        setTotalPeserta(activeCount);
       }
     } catch {}
   };
@@ -437,8 +438,28 @@ const AttendanceCalendar: React.FC = () => {
       }),
     );
 
+    const targetDate = new Date(dateStr);
+
     const belumAbsen: Attendance[] = allUsers
-      .filter((u) => !attendedUserIds.has(u._id))
+      .filter((u) => {
+        if (attendedUserIds.has(u._id)) return false;
+        
+        if (u.status === "Nonaktif" && u.nonaktifDate) {
+          const nonaktifDate = new Date(u.nonaktifDate);
+          nonaktifDate.setHours(0, 0, 0, 0);
+          const currentTarget = new Date(targetDate);
+          currentTarget.setHours(0, 0, 0, 0);
+          
+          if (currentTarget > nonaktifDate) {
+            return false;
+          }
+        } else if (u.status === "Nonaktif" && !u.nonaktifDate) {
+          // If deactivated but no date was set, omit by default as standard behaviour
+          return false;
+        }
+
+        return true;
+      })
       .map((u) => ({
         _id: `belum-${u._id}`,
         userId: u as any,
