@@ -70,6 +70,15 @@ const Profil: React.FC = () => {
   };
 
   if (!user) return null;
+
+  const calculateDuration = (dateStr?: string) => {
+    if (!dateStr) return "0 hari";
+    const start = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    return `${diff + 1} hari`; // count today as 1st day
+  };
+
   const initials = user.name
     .split(" ")
     .map((n) => n[0])
@@ -90,6 +99,9 @@ const Profil: React.FC = () => {
             <div className="profile-badges">
               <span className="badge-aktif">Aktif</span>
               <span className="badge-pln">PLN ICON+</span>
+              <span className="badge-pln" style={{ background: "#e0f2fe", color: "#0369a1", border: "1px solid #bae6fd", fontWeight: "700" }}>
+                {calculateDuration(user.createdAt)}
+              </span>
             </div>
           </div>
           <div className="profile-stats">

@@ -9,9 +9,7 @@ router.get('/', auth, async (req, res) => {
   try {
     let filter = {};
     if (req.user.role === 'admin' || req.user.role === 'superadmin') {
-      const activeUsers = await User.find({ status: 'Aktif' }).select('_id');
-      const activeUserIds = activeUsers.map(u => u._id);
-      filter = { userId: { $in: activeUserIds } };
+      filter = {};
     } else {
       filter = { userId: req.userId };
     }
@@ -43,10 +41,7 @@ router.get('/', auth, async (req, res) => {
 // GET /api/work-logs/recap — admin recap: pivot per user per jenis
 router.get('/recap', auth, adminOnly, async (req, res) => {
   try {
-    const activeUsers = await User.find({ status: 'Aktif' }).select('_id');
-    const activeUserIds = activeUsers.map(u => u._id);
-
-    const filter = { status: 'Selesai', userId: { $in: activeUserIds } };
+    const filter = { status: 'Selesai' };
     if (req.query.from || req.query.to) {
       filter.tanggal = {};
       if (req.query.from) filter.tanggal.$gte = new Date(req.query.from);

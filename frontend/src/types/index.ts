@@ -8,6 +8,7 @@ export interface User {
   instansi?: string;
   jabatan?: string;
   status?: string;
+  nonaktifDate?: string;
   totalBerkas?: number;
   totalBuku?: number;
   totalBundle?: number;

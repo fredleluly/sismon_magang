@@ -12,7 +12,7 @@ const DataPeserta: React.FC = () => {
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif', role: 'user' });
+  const [form, setForm] = useState({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif', role: 'user', nonaktifDate: '' });
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: string | null }>({ show: false, id: null });
   const [resetPassword, setResetPassword] = useState<{ show: boolean; id: string | null; name: string }>({ show: false, id: null, name: '' });
@@ -58,14 +58,14 @@ const DataPeserta: React.FC = () => {
 
   const openAdd = () => {
     setEditingId(null);
-    setForm({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif', role: 'user' });
+    setForm({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif', role: 'user', nonaktifDate: '' });
     setModal(true);
   };
   const openEdit = (id: string) => {
     const p = peserta.find((x) => x._id === id);
     if (!p) return;
     setEditingId(id);
-    setForm({ name: p.name, email: p.email, username: p.username || '', instansi: p.instansi || '', password: '', status: p.status || 'Aktif', role: p.role || 'user' });
+    setForm({ name: p.name, email: p.email, username: p.username || '', instansi: p.instansi || '', password: '', status: p.status || 'Aktif', role: p.role || 'user', nonaktifDate: p.nonaktifDate ? p.nonaktifDate.split('T')[0] : '' });
     setModal(true);
   };
 
@@ -104,7 +104,8 @@ const DataPeserta: React.FC = () => {
       email: form.email, 
       username: form.username.trim() || undefined, 
       instansi: form.instansi, 
-      status: form.status 
+      status: form.status,
+      nonaktifDate: form.status === 'Nonaktif' ? (form.nonaktifDate || undefined) : undefined
     };
 
     if (editingId) {
@@ -136,6 +137,14 @@ const DataPeserta: React.FC = () => {
 
   const avColors = ['av-a', 'av-b', 'av-c', 'av-d', 'av-e'];
 
+  const calculateDuration = (dateStr?: string) => {
+    if (!dateStr) return '0 hari';
+    const start = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    return `${diff + 1} hari`;
+  };
+
   return (
     <>
       <div className="page-header-row">
@@ -165,6 +174,7 @@ const DataPeserta: React.FC = () => {
                 <th>Berkas</th>
                 <th>Buku</th>
                 <th>Bundle</th>
+                <th>Lama Magang</th>
                 <th>Status</th>
                 <th>Aksi</th>
               </tr>
@@ -199,6 +209,11 @@ const DataPeserta: React.FC = () => {
                     </td>
                     <td>
                       <span className="data-highlight">{p.totalBundle || 0}</span>
+                    </td>
+                    <td>
+                      <span className="data-highlight" style={{ color: '#0369a1', fontWeight: '700' }}>
+                        {calculateDuration(p.createdAt)}
+                      </span>
                     </td>
                     <td>
                       <span className={`status-badge ${(p.status || 'Aktif').toLowerCase()}`}>{p.status || 'Aktif'}</span>
@@ -317,6 +332,13 @@ const DataPeserta: React.FC = () => {
                     <option value="Nonaktif">Nonaktif</option>
                   </select>
                 </div>
+                {form.status === 'Nonaktif' && (
+                  <div className="form-group">
+                    <label>Tanggal Nonaktif</label>
+                    <input type="date" value={form.nonaktifDate} onChange={(e) => setForm({ ...form, nonaktifDate: e.target.value })} required />
+                    <small style={{ color: '#666', marginTop: 4, display: 'block' }}>Mulai tanggal ini dan seterusnya, data absen belum absen akan dihilangkan.</small>
+                  </div>
+                )}
                 {!editingId && user?.role === 'superadmin' && (
                   <div className="form-group">
                     <label>Role</label>
