@@ -71,6 +71,7 @@ const Rekapitulasi: React.FC = () => {
 
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [showUserFilter, setShowUserFilter] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
   const filterRef = useRef<HTMLDivElement>(null);
 
   // Load users list and target data
@@ -487,17 +488,37 @@ const Rekapitulasi: React.FC = () => {
             </button>
             {showUserFilter && (
               <div className="rekap-user-dropdown">
+                <div style={{ padding: '8px 12px' }}>
+                  <input
+                    type="text"
+                    placeholder="Cari peserta..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      width: '100%',
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--gray-300)',
+                      fontSize: '13px'
+                    }}
+                  />
+                </div>
                 <div className="rekap-user-option" onClick={selectAllUsers}>
                   <input type="checkbox" checked={selectedUsers.length === users.length && users.length > 0} readOnly />
                   <span style={{ fontWeight: 600 }}>Pilih Semua</span>
                 </div>
                 <div className="rekap-user-dropdown-divider" />
-                {users.map((u) => (
-                  <div key={u._id} className="rekap-user-option" onClick={() => toggleUser(u._id)}>
-                    <input type="checkbox" checked={selectedUsers.includes(u._id)} readOnly />
-                    <span>{u.name}</span>
-                  </div>
-                ))}
+                <div style={{ maxHeight: '240px', overflowY: 'auto' }}>
+                  {users
+                    .filter((u) => u.name.toLowerCase().includes(userSearch.toLowerCase()))
+                    .map((u) => (
+                      <div key={u._id} className="rekap-user-option" onClick={() => toggleUser(u._id)}>
+                        <input type="checkbox" checked={selectedUsers.includes(u._id)} readOnly />
+                        <span>{u.name}</span>
+                      </div>
+                    ))}
+                </div>
               </div>
             )}
           </div>
