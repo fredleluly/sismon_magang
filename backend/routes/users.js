@@ -283,16 +283,8 @@ router.delete('/:id', auth, adminOnly, async (req, res) => {
 });
 
 // PATCH /api/users/:id/role — superadmin update user role
-router.patch('/:id/role', auth, async (req, res) => {
+router.patch('/:id/role', auth, superadminOnly, async (req, res) => {
   try {
-    // Only superadmin can update roles
-    if (req.user.role !== 'superadmin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Hanya superadmin yang dapat mengubah role user.',
-      });
-    }
-
     const { role } = req.body;
     if (!role) {
       return res.status(400).json({ success: false, message: 'Role harus diberikan.' });

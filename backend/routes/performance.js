@@ -5,7 +5,8 @@ const Attendance = require('../models/Attendance');
 const WorkLog = require('../models/WorkLog');
 const TargetSection = require('../models/TargetSection');
 const User = require('../models/User');
-const { auth, adminOnly } = require('../middleware/auth');
+const ActivityLog = require('../models/ActivityLog');
+const { auth, adminOnly, superadminOnly } = require('../middleware/auth');
 
 const DEBUG = process.env.NODE_ENV === 'development';
 
@@ -302,18 +303,34 @@ router.get('/ranking', auth, adminOnly, async (req, res) => {
 // PUT /api/performance/:id/reset-to-draft — reset finalized evaluation back to Draft (superadmin)
 router.put('/:id/reset-to-draft', auth, adminOnly, async (req, res) => {
   try {
-    const evaluation = await PerformanceEvaluation.findById(req.params.id);
+    const evaluation = await PerformanceEvaluation.findById(req.params.id).populate('userId', 'name');
     if (!evaluation) {
       return res.status(404).json({ success: false, message: 'Penilaian tidak ditemukan.' });
     }
+    
+    // Only superadmin can reset Final evaluations
+    if (evaluation.status === 'Final' && req.user.role !== 'superadmin') {
+      return res.status(403).json({ success: false, message: 'Hanya Superadmin yang dapat mereset penilaian final.' });
+    }
+
     if (evaluation.status !== 'Final') {
       return res.status(400).json({ success: false, message: 'Penilaian ini belum difinalisasi.' });
     }
 
+    const oldStatus = evaluation.status;
     evaluation.status = 'Draft';
     await evaluation.save();
 
-    if (DEBUG) console.log(`[RESET TO DRAFT] Evaluation ${req.params.id} reset from Final to Draft`);
+    // Log Activity
+    await ActivityLog.create({
+      userId: req.userId,
+      action: 'RESET_EVALUATION',
+      targetId: evaluation._id,
+      targetType: 'PerformanceEvaluation',
+      details: `Reset penilaian ${evaluation.userId.name} (${evaluation.bulan}/${evaluation.tahun}) dari ${oldStatus} ke Draft`
+    });
+
+    if (DEBUG) console.log(`[RESET TO DRAFT] Evaluation ${req.params.id} reset from Final to Draft by ${req.user.name}`);
 
     res.json({ success: true, message: 'Penilaian berhasil direset ke Draft.' });
   } catch (err) {
@@ -321,23 +338,36 @@ router.put('/:id/reset-to-draft', auth, adminOnly, async (req, res) => {
   }
 });
 
-// DELETE /api/performance/:id — delete draft evaluation
+// DELETE /api/performance/:id — delete evaluation
 router.delete('/:id', auth, adminOnly, async (req, res) => {
   try {
-    const evaluation = await PerformanceEvaluation.findById(req.params.id);
+    const evaluation = await PerformanceEvaluation.findById(req.params.id).populate('userId', 'name');
     if (!evaluation) return res.status(404).json({ success: false, message: 'Penilaian tidak ditemukan.' });
-    if (evaluation.status === 'Final') {
-      return res.status(400).json({ success: false, message: 'Penilaian final tidak bisa dihapus. Gunakan reset ke Draft.' });
+    
+    // If it's Final, only superadmin can delete
+    if (evaluation.status === 'Final' && req.user.role !== 'superadmin') {
+      return res.status(403).json({ success: false, message: 'Penilaian final hanya bisa dihapus oleh Superadmin. Gunakan reset ke Draft jika perlu.' });
     }
+
     await PerformanceEvaluation.findByIdAndDelete(req.params.id);
-    res.json({ success: true, message: 'Penilaian draft berhasil dihapus.' });
+
+    // Log Activity
+    await ActivityLog.create({
+      userId: req.userId,
+      action: 'DELETE_EVALUATION',
+      targetId: evaluation._id,
+      targetType: 'PerformanceEvaluation',
+      details: `Menghapus penilaian ${evaluation.userId.name} (${evaluation.bulan}/${evaluation.tahun}) - Status: ${evaluation.status}`
+    });
+
+    res.json({ success: true, message: `Penilaian ${evaluation.status === 'Final' ? 'final' : 'draft'} berhasil dihapus.` });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// DELETE /api/performance/delete-all-finals — delete ALL finalized evaluations (for testing)
-router.delete('/delete-all-finals/:bulan/:tahun', auth, adminOnly, async (req, res) => {
+// DELETE /api/performance/delete-all-finals — delete ALL finalized evaluations (superadmin only)
+router.delete('/delete-all-finals/:bulan/:tahun', auth, superadminOnly, async (req, res) => {
   try {
     const bulan = parseInt(req.params.bulan);
     const tahun = parseInt(req.params.tahun);
@@ -348,7 +378,14 @@ router.delete('/delete-all-finals/:bulan/:tahun', auth, adminOnly, async (req, r
       status: 'Final' 
     });
 
-    if (DEBUG) console.log(`[DELETE ALL FINALS] Deleted ${result.deletedCount} finalized evaluations for ${bulan}/${tahun}`);
+    // Log Activity
+    await ActivityLog.create({
+      userId: req.userId,
+      action: 'DELETE_ALL_FINALS',
+      details: `Menghapus semua penilaian final untuk periode ${bulan}/${tahun} (Total: ${result.deletedCount})`
+    });
+
+    if (DEBUG) console.log(`[DELETE ALL FINALS] Deleted ${result.deletedCount} finalized evaluations for ${bulan}/${tahun} by ${req.user.name}`);
 
     res.json({ 
       success: true, 
