@@ -63,7 +63,16 @@ const isLate = (timeStr, threshold = '08:10') => {
 // GET /api/attendance — user: own history, admin: all
 router.get('/', auth, async (req, res) => {
   try {
-    const filter = (req.user.role === 'admin' || req.user.role === 'superadmin') ? {} : { userId: req.userId };
+    let filter = {};
+    if (req.user.role === 'admin' || req.user.role === 'superadmin') {
+      // Find active user IDs to filter attendance
+      const activeUsers = await User.find({ status: 'Aktif' }).select('_id');
+      const activeUserIds = activeUsers.map(u => u._id);
+      filter = { userId: { $in: activeUserIds } };
+    } else {
+      filter = { userId: req.userId };
+    }
+
     if (req.query.from || req.query.to) {
       filter.tanggal = {};
       if (req.query.from) filter.tanggal.$gte = new Date(req.query.from);
@@ -99,6 +108,9 @@ router.get('/', auth, async (req, res) => {
 // POST /api/attendance/scan — user scans QR to record attendance
 router.post('/scan', auth, async (req, res) => {
   try {
+    if (req.user.status === 'Nonaktif') {
+      return res.status(403).json({ success: false, message: 'Akun Anda tidak aktif. Tidak dapat melakukan absensi.' });
+    }
     const { token } = req.body;
     if (!token) return res.status(400).json({ success: false, message: 'Token QR wajib diisi.' });
 
@@ -176,6 +188,9 @@ router.post('/scan', auth, async (req, res) => {
 // Supports both base64 (foto field) and file upload (foto file)
 router.post('/photo-checkin', auth, upload.single('foto'), async (req, res) => {
   try {
+    if (req.user.status === 'Nonaktif') {
+      return res.status(403).json({ success: false, message: 'Akun Anda tidak aktif. Tidak dapat melakukan absensi.' });
+    }
     const { foto, timestamp, timezone, latitude, longitude, address, accuracy } = req.body;
 
     // Check if photo provided (either as file or base64)
@@ -461,6 +476,9 @@ router.post('/admin/set-status', auth, adminOnly, async (req, res) => {
       await att.save();
     } else {
       const targetUser = await User.findById(userId);
+      if (!targetUser || targetUser.status === 'Nonaktif') {
+        return res.status(400).json({ success: false, message: 'Tidak dapat mengatur absensi untuk peserta nonaktif.' });
+      }
       const createData = {
         userId,
         tanggal: targetDate,
@@ -496,7 +514,7 @@ router.post('/bulk-holiday', auth, adminOnly, async (req, res) => {
     const { tanggal } = req.body;
     if (!tanggal) return res.status(400).json({ success: false, message: 'Tanggal wajib diisi.' });
 
-    const users = await User.find({ role: 'user' });
+    const users = await User.find({ role: 'user', status: 'Aktif' });
 
     const dateStr = new Date(tanggal).toISOString().split('T')[0];
     const targetDate = new Date(dateStr);
@@ -580,8 +598,12 @@ router.post('/cancel-holiday', auth, adminOnly, async (req, res) => {
 // NOTE: Static routes MUST be defined before parameterized routes (/:id)
 router.get('/today', auth, adminOnly, async (req, res) => {
   try {
+    const activeUsers = await User.find({ status: 'Aktif' }).select('_id');
+    const activeUserIds = activeUsers.map(u => u._id);
+
     const today = new Date().toISOString().split('T')[0];
     const records = await Attendance.find({
+      userId: { $in: activeUserIds },
       tanggal: { $gte: new Date(today), $lt: new Date(today + 'T23:59:59') },
     }).populate('userId', 'name email instansi');
 

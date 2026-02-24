@@ -9,7 +9,7 @@ const { auth, adminOnly } = require('../middleware/auth');
 router.get('/admin', auth, adminOnly, async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const totalPeserta = await User.countDocuments({ role: 'user' });
+    const totalPeserta = await User.countDocuments({ role: 'user', status: 'Aktif' });
 
     // Total completed work
     const workStats = await WorkLog.aggregate([{ $match: { status: 'Selesai' } }, { $group: { _id: null, total: { $sum: 1 }, berkas: { $sum: '$berkas' }, buku: { $sum: '$buku' }, bundle: { $sum: '$bundle' } } }]);

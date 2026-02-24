@@ -99,10 +99,18 @@ const DataPeserta: React.FC = () => {
       return;
     }
     let res;
+    const payload = { 
+      name: form.name, 
+      email: form.email, 
+      username: form.username.trim() || undefined, 
+      instansi: form.instansi, 
+      status: form.status 
+    };
+
     if (editingId) {
-      res = await UsersAPI.update(editingId, { name: form.name, email: form.email, username: form.username, instansi: form.instansi, status: form.status });
+      res = await UsersAPI.update(editingId, payload);
     } else {
-      res = await UsersAPI.create({ name: form.name, email: form.email, username: form.username, instansi: form.instansi, status: form.status, password: form.password || 'magang123' } as any);
+      res = await UsersAPI.create({ ...payload, password: form.password || 'magang123' } as any);
     }
     if (res && res.success) {
       showToast(res.message || 'Berhasil', 'success');

@@ -1,12 +1,20 @@
 const router = require('express').Router();
 const mongoose = require('mongoose');
 const WorkLog = require('../models/WorkLog');
+const User = require('../models/User');
 const { auth, adminOnly } = require('../middleware/auth');
 
 // GET /api/work-logs — get work logs (user: own, admin: all)
 router.get('/', auth, async (req, res) => {
   try {
-    const filter = (req.user.role === 'admin' || req.user.role === 'superadmin') ? {} : { userId: req.userId };
+    let filter = {};
+    if (req.user.role === 'admin' || req.user.role === 'superadmin') {
+      const activeUsers = await User.find({ status: 'Aktif' }).select('_id');
+      const activeUserIds = activeUsers.map(u => u._id);
+      filter = { userId: { $in: activeUserIds } };
+    } else {
+      filter = { userId: req.userId };
+    }
 
     // Optional query filters
     if (req.query.status) filter.status = req.query.status;
@@ -35,7 +43,10 @@ router.get('/', auth, async (req, res) => {
 // GET /api/work-logs/recap — admin recap: pivot per user per jenis
 router.get('/recap', auth, adminOnly, async (req, res) => {
   try {
-    const filter = { status: 'Selesai' };
+    const activeUsers = await User.find({ status: 'Aktif' }).select('_id');
+    const activeUserIds = activeUsers.map(u => u._id);
+
+    const filter = { status: 'Selesai', userId: { $in: activeUserIds } };
     if (req.query.from || req.query.to) {
       filter.tanggal = {};
       if (req.query.from) filter.tanggal.$gte = new Date(req.query.from);
@@ -106,6 +117,9 @@ router.get('/stats/me', auth, async (req, res) => {
 // POST /api/work-logs — create work log (user saves draft)
 router.post('/', auth, async (req, res) => {
   try {
+    if (req.user.status === 'Nonaktif') {
+      return res.status(403).json({ success: false, message: 'Akun Anda tidak aktif. Tidak dapat menyimpan pekerjaan.' });
+    }
     const { tanggal, jenis, keterangan, berkas, buku, bundle, status } = req.body;
 
     if (!tanggal || !jenis) {
