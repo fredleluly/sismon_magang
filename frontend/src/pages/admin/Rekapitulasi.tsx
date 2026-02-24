@@ -78,7 +78,7 @@ const Rekapitulasi: React.FC = () => {
     (async () => {
       const res = await UsersAPI.getAll();
       if (res && res.success) {
-        const peserta = (res.data || []).filter((u: User) => u.role === 'user');
+        const peserta = (res.data || []).filter((u: User) => u.role === 'user' && u.status === 'Aktif');
         setUsers(peserta);
       }
     })();
