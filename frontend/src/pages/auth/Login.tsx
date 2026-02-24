@@ -29,7 +29,7 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     if (isLoggedIn && user) {
-      navigate(user.role === 'admin' ? '/admin' : '/dashboard');
+      navigate((user.role === 'admin' || user.role === 'superadmin') ? '/admin' : '/dashboard');
     }
   }, [isLoggedIn, user, navigate]);
 
@@ -130,7 +130,7 @@ const Login: React.FC = () => {
         gsap.to(cardRef.current, { scale: 1.02, duration: 0.3, yoyo: true, repeat: 1 });
       }
       showToast(res.message || 'Login berhasil!', 'success');
-      setTimeout(() => navigate(res.user!.role === 'admin' ? '/admin' : '/dashboard'), 800);
+      setTimeout(() => navigate((res.user!.role === 'admin' || res.user!.role === 'superadmin') ? '/admin' : '/dashboard'), 800);
     } else {
       const errorMsg = res.message || 'Gagal login';
       if (errorMsg.toLowerCase().includes('password') || errorMsg.toLowerCase().includes('kata sandi')) {

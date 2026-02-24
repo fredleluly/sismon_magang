@@ -72,7 +72,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
     if (!allowedRoles.includes(user?.role as any)) {
       return (
         <Navigate
-          to={user?.role === "user" ? "/dashboard" : "/admin"}
+          to={(user?.role === "admin" || user?.role === "superadmin") ? "/admin" : "/dashboard"}
           replace
         />
       );
@@ -93,7 +93,7 @@ const AppRoutes: React.FC = () => {
         element={
           isLoggedIn ? (
             <Navigate
-              to={user?.role === "admin" ? "/admin" : "/dashboard"}
+              to={(user?.role === "admin" || user?.role === "superadmin") ? "/admin" : "/dashboard"}
               replace
             />
           ) : (
@@ -106,7 +106,7 @@ const AppRoutes: React.FC = () => {
         element={
           isLoggedIn ? (
             <Navigate
-              to={user?.role === "admin" ? "/admin" : "/dashboard"}
+              to={(user?.role === "admin" || user?.role === "superadmin") ? "/admin" : "/dashboard"}
               replace
             />
           ) : (

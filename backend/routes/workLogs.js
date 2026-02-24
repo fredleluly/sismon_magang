@@ -6,12 +6,12 @@ const { auth, adminOnly } = require('../middleware/auth');
 // GET /api/work-logs — get work logs (user: own, admin: all)
 router.get('/', auth, async (req, res) => {
   try {
-    const filter = req.user.role === 'admin' ? {} : { userId: req.userId };
+    const filter = (req.user.role === 'admin' || req.user.role === 'superadmin') ? {} : { userId: req.userId };
 
     // Optional query filters
     if (req.query.status) filter.status = req.query.status;
-    if (req.query.userId && req.user.role === 'admin') filter.userId = req.query.userId;
-    if (req.query.userIds && req.user.role === 'admin') {
+    if (req.query.userId && (req.user.role === 'admin' || req.user.role === 'superadmin')) filter.userId = req.query.userId;
+    if (req.query.userIds && (req.user.role === 'admin' || req.user.role === 'superadmin')) {
         const ids = req.query.userIds.split(',').filter(Boolean);
         if (ids.length) filter.userId = { $in: ids };
     }
@@ -134,7 +134,7 @@ router.put('/:id', auth, async (req, res) => {
     if (!log) return res.status(404).json({ success: false, message: 'Data tidak ditemukan.' });
 
     // User can only edit own logs
-    if (req.user.role !== 'admin' && log.userId.toString() !== req.userId.toString()) {
+    if (req.user.role !== 'admin' && req.user.role !== 'superadmin' && log.userId.toString() !== req.userId.toString()) {
       return res.status(403).json({ success: false, message: 'Akses ditolak.' });
     }
 
@@ -177,7 +177,7 @@ router.delete('/:id', auth, async (req, res) => {
     const log = await WorkLog.findById(req.params.id);
     if (!log) return res.status(404).json({ success: false, message: 'Data tidak ditemukan.' });
 
-    if (req.user.role !== 'admin' && log.userId.toString() !== req.userId.toString()) {
+    if (req.user.role !== 'admin' && req.user.role !== 'superadmin' && log.userId.toString() !== req.userId.toString()) {
       return res.status(403).json({ success: false, message: 'Akses ditolak.' });
     }
 

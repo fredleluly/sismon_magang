@@ -63,7 +63,7 @@ const isLate = (timeStr, threshold = '08:10') => {
 // GET /api/attendance — user: own history, admin: all
 router.get('/', auth, async (req, res) => {
   try {
-    const filter = req.user.role === 'admin' ? {} : { userId: req.userId };
+    const filter = (req.user.role === 'admin' || req.user.role === 'superadmin') ? {} : { userId: req.userId };
     if (req.query.from || req.query.to) {
       filter.tanggal = {};
       if (req.query.from) filter.tanggal.$gte = new Date(req.query.from);
@@ -731,7 +731,7 @@ router.get('/:id/photo', auth, async (req, res) => {
     if (!att) return res.status(404).json({ success: false, message: 'Data absensi tidak ditemukan.' });
 
     // Only the user or admin can view the photo
-    if (att.userId.toString() !== req.userId.toString() && req.user.role !== 'admin') {
+    if (att.userId.toString() !== req.userId.toString() && req.user.role !== 'admin' && req.user.role !== 'superadmin') {
       return res.status(403).json({ success: false, message: 'Akses ditolak.' });
     }
 
@@ -763,7 +763,7 @@ router.get('/:id/photo-pulang', auth, async (req, res) => {
     const att = await Attendance.findById(req.params.id);
     if (!att) return res.status(404).json({ success: false, message: 'Data absensi tidak ditemukan.' });
 
-    if (att.userId.toString() !== req.userId.toString() && req.user.role !== 'admin') {
+    if (att.userId.toString() !== req.userId.toString() && req.user.role !== 'admin' && req.user.role !== 'superadmin') {
       return res.status(403).json({ success: false, message: 'Akses ditolak.' });
     }
 
@@ -791,7 +791,7 @@ router.put('/:id/checkout', auth, async (req, res) => {
   try {
     const att = await Attendance.findById(req.params.id);
     if (!att) return res.status(404).json({ success: false, message: 'Data absensi tidak ditemukan.' });
-    if (att.userId.toString() !== req.userId.toString() && req.user.role !== 'admin') {
+    if (att.userId.toString() !== req.userId.toString() && req.user.role !== 'admin' && req.user.role !== 'superadmin') {
       return res.status(403).json({ success: false, message: 'Akses ditolak.' });
     }
 
