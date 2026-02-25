@@ -3589,7 +3589,7 @@ img {
   }
 
   .rekap-user-dropdown {
-    left: -60%;
+    left: 20%;
   }
 
   /* Log Table Mobile Responsive */
@@ -3784,7 +3784,7 @@ img {
 
   .month-user-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 8px;
     width: 100%;
   }

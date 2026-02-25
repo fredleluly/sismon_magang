@@ -36,14 +36,7 @@ interface PivotRow {
   grandTotal: number;
 }
 
-const JENIS_LIST = [
-  'Sortir',
-  'Register',
-  'Pencopotan Steples',
-  'Scanning',
-  'Rekardus',
-  'Stikering',
-];
+const JENIS_LIST = ['Sortir', 'Register', 'Pencopotan Steples', 'Scanning', 'Rekardus', 'Stikering'];
 
 const Rekapitulasi: React.FC = () => {
   const { showToast } = useToast();
@@ -84,10 +77,7 @@ const Rekapitulasi: React.FC = () => {
       }
     })();
     (async () => {
-      const [targetRes, upahRes] = await Promise.all([
-        TargetSectionAPI.getAll(),
-        TargetSectionAPI.getUpahHarian(),
-      ]);
+      const [targetRes, upahRes] = await Promise.all([TargetSectionAPI.getAll(), TargetSectionAPI.getUpahHarian()]);
       if (targetRes && targetRes.success) setTargetData(targetRes.data || []);
       if (upahRes && upahRes.success) setUpahHarian(upahRes.data.upahHarian || 0);
     })();
@@ -122,8 +112,7 @@ const Rekapitulasi: React.FC = () => {
       // End: 25th of current month
       const end = new Date(year, month, 25);
 
-      const fmt = (d: Date) =>
-        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
       setDateFrom(fmt(start));
       setDateTo(fmt(end));
@@ -188,23 +177,25 @@ const Rekapitulasi: React.FC = () => {
       const isEnd = startEnd === 'end';
 
       days.push(
-        <div
-          key={day}
-          className={`calendar-cell ${inRange ? 'in-range' : ''} ${isStart ? 'start-date' : ''} ${isEnd ? 'end-date' : ''}`}
-          onClick={() => handleCalendarDateClick(year, monthIndex, day)}
-        >
+        <div key={day} className={`calendar-cell ${inRange ? 'in-range' : ''} ${isStart ? 'start-date' : ''} ${isEnd ? 'end-date' : ''}`} onClick={() => handleCalendarDateClick(year, monthIndex, day)}>
           {day}
-        </div>
+        </div>,
       );
     }
 
     return (
       <div className="calendar-month-picker">
         <div className="calendar-month-header">
-          <h3>{monthName} {year}</h3>
+          <h3>
+            {monthName} {year}
+          </h3>
         </div>
         <div className="calendar-weekdays">
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <div key={d} className="calendar-weekday">{d}</div>)}
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d) => (
+            <div key={d} className="calendar-weekday">
+              {d}
+            </div>
+          ))}
         </div>
         <div className="calendar-days">{days}</div>
       </div>
@@ -319,14 +310,7 @@ const Rekapitulasi: React.FC = () => {
     }
 
     try {
-      await exportRekapitulasiExcel(
-        jenisList,
-        pivotRows,
-        totalsRow,
-        grandTotalAll,
-        filterInfoStr || undefined,
-        upahHarian > 0 ? { upahHarian, getBiayaPerBerkas } : undefined,
-      );
+      await exportRekapitulasiExcel(jenisList, pivotRows, totalsRow, grandTotalAll, filterInfoStr || undefined, upahHarian > 0 ? { upahHarian, getBiayaPerBerkas } : undefined);
       showToast('Berhasil mengekspor data ke Excel', 'success');
     } catch (err) {
       console.error('Export error:', err);
@@ -359,10 +343,7 @@ const Rekapitulasi: React.FC = () => {
       <div className="work-filter-bar">
         <div className="work-filter-left">
           <div className="filter-buttons">
-            <button
-              className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`}
-              onClick={() => setFilterType('bulanan')}
-            >
+            <button className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`} onClick={() => setFilterType('bulanan')}>
               Bulanan
             </button>
             <button
@@ -377,151 +358,148 @@ const Rekapitulasi: React.FC = () => {
           </div>
 
           <div className="month-user-row">
-          {filterType === 'bulanan' ? (
-            <div className="month-picker-container">
-              <button className="month-nav-btn" onClick={handlePrevMonth}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-              </button>
-              <span className="month-display">
-                {currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
-              </span>
-              <button className="month-nav-btn" onClick={handleNextMonth}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-              </button>
-            </div>
-          ) : (
-            <div className="custom-date-range-container">
-              <button
-                className="custom-date-range-toggle"
-                onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
-              >
-                {dateFrom && dateTo
-                  ? `${dateFrom} - ${dateTo}`
-                  : 'Pilih Rentang Tanggal'}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  style={{
-                    width: '16px',
-                    height: '16px',
-                    transform: isSelectingDateRange ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s',
-                  }}
-                >
+            {filterType === 'bulanan' ? (
+              <div className="month-picker-container">
+                <button className="month-nav-btn" onClick={handlePrevMonth}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                </button>
+                <span className="month-display">{currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</span>
+                <button className="month-nav-btn" onClick={handleNextMonth}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <div className="custom-date-range-container">
+                <button className="custom-date-range-toggle" onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}>
+                  {dateFrom && dateTo ? `${dateFrom} - ${dateTo}` : 'Pilih Rentang Tanggal'}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    style={{
+                      width: '16px',
+                      height: '16px',
+                      transform: isSelectingDateRange ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s',
+                    }}
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+
+                {isSelectingDateRange && (
+                  <div className="custom-date-picker-dropdown">
+                    <div className="custom-date-picker-header">
+                      <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>
+                        ←
+                      </button>
+                      <span>Pilih Rentang Tanggal</span>
+                      <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>
+                        →
+                      </button>
+                    </div>
+
+                    <div className="custom-calendars-container">
+                      {renderCalendarMonth(0)}
+                      {renderCalendarMonth(1)}
+                    </div>
+
+                    <div className="custom-date-range-info">
+                      {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
+                      {tempDateRangeStart && tempDateRangeEnd && (
+                        <p>
+                          {tempDateRangeStart} sampai {tempDateRangeEnd}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="custom-date-picker-footer">
+                      <button
+                        className="custom-date-apply-btn"
+                        onClick={() => {
+                          if (tempDateRangeStart && tempDateRangeEnd) {
+                            setDateFrom(tempDateRangeStart);
+                            setDateTo(tempDateRangeEnd);
+                            setIsSelectingDateRange(false);
+                            setIsSelectingStart(true);
+                          } else {
+                            showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
+                          }
+                        }}
+                      >
+                        Terapkan
+                      </button>
+                      <button
+                        className="custom-date-cancel-btn"
+                        onClick={() => {
+                          setIsSelectingDateRange(false);
+                          setTempDateRangeStart('');
+                          setTempDateRangeEnd('');
+                          setIsSelectingStart(true);
+                        }}
+                      >
+                        Batal
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="rekap-filter-group rekap-user-filter rekap-user-filter-container" ref={filterRef}>
+              <button className="rekap-user-btn" onClick={() => setShowUserFilter(!showUserFilter)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                </svg>
+                {selectedUsers.length === 0 ? 'Semua Peserta' : selectedUsers.length === users.length ? 'Semua Peserta' : `${selectedUsers.length} Peserta`}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rekap-user-btn-icon-right">
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               </button>
-
-              {isSelectingDateRange && (
-                <div className="custom-date-picker-dropdown">
-                  <div className="custom-date-picker-header">
-                    <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>←</button>
-                    <span>Pilih Rentang Tanggal</span>
-                    <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>→</button>
-                  </div>
-
-                  <div className="custom-calendars-container">
-                    {renderCalendarMonth(0)}
-                    {renderCalendarMonth(1)}
-                  </div>
-
-                  <div className="custom-date-range-info">
-                    {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
-                    {tempDateRangeStart && tempDateRangeEnd && (
-                      <p>{tempDateRangeStart} sampai {tempDateRangeEnd}</p>
-                    )}
-                  </div>
-
-                  <div className="custom-date-picker-footer">
-                    <button
-                      className="custom-date-apply-btn"
-                      onClick={() => {
-                        if (tempDateRangeStart && tempDateRangeEnd) {
-                          setDateFrom(tempDateRangeStart);
-                          setDateTo(tempDateRangeEnd);
-                          setIsSelectingDateRange(false);
-                          setIsSelectingStart(true);
-                        } else {
-                          showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
-                        }
+              {showUserFilter && (
+                <div className="rekap-user-dropdown">
+                  <div style={{ padding: '8px 12px' }}>
+                    <input
+                      type="text"
+                      placeholder="Cari peserta..."
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        width: '100%',
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--gray-300)',
+                        fontSize: '13px',
                       }}
-                    >
-                      Terapkan
-                    </button>
-                    <button
-                      className="custom-date-cancel-btn"
-                      onClick={() => {
-                        setIsSelectingDateRange(false);
-                        setTempDateRangeStart('');
-                        setTempDateRangeEnd('');
-                        setIsSelectingStart(true);
-                      }}
-                    >
-                      Batal
-                    </button>
+                    />
+                  </div>
+                  <div className="rekap-user-option" onClick={selectAllUsers}>
+                    <input type="checkbox" checked={selectedUsers.length === users.length && users.length > 0} readOnly />
+                    <span style={{ fontWeight: 600 }}>Pilih Semua</span>
+                  </div>
+                  <div className="rekap-user-dropdown-divider" />
+                  <div style={{ maxHeight: '240px', overflowY: 'auto' }}>
+                    {users
+                      .filter((u) => u.name.toLowerCase().includes(userSearch.toLowerCase()))
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((u) => (
+                        <div key={u._id} className="rekap-user-option" onClick={() => toggleUser(u._id)}>
+                          <input type="checkbox" checked={selectedUsers.includes(u._id)} readOnly />
+                          <span>{u.name}</span>
+                        </div>
+                      ))}
                   </div>
                 </div>
               )}
             </div>
-          )}
-
-          <div className="rekap-filter-group rekap-user-filter rekap-user-filter-container" ref={filterRef}>
-            <button
-              className="rekap-user-btn"
-              onClick={() => setShowUserFilter(!showUserFilter)}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-              </svg>
-              {selectedUsers.length === 0
-                ? 'Semua Peserta'
-                : selectedUsers.length === users.length
-                  ? 'Semua Peserta'
-                  : `${selectedUsers.length} Peserta`}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rekap-user-btn-icon-right">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-            {showUserFilter && (
-              <div className="rekap-user-dropdown">
-                <div style={{ padding: '8px 12px' }}>
-                  <input
-                    type="text"
-                    placeholder="Cari peserta..."
-                    value={userSearch}
-                    onChange={(e) => setUserSearch(e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
-                    style={{
-                      width: '100%',
-                      padding: '6px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--gray-300)',
-                      fontSize: '13px'
-                    }}
-                  />
-                </div>
-                <div className="rekap-user-option" onClick={selectAllUsers}>
-                  <input type="checkbox" checked={selectedUsers.length === users.length && users.length > 0} readOnly />
-                  <span style={{ fontWeight: 600 }}>Pilih Semua</span>
-                </div>
-                <div className="rekap-user-dropdown-divider" />
-                <div style={{ maxHeight: '240px', overflowY: 'auto' }}>
-                  {users
-                    .filter((u) => u.name.toLowerCase().includes(userSearch.toLowerCase()))
-                    .map((u) => (
-                      <div key={u._id} className="rekap-user-option" onClick={() => toggleUser(u._id)}>
-                        <input type="checkbox" checked={selectedUsers.includes(u._id)} readOnly />
-                        <span>{u.name}</span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
-          </div>
           </div>
 
           <button className="btn-export" onClick={exportToExcel}>
@@ -538,36 +516,49 @@ const Rekapitulasi: React.FC = () => {
       {/* Info bar */}
       <div className="rekap-info-bar">
         <span className="rekap-info-badge">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
           {formatDateLabel()}
         </span>
         <div className="rekap-info-pair">
-        <span className="rekap-info-badge">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
-          {pivotRows.length} Peserta
-        </span>
-        <span className="rekap-info-badge">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
-          Total: {grandTotalAll.toLocaleString('id-ID')}
-        </span>
+          <span className="rekap-info-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+            </svg>
+            {pivotRows.length} Peserta
+          </span>
+          <span className="rekap-info-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+            </svg>
+            Total: {grandTotalAll.toLocaleString('id-ID')}
+          </span>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="rekap-tabs">
-        <button
-          className={`rekap-tab-btn ${activeTab === 'pekerjaan' ? 'active' : ''}`}
-          onClick={() => setActiveTab('pekerjaan')}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <button className={`rekap-tab-btn ${activeTab === 'pekerjaan' ? 'active' : ''}`} onClick={() => setActiveTab('pekerjaan')}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+          </svg>
           Rekapitulasi Pekerjaan
         </button>
         {upahHarian > 0 && (
-          <button
-            className={`rekap-tab-btn ${activeTab === 'biaya' ? 'active' : ''}`}
-            onClick={() => setActiveTab('biaya')}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <button className={`rekap-tab-btn ${activeTab === 'biaya' ? 'active' : ''}`} onClick={() => setActiveTab('biaya')}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23" />
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
             Rincian Biaya
           </button>
         )}
@@ -575,79 +566,87 @@ const Rekapitulasi: React.FC = () => {
 
       {/* Table */}
       {activeTab === 'pekerjaan' && (
-      <div className="rekap-table-card">
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: 60, color: 'var(--gray-400)' }}>
-            <div style={{ width: 36, height: 36, border: '3px solid var(--gray-200)', borderTop: '3px solid var(--primary-500)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
-            Memuat data...
-          </div>
-        ) : (
-          <div className="rekap-table-wrapper">
-            <table className="rekap-table">
-              <thead>
-                <tr>
-                  <th rowSpan={2} className="rekap-th-sticky">NAMA PESERTA</th>
-                  {jenisList.map((j) => (
-                    <th key={j} colSpan={4} className="rekap-th-group">{j.toUpperCase()}</th>
-                  ))}
-                  <th rowSpan={2} className="rekap-th-total">TOTAL</th>
-                </tr>
-                <tr>
-                  {jenisList.map((j) => (
-                    <React.Fragment key={j + '-sub'}>
-                      <th className="rekap-th-sub">BERKAS</th>
-                      <th className="rekap-th-sub">BUKU</th>
-                      <th className="rekap-th-sub">BUNDLE</th>
-                      <th className="rekap-th-sub rekap-th-sub-total">TOTAL</th>
-                    </React.Fragment>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {pivotRows.length === 0 ? (
+        <div className="rekap-table-card">
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: 60, color: 'var(--gray-400)' }}>
+              <div style={{ width: 36, height: 36, border: '3px solid var(--gray-200)', borderTop: '3px solid var(--primary-500)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
+              Memuat data...
+            </div>
+          ) : (
+            <div className="rekap-table-wrapper">
+              <table className="rekap-table">
+                <thead>
                   <tr>
-                    <td colSpan={jenisList.length * 4 + 2} style={{ textAlign: 'center', padding: 40, color: 'var(--gray-400)' }}>
-                      Belum ada data rekapitulasi
-                    </td>
-                  </tr>
-                ) : (
-                  <>
-                    {pivotRows.map((row) => (
-                      <tr key={row.userId}>
-                        <td className="rekap-td-name">{row.userName}</td>
-                        {jenisList.map((j) => {
-                          const c = row.cells[j] || { berkas: 0, buku: 0, bundle: 0, total: 0 };
-                          return (
-                            <React.Fragment key={j}>
-                              <td className="rekap-td-num">{c.berkas}</td>
-                              <td className="rekap-td-num">{c.buku}</td>
-                              <td className="rekap-td-num">{c.bundle}</td>
-                              <td className="rekap-td-num rekap-td-subtotal">{c.total}</td>
-                            </React.Fragment>
-                          );
-                        })}
-                        <td className="rekap-td-num rekap-td-grandtotal">{row.grandTotal}</td>
-                      </tr>
+                    <th rowSpan={2} className="rekap-th-sticky">
+                      NAMA PESERTA
+                    </th>
+                    {jenisList.map((j) => (
+                      <th key={j} colSpan={4} className="rekap-th-group">
+                        {j.toUpperCase()}
+                      </th>
                     ))}
-                    <tr className="rekap-total-row">
-                      <td className="rekap-td-name" style={{ fontWeight: 800 }}>TOTAL</td>
-                      {jenisList.map((j) => (
-                        <React.Fragment key={j + '-tot'}>
-                          <td className="rekap-td-num">{totalsRow[j].berkas}</td>
-                          <td className="rekap-td-num">{totalsRow[j].buku}</td>
-                          <td className="rekap-td-num">{totalsRow[j].bundle}</td>
-                          <td className="rekap-td-num rekap-td-subtotal">{totalsRow[j].total}</td>
-                        </React.Fragment>
-                      ))}
-                      <td className="rekap-td-num rekap-td-grandtotal">{grandTotalAll}</td>
+                    <th rowSpan={2} className="rekap-th-total">
+                      TOTAL
+                    </th>
+                  </tr>
+                  <tr>
+                    {jenisList.map((j) => (
+                      <React.Fragment key={j + '-sub'}>
+                        <th className="rekap-th-sub">BERKAS</th>
+                        <th className="rekap-th-sub">BUKU</th>
+                        <th className="rekap-th-sub">BUNDLE</th>
+                        <th className="rekap-th-sub rekap-th-sub-total">TOTAL</th>
+                      </React.Fragment>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {pivotRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={jenisList.length * 4 + 2} style={{ textAlign: 'center', padding: 40, color: 'var(--gray-400)' }}>
+                        Belum ada data rekapitulasi
+                      </td>
                     </tr>
-                  </>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                  ) : (
+                    <>
+                      {pivotRows.map((row) => (
+                        <tr key={row.userId}>
+                          <td className="rekap-td-name">{row.userName}</td>
+                          {jenisList.map((j) => {
+                            const c = row.cells[j] || { berkas: 0, buku: 0, bundle: 0, total: 0 };
+                            return (
+                              <React.Fragment key={j}>
+                                <td className="rekap-td-num">{c.berkas}</td>
+                                <td className="rekap-td-num">{c.buku}</td>
+                                <td className="rekap-td-num">{c.bundle}</td>
+                                <td className="rekap-td-num rekap-td-subtotal">{c.total}</td>
+                              </React.Fragment>
+                            );
+                          })}
+                          <td className="rekap-td-num rekap-td-grandtotal">{row.grandTotal}</td>
+                        </tr>
+                      ))}
+                      <tr className="rekap-total-row">
+                        <td className="rekap-td-name" style={{ fontWeight: 800 }}>
+                          TOTAL
+                        </td>
+                        {jenisList.map((j) => (
+                          <React.Fragment key={j + '-tot'}>
+                            <td className="rekap-td-num">{totalsRow[j].berkas}</td>
+                            <td className="rekap-td-num">{totalsRow[j].buku}</td>
+                            <td className="rekap-td-num">{totalsRow[j].bundle}</td>
+                            <td className="rekap-td-num rekap-td-subtotal">{totalsRow[j].total}</td>
+                          </React.Fragment>
+                        ))}
+                        <td className="rekap-td-num rekap-td-grandtotal">{grandTotalAll}</td>
+                      </tr>
+                    </>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       )}
 
       {/* ===== BIAYA PER BERKAS TABLE ===== */}
@@ -666,21 +665,21 @@ const Rekapitulasi: React.FC = () => {
             <table className="rekap-table rekap-biaya-table">
               <thead>
                 <tr>
-                  <th rowSpan={2} className="rekap-th-sticky">NAMA PESERTA</th>
+                  <th rowSpan={2} className="rekap-th-sticky">
+                    NAMA PESERTA
+                  </th>
                   {jenisList.map((j) => {
                     const rate = getBiayaPerBerkas(j);
                     return (
                       <th key={j} colSpan={4} className="rekap-th-group rekap-biaya-th-group">
                         {j.toUpperCase()}
-                        {rate > 0 && (
-                          <div style={{ fontSize: 10, fontWeight: 500, opacity: 0.75, marginTop: 2 }}>
-                            {formatRupiah(rate)}/item
-                          </div>
-                        )}
+                        {rate > 0 && <div style={{ fontSize: 10, fontWeight: 500, opacity: 0.75, marginTop: 2 }}>{formatRupiah(rate)}/item</div>}
                       </th>
                     );
                   })}
-                  <th rowSpan={2} className="rekap-th-total">TOTAL</th>
+                  <th rowSpan={2} className="rekap-th-total">
+                    TOTAL
+                  </th>
                 </tr>
                 <tr>
                   {jenisList.map((j) => (
@@ -721,7 +720,9 @@ const Rekapitulasi: React.FC = () => {
                   );
                 })}
                 <tr className="rekap-total-row">
-                  <td className="rekap-td-name" style={{ fontWeight: 800 }}>TOTAL</td>
+                  <td className="rekap-td-name" style={{ fontWeight: 800 }}>
+                    TOTAL
+                  </td>
                   {jenisList.map((j) => {
                     const rate = getBiayaPerBerkas(j);
                     return (
@@ -733,9 +734,7 @@ const Rekapitulasi: React.FC = () => {
                       </React.Fragment>
                     );
                   })}
-                  <td className="rekap-td-num rekap-td-grandtotal rekap-td-biaya">
-                    {formatRupiah(jenisList.reduce((sum, j) => sum + totalsRow[j].total * getBiayaPerBerkas(j), 0))}
-                  </td>
+                  <td className="rekap-td-num rekap-td-grandtotal rekap-td-biaya">{formatRupiah(jenisList.reduce((sum, j) => sum + totalsRow[j].total * getBiayaPerBerkas(j), 0))}</td>
                 </tr>
               </tbody>
             </table>
