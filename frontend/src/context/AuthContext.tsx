@@ -18,8 +18,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshUser = useCallback(() => {
-    setUser(AuthAPI.getCurrentUser());
+  const refreshUser = useCallback(async () => {
+    const res = await AuthAPI.getProfile();
+    if (res && res.success) {
+      localStorage.setItem('pln_current_user', JSON.stringify(res.data));
+      setUser(res.data);
+    } else {
+      setUser(AuthAPI.getCurrentUser());
+    }
   }, []);
 
   useEffect(() => {
@@ -50,11 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     AuthAPI.logout();
   };
 
-  return (
-    <AuthContext.Provider value={{ user, isLoggedIn: !!user, loading, login, register, logout, refreshUser }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{ user, isLoggedIn: !!user, loading, login, register, logout, refreshUser }}>{children}</AuthContext.Provider>;
 };
 
 export function useAuth(): AuthContextType {

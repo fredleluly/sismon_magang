@@ -22,6 +22,11 @@ const Profil: React.FC = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Fetch latest user data from API on mount
+  useEffect(() => {
+    refreshUser();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (user) {
       setEmail(user.email);
@@ -42,9 +47,9 @@ const Profil: React.FC = () => {
       .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ');
     data.username = username.trim().toLowerCase();
-    // Add tanggalMasuk if provided
+    // Add tanggalMasuk if provided (send as YYYY-MM-DD to avoid timezone shift)
     if (tanggalMasuk) {
-      data.tanggalMasuk = new Date(tanggalMasuk).toISOString();
+      data.tanggalMasuk = tanggalMasuk;
     }
     const res = await AuthAPI.updateProfile(data);
     if (res && res.success) {
