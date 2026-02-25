@@ -3,6 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { AuthAPI, WorkLogAPI } from "../../services/api";
 import type { WorkStats } from "../../types";
+import CustomDatePicker from "../../components/CustomDatePicker";
 
 const Profil: React.FC = () => {
   const { user, refreshUser } = useAuth();
@@ -10,7 +11,7 @@ const Profil: React.FC = () => {
   const [email, setEmail] = useState("");
   const [instansi, setInstansi] = useState("");
   const [username, setUsername] = useState("");
-  const [tanggalMulai, setTanggalMulai] = useState("");
+  const [tanggalMasuk, setTanggalMasuk] = useState("");
   const [stats, setStats] = useState<WorkStats>({
     berkas: 0,
     buku: 0,
@@ -26,7 +27,7 @@ const Profil: React.FC = () => {
       setEmail(user.email);
       setInstansi(user.instansi || "");
       setUsername(user.username || user.name.toLowerCase().replace(/\s/g, ""));
-      setTanggalMulai(user.tanggalMulai ? user.tanggalMulai.split("T")[0] : "");
+      setTanggalMasuk(user.tanggalMasuk ? user.tanggalMasuk.split("T")[0] : (user.createdAt ? user.createdAt.split("T")[0] : ""));
     }
     WorkLogAPI.getMyStats().then((res) => {
       if (res && res.success) setStats(res.data);
@@ -40,9 +41,9 @@ const Profil: React.FC = () => {
       .split(" ")
       .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(" ");
-    // Add tanggalMulai if provided
-    if (tanggalMulai) {
-      data.tanggalMulai = new Date(tanggalMulai).toISOString();
+    // Add tanggalMasuk if provided
+    if (tanggalMasuk) {
+      data.tanggalMasuk = new Date(tanggalMasuk).toISOString();
     }
     const res = await AuthAPI.updateProfile(data);
     if (res && res.success) {
@@ -106,7 +107,7 @@ const Profil: React.FC = () => {
               <span className="badge-aktif">Aktif</span>
               <span className="badge-pln">PLN ICON+</span>
               <span className="badge-pln" style={{ background: "#e0f2fe", color: "#0369a1", border: "1px solid #bae6fd", fontWeight: "700" }}>
-                {tanggalMulai ? calculateDuration(tanggalMulai) : "0 hari"}
+                {tanggalMasuk ? calculateDuration(tanggalMasuk) : "0 hari"}
               </span>
             </div>
           </div>
@@ -179,29 +180,10 @@ const Profil: React.FC = () => {
             </div>
             <div className="form-group" style={{ marginTop: '16px' }}>
               <label>Tanggal Mulai Magang</label>
-              <div className="input-wrapper">
-                <span className="input-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                </span>
-                <input
-                  type="date"
-                  className="profile-input"
-                  value={tanggalMulai}
-                  onChange={(e) => setTanggalMulai(e.target.value)}
-                  style={{ padding: '12px 16px 12px 44px' }}
-                />
-              </div>
+              <CustomDatePicker 
+                value={tanggalMasuk}
+                onChange={setTanggalMasuk}
+              />
             </div>
             <div className="form-group" style={{ marginTop: '16px' }}>
               <label>Lama Magang</label>
@@ -221,7 +203,7 @@ const Profil: React.FC = () => {
                 <input
                   type="text"
                   className="profile-input"
-                  value={tanggalMulai ? calculateDuration(tanggalMulai) : "0 hari"}
+                  value={tanggalMasuk ? calculateDuration(tanggalMasuk) : "0 hari"}
                   disabled
                   style={{ 
                     padding: '12px 16px 12px 44px',

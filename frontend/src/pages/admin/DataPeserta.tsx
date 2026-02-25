@@ -4,6 +4,7 @@ import { UsersAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import type { User } from '../../types';
+import CustomDatePicker from '../../components/CustomDatePicker';
 
 const DataPeserta: React.FC = () => {
   const { showToast } = useToast();
@@ -370,12 +371,18 @@ const DataPeserta: React.FC = () => {
                 </div>
                 <div className="form-group">
                   <label>Tanggal Masuk</label>
-                  <input type="date" value={form.tanggalMasuk} onChange={(e) => setForm({ ...form, tanggalMasuk: e.target.value })} required />
+                  <CustomDatePicker 
+                    value={form.tanggalMasuk}
+                    onChange={(val) => setForm({ ...form, tanggalMasuk: val })}
+                  />
                 </div>
                 {form.status === 'Nonaktif' && (
                   <div className="form-group">
                     <label>Tanggal Nonaktif</label>
-                    <input type="date" value={form.nonaktifDate} onChange={(e) => setForm({ ...form, nonaktifDate: e.target.value })} required />
+                    <CustomDatePicker 
+                      value={form.nonaktifDate}
+                      onChange={(val) => setForm({ ...form, nonaktifDate: val })}
+                    />
                     <small style={{ color: '#666', marginTop: 4, display: 'block' }}>Mulai tanggal ini dan seterusnya, data absen belum absen akan dihilangkan.</small>
                   </div>
                 )}

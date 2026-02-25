@@ -1,0 +1,183 @@
+/* ===== CustomDatePicker ===== */
+.cdp-container {
+  position: relative;
+  width: 100%;
+}
+
+/* Trigger button */
+.cdp-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--gray-50);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  color: var(--gray-800);
+  cursor: pointer;
+  transition: var(--transition-base);
+  text-align: left;
+}
+
+.cdp-trigger:hover {
+  background: var(--gray-100);
+}
+
+.cdp-trigger.active {
+  border-color: var(--primary-400);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(26, 143, 201, 0.1);
+}
+
+.cdp-trigger .cdp-icon {
+  color: var(--gray-400);
+  flex-shrink: 0;
+  display: flex;
+}
+
+.cdp-trigger .cdp-value {
+  flex: 1;
+}
+
+.cdp-trigger .cdp-placeholder {
+  color: var(--gray-400);
+}
+
+.cdp-trigger .cdp-chevron {
+  color: var(--gray-400);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.cdp-trigger.active .cdp-chevron {
+  transform: rotate(180deg);
+  color: var(--primary-500);
+}
+
+/* Dropdown Panel */
+.cdp-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 100;
+  width: 280px;
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
+  animation: cdpSlideIn 0.15s ease-out;
+  padding: 16px;
+}
+
+@keyframes cdpSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Panel Header */
+.cdp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.cdp-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gray-500);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cdp-nav:hover {
+  background: var(--gray-100);
+  color: var(--primary-600);
+}
+
+.cdp-nav:active {
+  background: var(--gray-200);
+  transform: scale(0.95);
+}
+
+.cdp-month-year {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--gray-900);
+}
+
+/* Calendar Grid */
+.cdp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cdp-weekday {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-500);
+  padding-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.cdp-day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-800);
+  background: transparent;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cdp-day:hover:not(.cdp-day-empty):not(.cdp-day-disabled) {
+  background: var(--primary-50);
+  color: var(--primary-700);
+}
+
+.cdp-day.cdp-day-selected {
+  background: var(--primary-500);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(26, 143, 201, 0.4);
+}
+
+.cdp-day.cdp-day-today:not(.cdp-day-selected) {
+  border-color: var(--primary-400);
+  color: var(--primary-600);
+}
+
+.cdp-day-empty {
+  visibility: hidden;
+}
+
+.cdp-day-disabled {
+  color: var(--gray-300);
+  cursor: not-allowed;
+}
+
+/* Modifiers */
+.cdp-container.slim .cdp-trigger {
+  padding: 10px 14px;
+}
