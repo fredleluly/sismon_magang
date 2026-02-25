@@ -17,8 +17,8 @@
   display: flex;
   gap: 8px;
   flex-wrap: nowrap;
-  overflow-x: auto; 
-  padding-bottom: 4px; 
+  overflow-x: auto;
+  padding-bottom: 4px;
 }
 
 .filter-btn {
@@ -560,6 +560,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -580,7 +581,7 @@
   margin-bottom: 24px;
 }
 
-.work-monitor-layout > * {
+.work-monitor-layout>* {
   min-width: 0;
 }
 
@@ -753,6 +754,75 @@
   z-index: 1;
 }
 
+/* ===== HOLIDAY STYLES ===== */
+.calendar-day.is-holiday {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.calendar-day.is-holiday .day-number {
+  color: #dc2626;
+}
+
+.calendar-day.is-holiday.has-data {
+  background: linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%);
+  border-color: #f87171;
+}
+
+.calendar-day.is-holiday.has-data .day-badge {
+  background: #ef4444;
+}
+
+.calendar-day.is-holiday:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+  box-shadow: 0 8px 16px rgba(239, 68, 68, 0.15);
+}
+
+/* Holiday Detail Panel */
+.holiday-detail {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+  padding: 40px 20px;
+  animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.holiday-icon {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: #fef2f2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.holiday-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #dc2626;
+  margin: 0 0 8px 0;
+}
+
+.holiday-date {
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  margin: 0 0 12px 0;
+}
+
+.holiday-desc {
+  font-size: 13px;
+  color: #94a3b8;
+  margin: 0;
+  max-width: 300px;
+}
+
 .day-number {
   font-size: 16px;
   font-weight: 600;
@@ -877,7 +947,8 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
-  min-width: 600px; /* Ensure table has minimum width to trigger scroll */
+  min-width: 600px;
+  /* Ensure table has minimum width to trigger scroll */
 }
 
 .work-table thead {
@@ -1014,18 +1085,23 @@
   0% {
     box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
   }
+
   50% {
     box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
   }
 }
 
 @keyframes glow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
   }
+
   50% {
     box-shadow: 0 8px 24px rgba(102, 126, 234, 0.6);
   }
@@ -1036,6 +1112,7 @@
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -1047,6 +1124,7 @@
     opacity: 0;
     transform: translateX(20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -1062,7 +1140,7 @@
     justify-content: flex-start;
     gap: 16px;
   }
-  
+
   .filter-buttons {
     flex-wrap: nowrap;
   }
@@ -1076,7 +1154,8 @@
   .work-details {
     max-height: none;
     overflow-y: visible;
-    overflow-x: hidden; /* Prevent horizontal scroll on the card itself */
+    overflow-x: hidden;
+    /* Prevent horizontal scroll on the card itself */
   }
 
   .date-picker-calendars {
@@ -1125,7 +1204,7 @@
     inset: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(2px);
     z-index: 9999;
     display: flex;
@@ -1133,33 +1212,40 @@
     justify-content: center;
     animation: fadeIn 0.2s ease;
   }
-  
+
   /* Reset the dropdown style when inside portal */
   .custom-date-picker-dropdown.mobile-portal {
-    position: relative !important; /* Relative to overlay flex item */
+    position: relative !important;
+    /* Relative to overlay flex item */
     inset: auto !important;
     margin: 0 !important;
     transform: none !important;
     top: auto !important;
     left: auto !important;
-    
+
     width: 90vw !important;
     max-width: 320px !important;
     height: auto !important;
     max-height: 450px !important;
-    
+
     background: white;
     padding: 16px !important;
     border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-    z-index: 10000; /* Higher than overlay */
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    /* Higher than overlay */
     overflow-y: auto !important;
     animation: scaleIn 0.2s ease;
   }
-  
+
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
   }
 
   /* Hide the old inline overlay logic for mobile */

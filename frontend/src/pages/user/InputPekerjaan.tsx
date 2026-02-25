@@ -1,9 +1,22 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom';
-import { WorkLogAPI } from '../../services/api';
+import { WorkLogAPI, AttendanceAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { WorkLog } from '../../types';
 import './InputPekerjaan.css';
+
+const MONTH_NAMES = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+
+const toDateString = (date: Date): string => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
 
 const InputPekerjaan: React.FC = () => {
   const { showToast } = useToast();
@@ -14,6 +27,12 @@ const InputPekerjaan: React.FC = () => {
   const [buku, setBuku] = useState(0);
   const [bundle, setBundle] = useState(0);
   const [pendingData, setPendingData] = useState<WorkLog[]>([]);
+
+  // Calendar dropdown states
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarDate, setCalendarDate] = useState(new Date());
+  const [holidayDates, setHolidayDates] = useState<Set<string>>(new Set());
+  const calendarRef = useRef<HTMLDivElement>(null);
 
   const loadPending = useCallback(async () => {
     const res = await WorkLogAPI.getAll('status=Draft');
@@ -65,6 +84,44 @@ const InputPekerjaan: React.FC = () => {
   useEffect(() => {
     loadPending();
   }, [loadPending]);
+
+  // Load holidays for the calendar month
+  useEffect(() => {
+    const loadHolidays = async () => {
+      try {
+        const year = calendarDate.getFullYear();
+        const month = calendarDate.getMonth();
+        const from = toDateString(new Date(year, month, 1));
+        const to = toDateString(new Date(year, month + 1, 0));
+        const res = await AttendanceAPI.getAll(`from=${from}&to=${to}&limit=100`);
+        if (res && res.success && res.data) {
+          const holidays = new Set<string>();
+          (res.data as any[]).forEach((att: any) => {
+            if (att.status === 'Hari Libur') {
+              holidays.add(att.tanggal.split('T')[0]);
+            }
+          });
+          setHolidayDates(holidays);
+        }
+      } catch (error) {
+        console.error('Error loading holidays:', error);
+      }
+    };
+    loadHolidays();
+  }, [calendarDate]);
+
+  // Close calendar on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
+        setShowCalendar(false);
+      }
+    };
+    if (showCalendar) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showCalendar]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,6 +203,44 @@ const InputPekerjaan: React.FC = () => {
 
   const formatDate = (d: string) => new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
+  // Calendar helper: generate days for the month
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    return { firstDay, totalDays };
+  };
+
+  const handleCalendarDayClick = (day: number) => {
+    const targetDate = toDateString(
+      new Date(calendarDate.getFullYear(), calendarDate.getMonth(), day),
+    );
+    if (holidayDates.has(targetDate)) {
+      showToast('Tanggal ini adalah Hari Libur, tidak dapat menginput pekerjaan.', 'error');
+      return;
+    }
+    setTanggal(targetDate);
+    setShowCalendar(false);
+  };
+
+  const handlePrevMonth = () => {
+    setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1));
+  };
+
+  const { firstDay, totalDays } = getDaysInMonth(calendarDate);
+
+  const formattedTanggal = new Date(tanggal + 'T00:00:00').toLocaleDateString('id-ID', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
   return (
     <div className="input-pekerjaan-layout">
       <div className="form-card">
@@ -162,7 +257,81 @@ const InputPekerjaan: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Tanggal</label>
-            <input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} required />
+            <div className="ip-calendar-wrapper" ref={calendarRef}>
+              <button
+                type="button"
+                className="ip-calendar-trigger"
+                onClick={() => {
+                  // Sync calendar view to currently selected date
+                  const d = new Date(tanggal + 'T00:00:00');
+                  setCalendarDate(new Date(d.getFullYear(), d.getMonth(), 1));
+                  setShowCalendar(!showCalendar);
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span>{formattedTanggal}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ip-calendar-chevron" style={{ transform: showCalendar ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+
+              {showCalendar && (
+                <div className="ip-calendar-dropdown">
+                  <div className="ip-calendar-header">
+                    <button type="button" className="ip-calendar-nav" onClick={handlePrevMonth}>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="15 18 9 12 15 6" />
+                      </svg>
+                    </button>
+                    <h4 className="ip-calendar-title">
+                      {MONTH_NAMES[calendarDate.getMonth()]} {calendarDate.getFullYear()}
+                    </h4>
+                    <button type="button" className="ip-calendar-nav" onClick={handleNextMonth}>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="ip-calendar-day-names">
+                    {DAY_NAMES.map((name) => (
+                      <div key={name} className="ip-day-name">{name}</div>
+                    ))}
+                  </div>
+
+                  <div className="ip-calendar-grid">
+                    {Array.from({ length: firstDay }, (_, i) => (
+                      <div key={`e-${i}`} className="ip-calendar-empty" />
+                    ))}
+                    {Array.from({ length: totalDays }, (_, i) => {
+                      const day = i + 1;
+                      const dateStr = toDateString(
+                        new Date(calendarDate.getFullYear(), calendarDate.getMonth(), day),
+                      );
+                      const isHoliday = holidayDates.has(dateStr);
+                      const isSelected = tanggal === dateStr;
+                      const isToday = dateStr === new Date().toISOString().split('T')[0];
+
+                      return (
+                        <div
+                          key={day}
+                          className={`ip-calendar-day${isSelected ? ' selected' : ''}${isHoliday ? ' is-holiday' : ''}${isToday ? ' is-today' : ''}`}
+                          onClick={() => handleCalendarDayClick(day)}
+                          title={isHoliday ? 'Hari Libur' : ''}
+                        >
+                          <span className="ip-day-number">{day}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           <div className="form-group">
             <label>Jenis Pekerjaan (Jobdesk)</label>
