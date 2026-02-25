@@ -32,7 +32,9 @@ const KelolaKeluhan: React.FC = () => {
     if (res && res.success) setAll(res.data || []);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   // Update dates when filter type or month changes
   useEffect(() => {
@@ -94,50 +96,55 @@ const KelolaKeluhan: React.FC = () => {
     return null;
   };
 
+  const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
   const renderCalendarMonth = (offset: number) => {
     const month = new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() + offset);
     const year = month.getFullYear();
     const monthIndex = month.getMonth();
     const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
     const firstDay = new Date(year, monthIndex, 1).getDay();
+    const monthName = monthNames[monthIndex];
     const days: React.ReactNode[] = [];
 
     for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${offset}-${i}`} className="custom-calendar-day empty" />);
+      days.push(<div key={`empty-${offset}-${i}`} className="calendar-cell empty"></div>);
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
       const inRange = isDateInRange(year, monthIndex, d);
       const startEnd = isDateStartEnd(year, monthIndex, d);
-      let cls = 'custom-calendar-day';
-      if (startEnd === 'start') cls += ' range-start';
-      else if (startEnd === 'end') cls += ' range-end';
-      else if (inRange) cls += ' in-range';
+      const isStart = startEnd === 'start';
+      const isEnd = startEnd === 'end';
 
       days.push(
-        <div key={`${offset}-${d}`} className={cls} onClick={() => handleCalendarDateClick(year, monthIndex, d)}>
+        <div key={`${offset}-${d}`} className={`calendar-cell ${inRange ? 'in-range' : ''} ${isStart ? 'start-date' : ''} ${isEnd ? 'end-date' : ''}`} onClick={() => handleCalendarDateClick(year, monthIndex, d)}>
           {d}
-        </div>
+        </div>,
       );
     }
 
     return (
-      <div className="custom-calendar-month">
-        <div className="custom-calendar-title">
-          {month.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+      <div className="calendar-month-picker">
+        <div className="calendar-month-header">
+          <h3>
+            {monthName} {year}
+          </h3>
         </div>
-        <div className="custom-calendar-header">
-          {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(d => (
-            <div key={d} className="custom-calendar-day-label">{d}</div>
+        <div className="calendar-weekdays">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d) => (
+            <div key={d} className="calendar-weekday">
+              {d}
+            </div>
           ))}
         </div>
-        <div className="custom-calendar-grid">{days}</div>
+        <div className="calendar-days">{days}</div>
       </div>
     );
   };
 
   // ── Filtered data (date + search + status + priority) ──
-  const filtered = all.filter(k => {
+  const filtered = all.filter((k) => {
     // Date filter
     if (dateFrom && dateTo && k.createdAt) {
       const created = k.createdAt.substring(0, 10);
@@ -150,14 +157,16 @@ const KelolaKeluhan: React.FC = () => {
     return matchQ && matchS && matchP;
   });
 
-  const menunggu = all.filter(k => k.status === 'Menunggu').length;
-  const diproses = all.filter(k => k.status === 'Diproses').length;
-  const selesai = all.filter(k => k.status === 'Selesai').length;
+  const menunggu = all.filter((k) => k.status === 'Menunggu').length;
+  const diproses = all.filter((k) => k.status === 'Diproses').length;
+  const selesai = all.filter((k) => k.status === 'Selesai').length;
 
   const updateStatus = async (id: string, status: string) => {
     const res = await ComplaintAPI.updateStatus(id, status);
-    if (res && res.success) { showToast(`Status diubah ke "${status}"`, 'success'); load(); }
-    else showToast(res?.message || 'Gagal', 'error');
+    if (res && res.success) {
+      showToast(`Status diubah ke "${status}"`, 'success');
+      load();
+    } else showToast(res?.message || 'Gagal', 'error');
   };
 
   const formatDateLabel = () => {
@@ -189,11 +198,7 @@ const KelolaKeluhan: React.FC = () => {
       filterInfoStr = `Custom — ${f} s/d ${t}`;
     }
 
-    const infoLines = [
-      `Filter: ${filterInfoStr}`,
-      `Total: ${filtered.length} keluhan`,
-      `Menunggu: ${menunggu} | Diproses: ${diproses} | Selesai: ${selesai}`,
-    ];
+    const infoLines = [`Filter: ${filterInfoStr}`, `Total: ${filtered.length} keluhan`, `Menunggu: ${menunggu} | Diproses: ${diproses} | Selesai: ${selesai}`];
     if (search) infoLines.push(`Pencarian: "${search}"`);
     if (statusFilter) infoLines.push(`Status: ${statusFilter}`);
     if (prioFilter) infoLines.push(`Prioritas: ${prioFilter}`);
@@ -203,32 +208,34 @@ const KelolaKeluhan: React.FC = () => {
         fileName: 'Kelola_Keluhan',
         companyName: 'SISMON Magang',
         creator: 'Admin',
-        sheets: [{
-          sheetName: 'Keluhan',
-          title: 'LAPORAN KELUHAN PESERTA MAGANG',
-          subtitle: 'Daftar keluhan dan status penanganan',
-          infoLines,
-          columns: [
-            { header: 'No', key: 'no', width: 6, type: 'number' as const },
-            { header: 'Tanggal', key: 'tanggal', width: 20 },
-            { header: 'Nama Peserta', key: 'nama', width: 24 },
-            { header: 'Judul', key: 'judul', width: 28 },
-            { header: 'Kategori', key: 'kategori', width: 16 },
-            { header: 'Prioritas', key: 'prioritas', width: 12 },
-            { header: 'Status', key: 'status', width: 12 },
-            { header: 'Deskripsi', key: 'deskripsi', width: 40 },
-          ],
-          data: filtered.map((k, i) => ({
-            no: i + 1,
-            tanggal: k.createdAt ? new Date(k.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-',
-            nama: (k.userId as any)?.name || 'Unknown',
-            judul: k.judul || 'Tanpa Judul',
-            kategori: k.kategori || '-',
-            prioritas: k.prioritas || '-',
-            status: k.status || '-',
-            deskripsi: k.deskripsi || '-',
-          })),
-        }],
+        sheets: [
+          {
+            sheetName: 'Keluhan',
+            title: 'LAPORAN KELUHAN PESERTA MAGANG',
+            subtitle: 'Daftar keluhan dan status penanganan',
+            infoLines,
+            columns: [
+              { header: 'No', key: 'no', width: 6, type: 'number' as const },
+              { header: 'Tanggal', key: 'tanggal', width: 20 },
+              { header: 'Nama Peserta', key: 'nama', width: 24 },
+              { header: 'Judul', key: 'judul', width: 28 },
+              { header: 'Kategori', key: 'kategori', width: 16 },
+              { header: 'Prioritas', key: 'prioritas', width: 12 },
+              { header: 'Status', key: 'status', width: 12 },
+              { header: 'Deskripsi', key: 'deskripsi', width: 40 },
+            ],
+            data: filtered.map((k, i) => ({
+              no: i + 1,
+              tanggal: k.createdAt ? new Date(k.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-',
+              nama: (k.userId as any)?.name || 'Unknown',
+              judul: k.judul || 'Tanpa Judul',
+              kategori: k.kategori || '-',
+              prioritas: k.prioritas || '-',
+              status: k.status || '-',
+              deskripsi: k.deskripsi || '-',
+            })),
+          },
+        ],
       });
       showToast('Berhasil mengekspor data ke Excel', 'success');
     } catch (err) {
@@ -239,22 +246,42 @@ const KelolaKeluhan: React.FC = () => {
 
   return (
     <>
-      <div className="page-header"><h1>Kelola Keluhan</h1><p>Kelola dan tanggapi laporan keluhan dari peserta magang</p></div>
+      <div className="page-header">
+        <h1>Kelola Keluhan</h1>
+        <p>Kelola dan tanggapi laporan keluhan dari peserta magang</p>
+      </div>
       <div className="keluhan-stats-grid">
-        <div className="keluhan-stat"><div className="ks-header"><span className="ks-label">Total</span></div><div className="ks-value">{all.length}</div></div>
-        <div className="keluhan-stat"><div className="ks-header"><span className="ks-label">Menunggu</span></div><div className="ks-value">{menunggu}</div></div>
-        <div className="keluhan-stat"><div className="ks-header"><span className="ks-label">Diproses</span></div><div className="ks-value">{diproses}</div></div>
-        <div className="keluhan-stat"><div className="ks-header"><span className="ks-label">Selesai</span></div><div className="ks-value">{selesai}</div></div>
+        <div className="keluhan-stat">
+          <div className="ks-header">
+            <span className="ks-label">Total</span>
+          </div>
+          <div className="ks-value">{all.length}</div>
+        </div>
+        <div className="keluhan-stat">
+          <div className="ks-header">
+            <span className="ks-label">Menunggu</span>
+          </div>
+          <div className="ks-value">{menunggu}</div>
+        </div>
+        <div className="keluhan-stat">
+          <div className="ks-header">
+            <span className="ks-label">Diproses</span>
+          </div>
+          <div className="ks-value">{diproses}</div>
+        </div>
+        <div className="keluhan-stat">
+          <div className="ks-header">
+            <span className="ks-label">Selesai</span>
+          </div>
+          <div className="ks-value">{selesai}</div>
+        </div>
       </div>
 
       {/* ── Filter Bar (same layout/position as Rekapitulasi) ── */}
       <div className="work-filter-bar">
         <div className="work-filter-left">
           <div className="filter-buttons">
-            <button
-              className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`}
-              onClick={() => setFilterType('bulanan')}
-            >
+            <button className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`} onClick={() => setFilterType('bulanan')}>
               Bulanan
             </button>
             <button
@@ -271,24 +298,21 @@ const KelolaKeluhan: React.FC = () => {
           {filterType === 'bulanan' ? (
             <div className="month-picker-container">
               <button className="month-nav-btn" onClick={handlePrevMonth}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
               </button>
-              <span className="month-display">
-                {currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
-              </span>
+              <span className="month-display">{currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</span>
               <button className="month-nav-btn" onClick={handleNextMonth}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
               </button>
             </div>
           ) : (
             <div className="custom-date-range-container" ref={dateRangeRef}>
-              <button
-                className="custom-date-range-toggle"
-                onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
-              >
-                {dateFrom && dateTo
-                  ? `${dateFrom} - ${dateTo}`
-                  : 'Pilih Rentang Tanggal'}
+              <button className="custom-date-range-toggle" onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}>
+                {dateFrom && dateTo ? `${dateFrom} - ${dateTo}` : 'Pilih Rentang Tanggal'}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -309,9 +333,13 @@ const KelolaKeluhan: React.FC = () => {
               {isSelectingDateRange && (
                 <div className="custom-date-picker-dropdown">
                   <div className="custom-date-picker-header">
-                    <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>←</button>
+                    <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>
+                      ←
+                    </button>
                     <span>Pilih Rentang Tanggal</span>
-                    <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>→</button>
+                    <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>
+                      →
+                    </button>
                   </div>
 
                   <div className="custom-calendars-container">
@@ -322,7 +350,9 @@ const KelolaKeluhan: React.FC = () => {
                   <div className="custom-date-range-info">
                     {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
                     {tempDateRangeStart && tempDateRangeEnd && (
-                      <p>{tempDateRangeStart} sampai {tempDateRangeEnd}</p>
+                      <p>
+                        {tempDateRangeStart} sampai {tempDateRangeEnd}
+                      </p>
                     )}
                   </div>
 
@@ -361,7 +391,7 @@ const KelolaKeluhan: React.FC = () => {
 
           {/* Search + Status + Priority filters */}
           <div className="keluhan-filters-row">
-            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari laporan..." className="keluhan-search-input" />
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari laporan..." className="keluhan-search-input" />
             <CustomSelect
               value={statusFilter}
               onChange={setStatusFilter}
@@ -398,18 +428,28 @@ const KelolaKeluhan: React.FC = () => {
       {/* Info bar (same as Rekapitulasi) */}
       <div className="rekap-info-bar">
         <span className="rekap-info-badge">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
           {formatDateLabel()}
         </span>
         <span className="rekap-info-badge">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+          </svg>
           {filtered.length} Keluhan
         </span>
       </div>
 
       {/* Complaint list */}
       <div className="keluhan-list-card mt-5">
-        <h3>Daftar Keluhan</h3><p className="text-[13px] text-gray-500 mb-4">Menampilkan {filtered.length} dari {all.length} laporan</p>
+        <h3>Daftar Keluhan</h3>
+        <p className="text-[13px] text-gray-500 mb-4">
+          Menampilkan {filtered.length} dari {all.length} laporan
+        </p>
         <div className="keluhan-scroll-container max-h-[500px] overflow-y-auto pr-1">
           {filtered.length === 0 ? (
             <div className="text-center p-10 text-gray-400">Tidak ada laporan ditemukan</div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import ReactDOM from "react-dom";
-import { WorkLogAPI } from "../../services/api";
+import { WorkLogAPI, AttendanceAPI } from "../../services/api";
 import { useToast } from "../../context/ToastContext";
 import type { WorkLog } from "../../types";
 import { exportExcel } from "../../utils/excelExport";
@@ -27,6 +27,9 @@ const MonitoringPekerjaan: React.FC = () => {
   const [workData, setWorkData] = useState<WorkLog[]>([]);
   const [selectedDayData, setSelectedDayData] = useState<WorkLog[]>([]);
   const [calendarLoading, setCalendarLoading] = useState(false);
+  const [holidayDates, setHolidayDates] = useState<Set<string>>(new Set());
+  const [selectedHoliday, setSelectedHoliday] = useState(false);
+  const [selectedDayDate, setSelectedDayDate] = useState<string>("");
 
   // Filter states
   const [filterType, setFilterType] = useState<
@@ -147,7 +150,13 @@ const MonitoringPekerjaan: React.FC = () => {
 
   const handleDayClick = (day: number) => {
     const dayData = getWorkForDay(day);
+    const targetDate = toDateString(
+      new Date(currentDate.getFullYear(), currentDate.getMonth(), day),
+    );
+    const isHoliday = holidayDates.has(targetDate);
     setSelectedDayData(dayData);
+    setSelectedHoliday(isHoliday);
+    setSelectedDayDate(targetDate);
   };
 
   const getWorkCount = (day: number) => {
@@ -698,10 +707,10 @@ const MonitoringPekerjaan: React.FC = () => {
       const selectedDateStr =
         selectedDayData.length > 0
           ? new Date(selectedDayData[0]?.tanggal).toLocaleDateString("id-ID", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })
           : `${dateRangeStart} sampai ${dateRangeEnd}`;
 
       const totalBerkas = dataToExport.reduce((s, w) => s + (w.berkas || 0), 0);
@@ -798,6 +807,33 @@ const MonitoringPekerjaan: React.FC = () => {
   useEffect(() => {
     loadWorkData();
   }, [filterType, dateRangeStart, dateRangeEnd, currentDate]);
+
+  // Load holiday dates from attendance API for current calendar month
+  useEffect(() => {
+    const loadHolidayDates = async () => {
+      try {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const from = toDateString(new Date(year, month, 1));
+        const to = toDateString(new Date(year, month + 1, 0));
+        const res = await AttendanceAPI.getAll(
+          `from=${from}&to=${to}&limit=100`,
+        );
+        if (res && res.success && res.data) {
+          const holidays = new Set<string>();
+          (res.data as any[]).forEach((att: any) => {
+            if (att.status === "Hari Libur") {
+              holidays.add(att.tanggal.split("T")[0]);
+            }
+          });
+          setHolidayDates(holidays);
+        }
+      } catch (error) {
+        console.error("Error loading holiday dates:", error);
+      }
+    };
+    loadHolidayDates();
+  }, [currentDate]);
 
   const today = new Date().toLocaleDateString("id-ID", {
     weekday: "long",
@@ -1105,12 +1141,13 @@ const MonitoringPekerjaan: React.FC = () => {
               const isSelected =
                 selectedDayData.length > 0 &&
                 selectedDayData[0]?.tanggal.split("T")[0] === targetDate;
+              const isHoliday = holidayDates.has(targetDate);
               return (
                 <div
                   key={day}
-                  className={`calendar-day ${count > 0 ? "has-data" : ""} ${isSelected ? "selected" : ""}`}
+                  className={`calendar-day ${count > 0 ? "has-data" : ""} ${isSelected ? "selected" : ""} ${isHoliday ? "is-holiday" : ""}`}
                   onClick={() => handleDayClick(day)}
-                  title={`${count} entri pekerjaan`}
+                  title={isHoliday ? "Hari Libur" : `${count} entri pekerjaan`}
                 >
                   <div className="day-number">{day}</div>
                   {count > 0 && <div className="day-badge">{count}</div>}
@@ -1159,7 +1196,28 @@ const MonitoringPekerjaan: React.FC = () => {
             )}
           </div>
 
-          {selectedDayData.length === 0 ? (
+          {selectedHoliday && selectedDayData.length === 0 ? (
+            <div className="holiday-detail">
+              <div className="holiday-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+              </div>
+              <h4 className="holiday-title">Hari Libur</h4>
+              <p className="holiday-date">
+                {new Date(selectedDayDate + "T00:00:00").toLocaleDateString("id-ID", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+              <p className="holiday-desc">Tanggal ini telah ditetapkan sebagai Hari Libur.</p>
+            </div>
+          ) : selectedDayData.length === 0 ? (
             <div className="no-selection">
               <p>Pilih tanggal untuk melihat detail pekerjaan</p>
             </div>

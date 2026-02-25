@@ -13,7 +13,7 @@ const DataPeserta: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'aktif' | 'nonaktif'>('aktif');
   const [modal, setModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif', role: 'user', nonaktifDate: '' });
+  const [form, setForm] = useState({ name: '', email: '', username: '', password: '', status: 'Aktif', role: 'user', nonaktifDate: '', tanggalMasuk: '' });
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: string | null }>({ show: false, id: null });
   const [resetPassword, setResetPassword] = useState<{ show: boolean; id: string | null; name: string }>({ show: false, id: null, name: '' });
@@ -63,14 +63,15 @@ const DataPeserta: React.FC = () => {
 
   const openAdd = () => {
     setEditingId(null);
-    setForm({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif', role: 'user', nonaktifDate: '' });
+    setForm({ name: '', email: '', username: '', password: '', status: 'Aktif', role: 'user', nonaktifDate: '', tanggalMasuk: new Date().toISOString().split('T')[0] });
     setModal(true);
   };
   const openEdit = (id: string) => {
     const p = peserta.find((x) => x._id === id);
     if (!p) return;
     setEditingId(id);
-    setForm({ name: p.name, email: p.email, username: p.username || '', instansi: p.instansi || '', password: '', status: p.status || 'Aktif', role: p.role || 'user', nonaktifDate: p.nonaktifDate ? p.nonaktifDate.split('T')[0] : '' });
+    const tm = p.tanggalMasuk ? p.tanggalMasuk.split('T')[0] : p.createdAt ? p.createdAt.split('T')[0] : new Date().toISOString().split('T')[0];
+    setForm({ name: p.name, email: p.email, username: p.username || '', password: '', status: p.status || 'Aktif', role: p.role || 'user', nonaktifDate: p.nonaktifDate ? p.nonaktifDate.split('T')[0] : '', tanggalMasuk: tm });
     setModal(true);
   };
 
@@ -104,13 +105,13 @@ const DataPeserta: React.FC = () => {
       return;
     }
     let res;
-    const payload = { 
-      name: form.name, 
-      email: form.email, 
-      username: form.username.trim() || undefined, 
-      instansi: form.instansi, 
+    const payload = {
+      name: form.name,
+      email: form.email,
+      username: form.username.trim() || undefined,
       status: form.status,
-      nonaktifDate: form.status === 'Nonaktif' ? (form.nonaktifDate || undefined) : undefined
+      nonaktifDate: form.status === 'Nonaktif' ? form.nonaktifDate || undefined : undefined,
+      tanggalMasuk: form.tanggalMasuk || undefined,
     };
 
     if (editingId) {
@@ -142,9 +143,10 @@ const DataPeserta: React.FC = () => {
 
   const avColors = ['av-a', 'av-b', 'av-c', 'av-d', 'av-e'];
 
-  const calculateDuration = (dateStr?: string) => {
-    if (!dateStr) return '0 hari';
-    const start = new Date(dateStr);
+  const calculateDuration = (dateStr?: string, entryDateStr?: string) => {
+    const activeDateStr = entryDateStr || dateStr;
+    if (!activeDateStr) return '0 hari';
+    const start = new Date(activeDateStr);
     const now = new Date();
     const diff = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     return `${diff + 1} hari`;
@@ -163,18 +165,22 @@ const DataPeserta: React.FC = () => {
       </div>
 
       <div className="rekap-tabs" style={{ marginBottom: '20px' }}>
-        <button
-          className={`rekap-tab-btn ${activeTab === 'aktif' ? 'active' : ''}`}
-          onClick={() => setActiveTab('aktif')}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <button className={`rekap-tab-btn ${activeTab === 'aktif' ? 'active' : ''}`} onClick={() => setActiveTab('aktif')}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
           Peserta Aktif
         </button>
-        <button
-          className={`rekap-tab-btn ${activeTab === 'nonaktif' ? 'active' : ''}`}
-          onClick={() => setActiveTab('nonaktif')}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg>
+        <button className={`rekap-tab-btn ${activeTab === 'nonaktif' ? 'active' : ''}`} onClick={() => setActiveTab('nonaktif')}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <line x1="18" y1="8" x2="23" y2="13" />
+            <line x1="23" y1="8" x2="18" y2="13" />
+          </svg>
           Peserta Nonaktif
         </button>
       </div>
@@ -235,16 +241,19 @@ const DataPeserta: React.FC = () => {
                     </td>
                     <td>
                       <span className="data-highlight" style={{ color: '#0369a1', fontWeight: '700' }}>
-                        {calculateDuration(p.createdAt)}
+                        {calculateDuration(p.createdAt, p.tanggalMasuk)}
                       </span>
                     </td>
                     <td>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                         <span className={`status-badge ${(p.status || 'Aktif').toLowerCase()}`}>{p.status || 'Aktif'}</span>
-                        {p.status === 'Nonaktif' && p.nonaktifDate && (
-                          <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>
-                            dari {new Date(p.nonaktifDate).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                        {p.status === 'Aktif' && (
+                          <span style={{ fontSize: '11px', color: '#059669', fontWeight: 600 }}>
+                            sejak {p.tanggalMasuk || p.createdAt ? new Date(p.tanggalMasuk || p.createdAt || '').toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '-'}
                           </span>
+                        )}
+                        {p.status === 'Nonaktif' && p.nonaktifDate && (
+                          <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>dari {new Date(p.nonaktifDate).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
                         )}
                       </div>
                     </td>
@@ -347,10 +356,7 @@ const DataPeserta: React.FC = () => {
                   <label>Username</label>
                   <input type="text" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="Username untuk login" />
                 </div>
-                <div className="form-group">
-                  <label>Instansi</label>
-                  <input type="text" value={form.instansi} onChange={(e) => setForm({ ...form, instansi: e.target.value })} placeholder="Universitas" />
-                </div>
+
                 <div className="form-group">
                   <label>Status Peserta</label>
                   <select
@@ -361,6 +367,10 @@ const DataPeserta: React.FC = () => {
                     <option value="Aktif">Aktif</option>
                     <option value="Nonaktif">Nonaktif</option>
                   </select>
+                </div>
+                <div className="form-group">
+                  <label>Tanggal Masuk</label>
+                  <input type="date" value={form.tanggalMasuk} onChange={(e) => setForm({ ...form, tanggalMasuk: e.target.value })} required />
                 </div>
                 {form.status === 'Nonaktif' && (
                   <div className="form-group">
@@ -390,7 +400,7 @@ const DataPeserta: React.FC = () => {
                 )}
               </div>
               <div className="modal-footer">
-                <button className="btn-outline" disabled title="Gunakan tombol ✕ untuk menutup">
+                <button className="btn-outline" onClick={() => setModal(false)}>
                   Batal
                 </button>
                 <button className="btn btn-primary" onClick={save}>
