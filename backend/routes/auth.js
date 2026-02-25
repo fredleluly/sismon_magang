@@ -120,7 +120,7 @@ router.get('/me', auth, async (req, res) => {
 // PUT /api/auth/profile — update own profile
 router.put('/profile', auth, async (req, res) => {
   try {
-    const { name, email, instansi, jabatan, password, username } = req.body;
+    const { name, email, instansi, jabatan, password, username, tanggalMulai } = req.body;
     const user = req.user;
 
     if (name) user.name = name;
@@ -129,6 +129,7 @@ router.put('/profile', auth, async (req, res) => {
     if (jabatan) user.jabatan = jabatan;
     if (password) user.password = password;
     if (username !== undefined) user.username = username ? username.trim().toLowerCase() : '';
+    if (tanggalMulai) user.tanggalMulai = new Date(tanggalMulai);
 
     await user.save();
     res.json({ success: true, message: 'Profil berhasil diperbarui.', data: user.toJSON() });
