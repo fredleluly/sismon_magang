@@ -4017,8 +4017,8 @@ img {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 12px 20px;
+  background: #ffffff;
+  padding: 12px 12px;
   border-radius: var(--radius-xl);
   border: 1px solid rgba(226, 232, 240, 0.8);
   box-shadow: var(--shadow-sm);
@@ -4044,7 +4044,7 @@ img {
 
 .dashboard-filter-group {
   display: inline-flex;
-  /* background: var(--gray-100); */
+  background: #f1f5f9;
   padding: 4px;
   border-radius: 12px;
   margin-right: 10px;
@@ -4072,7 +4072,7 @@ img {
 }
 
 .dashboard-filter-btn.active {
-  background: #fff;
+  background: #ffffff;
   color: var(--primary-600);
   box-shadow: var(--shadow-sm);
 }
@@ -4428,7 +4428,7 @@ img {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0;
-    background: white;
+    background: #f1f5f9;
     border-radius: var(--radius-md);
     border: 1px solid var(--gray-200);
     padding: 2px;
