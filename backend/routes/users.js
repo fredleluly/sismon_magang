@@ -236,8 +236,14 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
     if (email) user.email = email;
     if (instansi !== undefined) user.instansi = instansi;
     if (status) user.status = status;
-    if (nonaktifDate !== undefined) user.nonaktifDate = nonaktifDate ? new Date(nonaktifDate) : null;
-    if (tanggalMasuk !== undefined) user.tanggalMasuk = tanggalMasuk ? new Date(tanggalMasuk) : undefined;
+    if (nonaktifDate !== undefined) {
+      user.nonaktifDate = nonaktifDate ? new Date(nonaktifDate) : null;
+      user.markModified('nonaktifDate');
+    }
+    if (tanggalMasuk !== undefined) {
+      user.tanggalMasuk = tanggalMasuk ? new Date(tanggalMasuk) : null;
+      user.markModified('tanggalMasuk');
+    }
     if (username !== undefined) {
       user.username = username && username.trim() !== '' ? username.trim().toLowerCase() : undefined;
     }

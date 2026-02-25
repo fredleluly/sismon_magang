@@ -1,33 +1,33 @@
-import React, { useState, useEffect } from "react";
-import { useAuth } from "../../context/AuthContext";
-import { useToast } from "../../context/ToastContext";
-import { AuthAPI, WorkLogAPI } from "../../services/api";
-import type { WorkStats } from "../../types";
-import CustomDatePicker from "../../components/CustomDatePicker";
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import { AuthAPI, WorkLogAPI } from '../../services/api';
+import type { WorkStats } from '../../types';
+import CustomDatePicker from '../../components/CustomDatePicker';
 
 const Profil: React.FC = () => {
   const { user, refreshUser } = useAuth();
   const { showToast } = useToast();
-  const [email, setEmail] = useState("");
-  const [instansi, setInstansi] = useState("");
-  const [username, setUsername] = useState("");
-  const [tanggalMasuk, setTanggalMasuk] = useState("");
+  const [email, setEmail] = useState('');
+  const [instansi, setInstansi] = useState('');
+  const [username, setUsername] = useState('');
+  const [tanggalMasuk, setTanggalMasuk] = useState('');
   const [stats, setStats] = useState<WorkStats>({
     berkas: 0,
     buku: 0,
     bundle: 0,
   });
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     if (user) {
       setEmail(user.email);
-      setInstansi(user.instansi || "");
-      setUsername(user.username || user.name.toLowerCase().replace(/\s/g, ""));
-      setTanggalMasuk(user.tanggalMasuk ? user.tanggalMasuk.split("T")[0] : (user.createdAt ? user.createdAt.split("T")[0] : ""));
+      setInstansi(user.instansi || '');
+      setUsername(user.username || user.name.toLowerCase().replace(/\s/g, ''));
+      setTanggalMasuk(user.tanggalMasuk ? user.tanggalMasuk.split('T')[0] : user.createdAt ? user.createdAt.split('T')[0] : '');
     }
     WorkLogAPI.getMyStats().then((res) => {
       if (res && res.success) setStats(res.data);
@@ -36,50 +36,51 @@ const Profil: React.FC = () => {
 
   const handleSave = async () => {
     const data: any = { email, instansi };
-    const raw = username.replace(/[_.-]/g, " ").replace(/\s+/g, " ").trim();
+    const raw = username.replace(/[_.-]/g, ' ').replace(/\s+/g, ' ').trim();
     data.name = raw
-      .split(" ")
+      .split(' ')
       .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
+      .join(' ');
+    data.username = username.trim().toLowerCase();
     // Add tanggalMasuk if provided
     if (tanggalMasuk) {
       data.tanggalMasuk = new Date(tanggalMasuk).toISOString();
     }
     const res = await AuthAPI.updateProfile(data);
     if (res && res.success) {
-      showToast("Profil berhasil diperbarui!", "success");
+      showToast('Profil berhasil diperbarui!', 'success');
       refreshUser();
-    } else showToast(res?.message || "Gagal update", "error");
+    } else showToast(res?.message || 'Gagal update', 'error');
   };
 
   const handleChangePassword = async () => {
     if (!newPassword || !confirmPassword) {
-      showToast("Field password baru dan konfirmasi harus diisi", "error");
+      showToast('Field password baru dan konfirmasi harus diisi', 'error');
       return;
     }
     if (newPassword !== confirmPassword) {
-      showToast("Password baru dan konfirmasi tidak cocok", "error");
+      showToast('Password baru dan konfirmasi tidak cocok', 'error');
       return;
     }
     if (newPassword.length < 6) {
-      showToast("Password minimal 6 karakter", "error");
+      showToast('Password minimal 6 karakter', 'error');
       return;
     }
 
     const res = await AuthAPI.changePassword({ newPassword });
     if (res && res.success) {
-      showToast("Password berhasil diubah!", "success");
-      setNewPassword("");
-      setConfirmPassword("");
+      showToast('Password berhasil diubah!', 'success');
+      setNewPassword('');
+      setConfirmPassword('');
     } else {
-      showToast(res?.message || "Gagal mengubah password", "error");
+      showToast(res?.message || 'Gagal mengubah password', 'error');
     }
   };
 
   if (!user) return null;
 
   const calculateDuration = (dateStr?: string) => {
-    if (!dateStr) return "0 hari";
+    if (!dateStr) return '0 hari';
     const start = new Date(dateStr);
     const now = new Date();
     const diff = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
@@ -87,9 +88,9 @@ const Profil: React.FC = () => {
   };
 
   const initials = user.name
-    .split(" ")
+    .split(' ')
     .map((n) => n[0])
-    .join("")
+    .join('')
     .substring(0, 2)
     .toUpperCase();
 
@@ -101,13 +102,13 @@ const Profil: React.FC = () => {
           <div className="profile-avatar-area">
             <div className="profile-avatar">{initials}</div>
             <div className="profile-name">{user.name}</div>
-            <div className="profile-username">@{user.username || user.name.toLowerCase().replace(/\s/g, "")}</div>
+            <div className="profile-username">@{user.username || user.name.toLowerCase().replace(/\s/g, '')}</div>
             <div className="profile-role">Peserta Magang</div>
             <div className="profile-badges">
               <span className="badge-aktif">Aktif</span>
               <span className="badge-pln">PLN ICON+</span>
-              <span className="badge-pln" style={{ background: "#e0f2fe", color: "#0369a1", border: "1px solid #bae6fd", fontWeight: "700" }}>
-                {tanggalMasuk ? calculateDuration(tanggalMasuk) : "0 hari"}
+              <span className="badge-pln" style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', fontWeight: '700' }}>
+                {tanggalMasuk ? calculateDuration(tanggalMasuk) : '0 hari'}
               </span>
             </div>
           </div>
@@ -136,66 +137,35 @@ const Profil: React.FC = () => {
               <label>Username</label>
               <div className="input-wrapper">
                 <span className="input-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                     <circle cx="12" cy="7" r="4" />
                   </svg>
                 </span>
-                <input
-                  type="text"
-                  className="profile-input"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
+                <input type="text" className="profile-input" value={username} onChange={(e) => setUsername(e.target.value)} />
               </div>
             </div>
             <div className="form-group">
               <label>Email</label>
               <div className="input-wrapper">
                 <span className="input-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="2" y="4" width="20" height="16" rx="2" />
                     <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                   </svg>
                 </span>
-                <input
-                  type="email"
-                  className="profile-input"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
+                <input type="email" className="profile-input" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
             </div>
             <div className="form-group" style={{ marginTop: '16px' }}>
               <label>Tanggal Mulai Magang</label>
-              <CustomDatePicker 
-                value={tanggalMasuk}
-                onChange={setTanggalMasuk}
-              />
+              <CustomDatePicker value={tanggalMasuk} onChange={setTanggalMasuk} />
             </div>
             <div className="form-group" style={{ marginTop: '16px' }}>
               <label>Lama Magang</label>
               <div className="input-wrapper">
                 <span className="input-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="10" />
                     <polyline points="12 6 12 12 16 14" />
                   </svg>
@@ -203,28 +173,22 @@ const Profil: React.FC = () => {
                 <input
                   type="text"
                   className="profile-input"
-                  value={tanggalMasuk ? calculateDuration(tanggalMasuk) : "0 hari"}
+                  value={tanggalMasuk ? calculateDuration(tanggalMasuk) : '0 hari'}
                   disabled
-                  style={{ 
+                  style={{
                     padding: '12px 16px 12px 44px',
                     background: '#f0f9ff',
                     color: '#0369a1',
-                    fontWeight: '600'
+                    fontWeight: '600',
                   }}
                 />
               </div>
             </div>
-           <div className="form-group">
+            <div className="form-group">
               <label>Role</label>
               <div className="input-wrapper">
                 <span className="input-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="10" />
                     <circle cx="12" cy="12" r="4" />
                   </svg>
@@ -235,18 +199,14 @@ const Profil: React.FC = () => {
                   value="User (Peserta Magang)"
                   disabled
                   style={{
-                    color: "var(--gray-500)",
-                    background: "var(--gray-100)",
+                    color: 'var(--gray-500)',
+                    background: 'var(--gray-100)',
                   }}
                 />
               </div>
             </div>
             <div className="save-btn-wrapper">
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleSave}
-              >
+              <button type="button" className="btn btn-primary" onClick={handleSave}>
                 Simpan Perubahan
               </button>
             </div>
@@ -254,69 +214,41 @@ const Profil: React.FC = () => {
         </div>
         <div className="profile-info-card">
           <h3>Ubah Password</h3>
-          <p className="info-sub">
-            Perbarui password akun Anda untuk keamanan lebih baik
-          </p>
+          <p className="info-sub">Perbarui password akun Anda untuk keamanan lebih baik</p>
           <div className="profile-form">
             <div className="form-group">
               <label>Password Baru</label>
               <div className="input-wrapper">
                 <span className="input-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                   </svg>
                 </span>
-                <input
-                  type={showNewPassword ? "text" : "password"}
-                  className="profile-input"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Masukkan password baru"
-                />
+                <input type={showNewPassword ? 'text' : 'password'} className="profile-input" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Masukkan password baru" />
                 <button
                   type="button"
                   className="password-toggle"
                   onClick={() => setShowNewPassword(!showNewPassword)}
                   style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: "0 10px",
-                    color: "#94a3b8",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '0 10px',
+                    color: '#94a3b8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
                   {showNewPassword ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      style={{ width: "18px", height: "18px" }}
-                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}>
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                       <circle cx="12" cy="12" r="3" />
                       <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
                     </svg>
                   ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      style={{ width: "18px", height: "18px" }}
-                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}>
                       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
                       <line x1="1" y1="1" x2="23" y2="23" />
                     </svg>
@@ -328,61 +260,35 @@ const Profil: React.FC = () => {
               <label>Konfirmasi Password Baru</label>
               <div className="input-wrapper">
                 <span className="input-icon">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                   </svg>
                 </span>
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  className="profile-input"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Konfirmasi password baru"
-                />
+                <input type={showConfirmPassword ? 'text' : 'password'} className="profile-input" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Konfirmasi password baru" />
                 <button
                   type="button"
                   className="password-toggle"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: "0 10px",
-                    color: "#94a3b8",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '0 10px',
+                    color: '#94a3b8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
                   {showConfirmPassword ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      style={{ width: "18px", height: "18px" }}
-                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}>
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                       <circle cx="12" cy="12" r="3" />
                       <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
                     </svg>
                   ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      style={{ width: "18px", height: "18px" }}
-                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '18px', height: '18px' }}>
                       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
                       <line x1="1" y1="1" x2="23" y2="23" />
                     </svg>
@@ -391,11 +297,7 @@ const Profil: React.FC = () => {
               </div>
             </div>
             <div className="save-btn-wrapper">
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleChangePassword}
-              >
+              <button type="button" className="btn btn-primary" onClick={handleChangePassword}>
                 Ubah Password
               </button>
             </div>

@@ -5,11 +5,7 @@ const { auth } = require('../middleware/auth');
 
 // Generate JWT
 function generateToken(user) {
-  return jwt.sign(
-    { id: user._id, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-  );
+  return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
 }
 
 // POST /api/auth/register
@@ -36,10 +32,10 @@ router.post('/register', async (req, res) => {
     const user = await User.create({
       name,
       email,
-      password: password || "magang123",
+      password: password || 'magang123',
       instansi,
-      status: status || "Aktif",
-      role: "user",
+      status: status || 'Aktif',
+      role: 'user',
       username: username ? username.trim().toLowerCase() : undefined,
       tanggalMasuk: req.body.tanggalMasuk ? new Date(req.body.tanggalMasuk) : undefined,
     });
@@ -48,7 +44,7 @@ router.post('/register', async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Pendaftaran berhasil!',
-      data: { user: user.toJSON(), token }
+      data: { user: user.toJSON(), token },
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -68,7 +64,7 @@ router.post('/login', async (req, res) => {
     // Support login by email, username, or name
     const searchId = identifier.trim();
     const isEmail = searchId.includes('@');
-    
+
     let user;
     if (isEmail) {
       user = await User.findOne({ email: searchId.toLowerCase() });
@@ -79,12 +75,12 @@ router.post('/login', async (req, res) => {
       console.log('Search by username:', searchId.toLowerCase(), 'Found:', !!user);
       if (!user) {
         user = await User.findOne({
-          name: new RegExp(`^${searchId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')
+          name: new RegExp(`^${searchId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
         });
         console.log('Search by name fallback:', searchId, 'Found:', !!user);
       }
     }
-    
+
     if (!user) {
       console.log('User not found for identifier:', identifier);
       return res.status(401).json({ success: false, message: 'Email/username atau password salah.' });
@@ -106,7 +102,7 @@ router.post('/login', async (req, res) => {
     res.json({
       success: true,
       message: `Login berhasil! Selamat datang, ${user.name}.`,
-      data: { user: user.toJSON(), token }
+      data: { user: user.toJSON(), token },
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -130,7 +126,10 @@ router.put('/profile', auth, async (req, res) => {
     if (jabatan) user.jabatan = jabatan;
     if (password) user.password = password;
     if (username !== undefined) user.username = username ? username.trim().toLowerCase() : '';
-    if (tanggalMasuk) user.tanggalMasuk = new Date(tanggalMasuk);
+    if (tanggalMasuk) {
+      user.tanggalMasuk = new Date(tanggalMasuk);
+      user.markModified('tanggalMasuk');
+    }
 
     await user.save();
     res.json({ success: true, message: 'Profil berhasil diperbarui.', data: user.toJSON() });
