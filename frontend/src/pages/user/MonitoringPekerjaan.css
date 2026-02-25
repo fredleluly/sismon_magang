@@ -754,6 +754,36 @@
   z-index: 1;
 }
 
+/* ===== WEEKEND DAY NAME ===== */
+.day-name.is-weekend {
+  color: #dc2626;
+}
+
+/* ===== WEEKEND STYLES ===== */
+.calendar-day.is-weekend {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.calendar-day.is-weekend .day-number {
+  color: #dc2626;
+}
+
+.calendar-day.is-weekend.has-data {
+  background: linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%);
+  border-color: #f87171;
+}
+
+.calendar-day.is-weekend.has-data .day-badge {
+  background: #ef4444;
+}
+
+.calendar-day.is-weekend:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+  box-shadow: 0 8px 16px rgba(239, 68, 68, 0.15);
+}
+
 /* ===== HOLIDAY STYLES ===== */
 .calendar-day.is-holiday {
   background: #fef2f2;

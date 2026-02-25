@@ -926,41 +926,26 @@ const Dashboard: React.FC = () => {
   const donutLabels = wd.map((w) => w._id || "Lainnya");
   const donutColors = donutLabels.map((l) => JOB_COLORS[l] || "#94a3b8");
 
+  const handleDashboardPrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+  const handleDashboardNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+
   return (
     <>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "24px",
-        }}
-      >
+      <div className="page-header-row">
         <div className="page-header">
           <h1>Dashboard</h1>
         </div>
 
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <div style={{ display: "flex", gap: "4px" }}>
+        <div className="dashboard-filter-bar">
+          <div className="dashboard-filter-group">
             <button
               onClick={() => {
                 setDashboardFilterType("bulanan");
                 setIsDashboardSelectingDateRange(false);
               }}
-              style={{
-                padding: "6px 12px",
-                background:
-                  dashboardFilterType === "bulanan" ? "#0a6599" : "#e2e8f0",
-                color: dashboardFilterType === "bulanan" ? "white" : "#64748b",
-                border: "none",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontSize: "12px",
-                fontWeight: "600",
-                transition: "all 0.3s",
-              }}
+              className={`dashboard-filter-btn ${dashboardFilterType === "bulanan" ? "active" : ""}`}
             >
-              Monthly
+              Bulanan
             </button>
             <button
               onClick={() => {
@@ -969,148 +954,128 @@ const Dashboard: React.FC = () => {
                   setDashboardIsSelectingStart(true);
                 }
               }}
-              style={{
-                padding: "6px 12px",
-                background:
-                  dashboardFilterType === "custom" ? "#0a6599" : "#e2e8f0",
-                color: dashboardFilterType === "custom" ? "white" : "#64748b",
-                border: "none",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontSize: "12px",
-                fontWeight: "600",
-                transition: "all 0.3s",
-              }}
+              className={`dashboard-filter-btn ${dashboardFilterType === "custom" ? "active" : ""}`}
             >
               Custom
             </button>
           </div>
 
-          {dashboardFilterType === "custom" && (
-            <div>
-              <button
-                onClick={() =>
-                  setIsDashboardSelectingDateRange(
-                    !isDashboardSelectingDateRange,
-                  )
-                }
-                style={{
-                  padding: "6px 12px",
-                  background: "#e2e8f0",
-                  color: "#64748b",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "12px",
-                  fontWeight: "600",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                }}
-              >
-                {dashboardTempDateRangeStart && dashboardTempDateRangeEnd
-                  ? `${dashboardTempDateRangeStart} - ${dashboardTempDateRangeEnd}`
-                  : dashboardDateRangeStart && dashboardDateRangeEnd
-                    ? `${dashboardDateRangeStart} - ${dashboardDateRangeEnd}`
-                    : "Select date range"}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  style={{
-                    width: "14px",
-                    height: "14px",
-                    transform: isDashboardSelectingDateRange
-                      ? "rotate(180deg)"
-                      : "rotate(0deg)",
-                    transition: "transform 0.2s",
-                  }}
+          <div className="dashboard-month-export-row">
+            {dashboardFilterType === "bulanan" ? (
+              <div className="month-picker-container">
+                <button onClick={handleDashboardPrevMonth} className="month-nav-btn">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                </button>
+                <span className="month-display">
+                  {currentDate.toLocaleDateString('id-ID', {
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </span>
+                <button onClick={handleDashboardNextMonth} className="month-nav-btn">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <div className="dashboard-custom-date">
+                <button
+                  onClick={() => setIsDashboardSelectingDateRange(!isDashboardSelectingDateRange)}
+                  className="dashboard-custom-trigger"
                 >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
+                  {dashboardTempDateRangeStart && dashboardTempDateRangeEnd
+                    ? `${dashboardTempDateRangeStart} - ${dashboardTempDateRangeEnd}`
+                    : dashboardDateRangeStart && dashboardDateRangeEnd
+                      ? `${dashboardDateRangeStart} - ${dashboardDateRangeEnd}`
+                      : "Pilih Tanggal"}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
 
-              {isDashboardSelectingDateRange &&
-                ReactDOM.createPortal(
-                  <>
-                    <div
-                      className="recap-date-modal-overlay"
-                      onClick={() => setIsDashboardSelectingDateRange(false)}
-                    />
-                    <div className="recap-date-modal">
-                      <div className="recap-date-modal-header">
-                        <button onClick={handleDashboardDatePickerPrevMonth}>
-                          ←
-                        </button>
-                        <span>Select Date Range</span>
-                        <button onClick={handleDashboardDatePickerNextMonth}>
-                          →
-                        </button>
-                      </div>
+                {isDashboardSelectingDateRange &&
+                  ReactDOM.createPortal(
+                    <>
+                      <div
+                        className="recap-date-modal-overlay"
+                        onClick={() => setIsDashboardSelectingDateRange(false)}
+                      />
+                      <div className="recap-date-modal">
+                        <div className="recap-date-modal-header">
+                          <button onClick={handleDashboardDatePickerPrevMonth}>
+                            ←
+                          </button>
+                          <span>Pilih Rentang Tanggal</span>
+                          <button onClick={handleDashboardDatePickerNextMonth}>
+                            →
+                          </button>
+                        </div>
 
-                      <div className="recap-calendars-grid">
-                        {renderDashboardCalendarMonth(0)}
-                        {renderDashboardCalendarMonth(1)}
-                      </div>
+                        <div className="recap-calendars-grid">
+                          {renderDashboardCalendarMonth(0)}
+                          {renderDashboardCalendarMonth(1)}
+                        </div>
 
-                      <div className="recap-date-info">
-                        {dashboardTempDateRangeStart &&
-                          !dashboardTempDateRangeEnd && <p>Select end date</p>}
-                        {dashboardTempDateRangeStart &&
-                          dashboardTempDateRangeEnd && (
-                            <p>
-                              {dashboardTempDateRangeStart} to{" "}
-                              {dashboardTempDateRangeEnd}
-                            </p>
-                          )}
-                      </div>
+                        <div className="recap-date-info">
+                          {dashboardTempDateRangeStart &&
+                            !dashboardTempDateRangeEnd && <p>Pilih tanggal akhir</p>}
+                          {dashboardTempDateRangeStart &&
+                            dashboardTempDateRangeEnd && (
+                              <p>
+                                {dashboardTempDateRangeStart} sampai{" "}
+                                {dashboardTempDateRangeEnd}
+                              </p>
+                            )}
+                        </div>
 
-                      <div className="recap-date-modal-footer">
-                        <button
-                          onClick={() => {
-                            setIsDashboardSelectingDateRange(false);
-                            setDashboardTempDateRangeStart("");
-                            setDashboardTempDateRangeEnd("");
-                            setDashboardIsSelectingStart(true);
-                          }}
-                          className="recap-date-cancel-btn"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (
-                              dashboardTempDateRangeStart &&
-                              dashboardTempDateRangeEnd
-                            ) {
-                              setDashboardDateRangeStart(
-                                dashboardTempDateRangeStart,
-                              );
-                              setDashboardDateRangeEnd(
-                                dashboardTempDateRangeEnd,
-                              );
+                        <div className="recap-date-modal-footer">
+                          <button
+                            onClick={() => {
                               setIsDashboardSelectingDateRange(false);
+                              setDashboardTempDateRangeStart("");
+                              setDashboardTempDateRangeEnd("");
                               setDashboardIsSelectingStart(true);
-                            } else {
-                              showToast(
-                                "Select start and end dates first",
-                                "error",
-                              );
-                            }
-                          }}
-                          className="recap-date-apply-btn"
-                        >
-                          Apply
-                        </button>
+                            }}
+                            className="recap-date-cancel-btn"
+                          >
+                            Batal
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (
+                                dashboardTempDateRangeStart &&
+                                dashboardTempDateRangeEnd
+                              ) {
+                                setDashboardDateRangeStart(
+                                  dashboardTempDateRangeStart,
+                                );
+                                setDashboardDateRangeEnd(
+                                  dashboardTempDateRangeEnd,
+                                );
+                                setIsDashboardSelectingDateRange(false);
+                                setDashboardIsSelectingStart(true);
+                              } else {
+                                showToast(
+                                  "Pilih tanggal awal dan akhir terlebih dahulu",
+                                  "error",
+                                );
+                              }
+                            }}
+                            className="recap-date-apply-btn"
+                          >
+                            Terapkan
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  </>,
-                  document.body,
-                )}
-            </div>
-          )}
+                    </>,
+                    document.body,
+                  )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div className="stats-grid">

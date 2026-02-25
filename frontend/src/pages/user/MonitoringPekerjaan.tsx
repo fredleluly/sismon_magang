@@ -1117,8 +1117,8 @@ const MonitoringPekerjaan: React.FC = () => {
           </div>
 
           <div className="calendar-day-names">
-            {["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"].map((day) => (
-              <div key={day} className="day-name">
+            {["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"].map((day, idx) => (
+              <div key={day} className={`day-name ${idx === 0 || idx === 6 ? "is-weekend" : ""}`}>
                 {day}
               </div>
             ))}
@@ -1131,13 +1131,14 @@ const MonitoringPekerjaan: React.FC = () => {
             {Array.from({ length: getDaysInMonth(currentDate) }, (_, i) => {
               const day = i + 1;
               const count = getWorkCount(day);
-              const targetDate = toDateString(
-                new Date(
+              const dateObj = new Date(
                   currentDate.getFullYear(),
                   currentDate.getMonth(),
                   day,
-                ),
-              );
+                );
+              const targetDate = toDateString(dateObj);
+              const dayOfWeek = dateObj.getDay();
+              const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
               const isSelected =
                 selectedDayData.length > 0 &&
                 selectedDayData[0]?.tanggal.split("T")[0] === targetDate;
@@ -1145,9 +1146,9 @@ const MonitoringPekerjaan: React.FC = () => {
               return (
                 <div
                   key={day}
-                  className={`calendar-day ${count > 0 ? "has-data" : ""} ${isSelected ? "selected" : ""} ${isHoliday ? "is-holiday" : ""}`}
+                  className={`calendar-day ${count > 0 ? "has-data" : ""} ${isSelected ? "selected" : ""} ${isHoliday ? "is-holiday" : ""} ${isWeekend ? "is-weekend" : ""}`}
                   onClick={() => handleDayClick(day)}
-                  title={isHoliday ? "Hari Libur" : `${count} entri pekerjaan`}
+                  title={isWeekend ? "Hari Libur (Weekend)" : isHoliday ? "Hari Libur" : `${count} entri pekerjaan`}
                 >
                   <div className="day-number">{day}</div>
                   {count > 0 && <div className="day-badge">{count}</div>}

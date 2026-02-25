@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { WorkLogAPI, AttendanceAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { WorkLog } from '../../types';
+import CustomSelect from '../../components/CustomSelect';
 import './InputPekerjaan.css';
 
 const MONTH_NAMES = [
@@ -125,6 +126,10 @@ const InputPekerjaan: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!jenis) {
+      showToast('Pilih jenis pekerjaan terlebih dahulu!', 'error');
+      return;
+    }
     const data = { tanggal, jenis, keterangan, berkas, buku, bundle, status: 'Draft' as const };
     const res = await WorkLogAPI.create(data);
     if (res && res.success) {
@@ -213,9 +218,13 @@ const InputPekerjaan: React.FC = () => {
   };
 
   const handleCalendarDayClick = (day: number) => {
-    const targetDate = toDateString(
-      new Date(calendarDate.getFullYear(), calendarDate.getMonth(), day),
-    );
+    const dateObj = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), day);
+    const targetDate = toDateString(dateObj);
+    const dayOfWeek = dateObj.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      showToast('Hari Sabtu/Minggu adalah hari libur, tidak dapat menginput pekerjaan.', 'error');
+      return;
+    }
     if (holidayDates.has(targetDate)) {
       showToast('Tanggal ini adalah Hari Libur, tidak dapat menginput pekerjaan.', 'error');
       return;
@@ -299,8 +308,8 @@ const InputPekerjaan: React.FC = () => {
                   </div>
 
                   <div className="ip-calendar-day-names">
-                    {DAY_NAMES.map((name) => (
-                      <div key={name} className="ip-day-name">{name}</div>
+                    {DAY_NAMES.map((name, idx) => (
+                      <div key={name} className={`ip-day-name${idx === 0 || idx === 6 ? ' is-weekend' : ''}`}>{name}</div>
                     ))}
                   </div>
 
@@ -310,9 +319,10 @@ const InputPekerjaan: React.FC = () => {
                     ))}
                     {Array.from({ length: totalDays }, (_, i) => {
                       const day = i + 1;
-                      const dateStr = toDateString(
-                        new Date(calendarDate.getFullYear(), calendarDate.getMonth(), day),
-                      );
+                      const dateObj = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), day);
+                      const dateStr = toDateString(dateObj);
+                      const dayOfWeek = dateObj.getDay();
+                      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
                       const isHoliday = holidayDates.has(dateStr);
                       const isSelected = tanggal === dateStr;
                       const isToday = dateStr === new Date().toISOString().split('T')[0];
@@ -320,9 +330,9 @@ const InputPekerjaan: React.FC = () => {
                       return (
                         <div
                           key={day}
-                          className={`ip-calendar-day${isSelected ? ' selected' : ''}${isHoliday ? ' is-holiday' : ''}${isToday ? ' is-today' : ''}`}
+                          className={`ip-calendar-day${isSelected ? ' selected' : ''}${isHoliday ? ' is-holiday' : ''}${isWeekend ? ' is-weekend' : ''}${isToday ? ' is-today' : ''}`}
                           onClick={() => handleCalendarDayClick(day)}
-                          title={isHoliday ? 'Hari Libur' : ''}
+                          title={isWeekend ? 'Hari Libur (Weekend)' : isHoliday ? 'Hari Libur' : ''}
                         >
                           <span className="ip-day-number">{day}</span>
                         </div>
@@ -335,15 +345,19 @@ const InputPekerjaan: React.FC = () => {
           </div>
           <div className="form-group">
             <label>Jenis Pekerjaan (Jobdesk)</label>
-            <select value={jenis} onChange={(e) => setJenis(e.target.value)} required>
-              <option value="">Pilih Pekerjaan (Jobdesk)</option>
-              <option value="Sortir">Sortir</option>
-              <option value="Register">Registrasi</option>
-              <option value="Pencopotan Steples">Pencopotan Staples</option>
-              <option value="Scanning">Scanning</option>
-              <option value="Rekardus">Rekardus</option>
-              <option value="Stikering">Stikering</option>
-            </select>
+            <CustomSelect
+              value={jenis}
+              onChange={setJenis}
+              placeholder="Pilih Pekerjaan (Jobdesk)"
+              options={[
+                { value: 'Sortir', label: 'Sortir' },
+                { value: 'Register', label: 'Registrasi' },
+                { value: 'Pencopotan Steples', label: 'Pencopotan Staples' },
+                { value: 'Scanning', label: 'Scanning' },
+                { value: 'Rekardus', label: 'Rekardus' },
+                { value: 'Stikering', label: 'Stikering' },
+              ]}
+            />
           </div>
           <div className="form-group">
             <label>Keterangan Berkas</label>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ComplaintAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { Complaint } from '../../types';
+import CustomSelect from '../../components/CustomSelect';
 
 const LaporanKendala: React.FC = () => {
   const { showToast } = useToast();
@@ -47,12 +48,29 @@ const LaporanKendala: React.FC = () => {
           <form onSubmit={handleSubmit}>
             <div className="form-group"><label>Judul Kendala *</label><input type="text" value={judul} onChange={e => setJudul(e.target.value.toUpperCase())} placeholder="Contoh: Sistem error saat input data" required style={{ width: '100%', padding: '14px 16px', background: 'var(--gray-50)', border: '2px solid var(--gray-200)', borderRadius: 'var(--radius-md)', fontSize: 14 }} /></div>
             <div className="form-row">
-              <div className="form-group"><label>Kategori</label><select value={kategori} onChange={e => setKategori(e.target.value)}>
-                <option>Sortir</option><option>Register</option><option>Pencopotan Steples</option><option>Scanning</option><option>Rekardus</option><option>Stikering</option><option>Sistem</option><option>Lainnya</option>
-              </select></div>
-              <div className="form-group"><label>Prioritas</label><select value={prioritas} onChange={e => setPrioritas(e.target.value)}>
-                <option value="Low">Low</option><option value="Medium">Medium</option><option value="High">High</option>
-              </select></div>
+              <div className="form-group"><label>Kategori</label><CustomSelect
+                value={kategori}
+                onChange={setKategori}
+                options={[
+                  { value: 'Sortir', label: 'Sortir' },
+                  { value: 'Register', label: 'Register' },
+                  { value: 'Pencopotan Steples', label: 'Pencopotan Steples' },
+                  { value: 'Scanning', label: 'Scanning' },
+                  { value: 'Rekardus', label: 'Rekardus' },
+                  { value: 'Stikering', label: 'Stikering' },
+                  { value: 'Sistem', label: 'Sistem' },
+                  { value: 'Lainnya', label: 'Lainnya' },
+                ]}
+              /></div>
+              <div className="form-group"><label>Prioritas</label><CustomSelect
+                value={prioritas}
+                onChange={setPrioritas}
+                options={[
+                  { value: 'Low', label: 'Low' },
+                  { value: 'Medium', label: 'Medium' },
+                  { value: 'High', label: 'High' },
+                ]}
+              /></div>
             </div>
             <div className="form-group"><label>Deskripsi Kendala *</label><textarea value={deskripsi} onChange={e => setDeskripsi(e.target.value)} placeholder="Jelaskan kendala yang Anda alami secara detail..." rows={4} required /></div>
             <button type="submit" className="btn btn-primary btn-full">Kirim Laporan</button>

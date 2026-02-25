@@ -560,6 +560,28 @@
   color: white;
 }
 
+/* Weekend day name */
+.ip-day-name.is-weekend {
+  color: #dc2626;
+}
+
+/* Weekend styles */
+.ip-calendar-day.is-weekend {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  cursor: not-allowed;
+}
+
+.ip-calendar-day.is-weekend .ip-day-number {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.ip-calendar-day.is-weekend:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+}
+
 /* Holiday styles */
 .ip-calendar-day.is-holiday {
   background: #fef2f2;
