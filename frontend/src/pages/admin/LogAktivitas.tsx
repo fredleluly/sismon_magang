@@ -636,12 +636,7 @@ const LogAktivitas: React.FC = () => {
                 </div>
                 <div className="form-group">
                   <label>Jenis Pekerjaan</label>
-                  <CustomSelect
-                    value={editForm.jenis}
-                    onChange={(val) => setEditForm({ ...editForm, jenis: val })}
-                    options={jobDesks.map((jd) => ({ value: jd.jenis, label: jd.jenis }))}
-                    placeholder="Pilih Jenis Pekerjaan"
-                  />
+                  <CustomSelect value={editForm.jenis} onChange={(val) => setEditForm({ ...editForm, jenis: val })} options={jobDesks.map((jd) => ({ value: jd.jenis, label: jd.jenis }))} placeholder="Pilih Jenis Pekerjaan" />
                 </div>
                 <div className="form-group">
                   <label>Keterangan</label>
