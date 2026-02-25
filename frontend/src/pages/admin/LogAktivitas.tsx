@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { exportExcel } from '../../utils/excelExport';
 import { WorkLogAPI, UsersAPI, TargetSectionAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
+import CustomSelect from '../../components/CustomSelect';
 import type { WorkLog, User, TargetSection } from '../../types';
 
 const LogAktivitas: React.FC = () => {
@@ -635,18 +636,12 @@ const LogAktivitas: React.FC = () => {
                 </div>
                 <div className="form-group">
                   <label>Jenis Pekerjaan</label>
-                  <select
+                  <CustomSelect
                     value={editForm.jenis}
-                    onChange={(e) => setEditForm({ ...editForm, jenis: e.target.value })}
-                    style={{ width: '100%', padding: '12px 16px', background: 'var(--gray-50)', border: '2px solid var(--gray-200)', borderRadius: 'var(--radius-md)', fontSize: '14px' }}
-                  >
-                    <option value="">Pilih Jenis Pekerjaan</option>
-                    {jobDesks.map((jd) => (
-                      <option key={jd.jenis} value={jd.jenis}>
-                        {jd.jenis}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setEditForm({ ...editForm, jenis: val })}
+                    options={jobDesks.map((jd) => ({ value: jd.jenis, label: jd.jenis }))}
+                    placeholder="Pilih Jenis Pekerjaan"
+                  />
                 </div>
                 <div className="form-group">
                   <label>Keterangan</label>

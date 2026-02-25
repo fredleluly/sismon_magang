@@ -4,6 +4,19 @@
   display: inline-block;
 }
 
+/* Full width when inside form-group */
+.form-group .cs-wrap {
+  display: block;
+  width: 100%;
+}
+
+.form-group .cs-trigger {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  min-width: unset;
+}
+
 /* Trigger button */
 .cs-trigger {
   display: inline-flex;
