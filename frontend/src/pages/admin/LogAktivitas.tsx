@@ -471,7 +471,7 @@ const LogAktivitas: React.FC = () => {
                         padding: '6px 12px',
                         borderRadius: '6px',
                         border: '1px solid var(--gray-300)',
-                        fontSize: '13px'
+                        fontSize: '13px',
                       }}
                     />
                   </div>
@@ -608,13 +608,16 @@ const LogAktivitas: React.FC = () => {
       </div>
 
       {/* Edit Modal */}
-      {editModal.show && editModal.log &&
+      {editModal.show &&
+        editModal.log &&
         ReactDOM.createPortal(
           <div className="modal-overlay active">
             <div className="modal-card">
               <div className="modal-header">
                 <h3>Edit Log Aktivitas</h3>
-                <div className="modal-close" onClick={() => setEditModal({ show: false, log: null })}>✕</div>
+                <div className="modal-close" onClick={() => setEditModal({ show: false, log: null })}>
+                  ✕
+                </div>
               </div>
               <div className="modal-body">
                 <div className="form-group">
@@ -623,7 +626,12 @@ const LogAktivitas: React.FC = () => {
                 </div>
                 <div className="form-group">
                   <label>Tanggal</label>
-                  <input type="text" value={editModal.log.tanggal ? new Date(editModal.log.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'} disabled style={{ background: 'var(--gray-100)', cursor: 'not-allowed' }} />
+                  <input
+                    type="text"
+                    value={editModal.log.tanggal ? new Date(editModal.log.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
+                    disabled
+                    style={{ background: 'var(--gray-100)', cursor: 'not-allowed' }}
+                  />
                 </div>
                 <div className="form-group">
                   <label>Jenis Pekerjaan</label>
@@ -633,8 +641,10 @@ const LogAktivitas: React.FC = () => {
                     style={{ width: '100%', padding: '12px 16px', background: 'var(--gray-50)', border: '2px solid var(--gray-200)', borderRadius: 'var(--radius-md)', fontSize: '14px' }}
                   >
                     <option value="">Pilih Jenis Pekerjaan</option>
-                    {jobDesks.map(jd => (
-                      <option key={jd.jenis} value={jd.jenis}>{jd.jenis}</option>
+                    {jobDesks.map((jd) => (
+                      <option key={jd.jenis} value={jd.jenis}>
+                        {jd.jenis}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -658,7 +668,9 @@ const LogAktivitas: React.FC = () => {
                 </div>
               </div>
               <div className="modal-footer">
-                <button className="btn-outline" onClick={() => setEditModal({ show: false, log: null })}>Batal</button>
+                <button className="btn-outline" onClick={() => setEditModal({ show: false, log: null })}>
+                  Batal
+                </button>
                 <button className="btn btn-primary" onClick={handleSaveEdit} disabled={isSaving}>
                   {isSaving ? 'Menyimpan...' : 'Simpan'}
                 </button>
@@ -675,7 +687,9 @@ const LogAktivitas: React.FC = () => {
             <div className="modal-card modal-delete-confirm">
               <div className="modal-header">
                 <h3>Konfirmasi Penghapusan</h3>
-                <div className="modal-close" onClick={() => setDeleteConfirm({ show: false, id: null, name: '' })}>✕</div>
+                <div className="modal-close" onClick={() => setDeleteConfirm({ show: false, id: null, name: '' })}>
+                  ✕
+                </div>
               </div>
               <div className="modal-body">
                 <p style={{ textAlign: 'center', color: '#666', marginBottom: '20px' }}>
@@ -683,8 +697,12 @@ const LogAktivitas: React.FC = () => {
                 </p>
               </div>
               <div className="modal-footer">
-                <button className="btn-outline" onClick={() => setDeleteConfirm({ show: false, id: null, name: '' })}>Batal</button>
-                <button className="btn btn-danger" onClick={confirmDelete}>Hapus</button>
+                <button className="btn-outline" onClick={() => setDeleteConfirm({ show: false, id: null, name: '' })}>
+                  Batal
+                </button>
+                <button className="btn btn-danger" onClick={confirmDelete}>
+                  Hapus
+                </button>
               </div>
             </div>
           </div>,
