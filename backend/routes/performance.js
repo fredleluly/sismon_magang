@@ -207,7 +207,8 @@ router.post('/', auth, adminOnly, async (req, res) => {
     await evaluation.populate('userId', 'name email instansi');
 
     // Calculate absen and hasil dynamically for response
-    const absen = await calculateAbsen(userId, bulan, tahun);
+    // Guard against null userId (deleted user)
+    const absen = evaluation.userId ? await calculateAbsen(userId, bulan, tahun) : 0;
     const laporanValue = laporan ? 5 : 0;
     const hasil = parseFloat((absen + (kuantitas || 0) + (kualitas || 0) + laporanValue).toFixed(2));
 
@@ -244,6 +245,15 @@ router.get('/', auth, adminOnly, async (req, res) => {
     // Recalculate absen and hasil dynamically for each evaluation
     const evaluationsWithDynamicScores = await Promise.all(
       evaluations.map(async (ev) => {
+        // Skip evaluations where the user has been deleted (populate returns null)
+        if (!ev.userId) {
+          return {
+            ...ev.toObject(),
+            absen: 0,
+            hasil: 0,
+            userId: { name: '[User Dihapus]', email: '', instansi: '' }
+          };
+        }
         const userId = typeof ev.userId === 'string' ? ev.userId : ev.userId._id;
         const absen = await calculateAbsen(userId, bulan, tahun);
         const laporanValue = ev.laporan ? 5 : 0;
@@ -278,6 +288,15 @@ router.get('/ranking', auth, adminOnly, async (req, res) => {
     // Recalculate absen and hasil dynamically for each evaluation
     const rankingsWithDynamicScores = await Promise.all(
       rankings.map(async (ev) => {
+        // Skip evaluations where the user has been deleted (populate returns null)
+        if (!ev.userId) {
+          return {
+            ...ev.toObject(),
+            absen: 0,
+            hasil: 0,
+            userId: { name: '[User Dihapus]', email: '', instansi: '' }
+          };
+        }
         const userId = typeof ev.userId === 'string' ? ev.userId : ev.userId._id;
         const absen = await calculateAbsen(userId, bulan, tahun);
         const laporanValue = ev.laporan ? 5 : 0;

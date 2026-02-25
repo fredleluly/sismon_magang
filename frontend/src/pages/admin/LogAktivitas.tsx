@@ -517,7 +517,7 @@ const LogAktivitas: React.FC = () => {
             <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari aktivitas..." />
           </div>
         </div>
-        <div className="log-table-header-wrapper">
+        <div className="table-container">
           <table className="log-table">
             <colgroup>
               <col style={{ width: '17%' }} />
@@ -541,20 +541,6 @@ const LogAktivitas: React.FC = () => {
                 <th style={{ textAlign: 'center' }}>Aksi</th>
               </tr>
             </thead>
-          </table>
-        </div>
-        <div className="table-container">
-          <table className="log-table">
-            <colgroup>
-              <col style={{ width: '17%' }} />
-              <col style={{ width: '12%' }} />
-              <col style={{ width: '15%' }} />
-              <col style={{ width: '24%' }} />
-              <col style={{ width: '8%' }} />
-              <col style={{ width: '8%' }} />
-              <col style={{ width: '8%' }} />
-              <col style={{ width: '8%' }} />
-            </colgroup>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
