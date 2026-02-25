@@ -696,13 +696,13 @@ const MonitoringPekerjaan: React.FC = () => {
       <div className="work-filter-bar">
         <div className="filter-buttons">
           <button className={`filter-btn ${filterType === 'harian' ? 'active' : ''}`} onClick={() => handleFilterChange('harian')}>
-            Today
+            Harian
           </button>
           <button className={`filter-btn ${filterType === 'mingguan' ? 'active' : ''}`} onClick={() => handleFilterChange('mingguan')}>
-            Weekly
+            Mingguan
           </button>
           <button className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`} onClick={() => handleFilterChange('bulanan')}>
-            Monthly
+            Bulanan
           </button>
           <button
             className={`filter-btn ${filterType === 'custom' ? 'active' : ''}`}
@@ -902,7 +902,23 @@ const MonitoringPekerjaan: React.FC = () => {
               const targetDate = toDateString(dateObj);
               const dayOfWeek = dateObj.getDay();
               const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-              const isSelected = selectedDayData.length > 0 && selectedDayData[0]?.tanggal.split('T')[0] === targetDate;
+              let isSelected = false;
+              if (filterType === "mingguan") {
+                const now = new Date();
+                const dayOfWeekNow = now.getDay();
+                const startOfWeek = new Date(now);
+                startOfWeek.setDate(now.getDate() - dayOfWeekNow);
+                startOfWeek.setHours(0,0,0,0);
+                
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6);
+                endOfWeek.setHours(23,59,59,999);
+                
+                const currentDayDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+                isSelected = currentDayDate >= startOfWeek && currentDayDate <= endOfWeek;
+              } else if (filterType === "harian") {
+                isSelected = selectedDayData.length > 0 && selectedDayData[0]?.tanggal.split('T')[0] === targetDate;
+              }
               const isHoliday = holidayDates.has(targetDate);
               return (
                 <div

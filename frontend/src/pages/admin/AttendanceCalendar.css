@@ -33,13 +33,23 @@
   }
 }
 
-@keyframes glow {
+@keyframes glowBlue {
   0%,
   100% {
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px rgba(125, 211, 252, 0.4);
   }
   50% {
-    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.5);
+    box-shadow: 0 4px 20px rgba(125, 211, 252, 0.6);
+  }
+}
+
+@keyframes glowRed {
+  0%,
+  100% {
+    box-shadow: 0 4px 12px rgba(252, 165, 165, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(252, 165, 165, 0.6);
   }
 }
 
@@ -223,14 +233,23 @@
 }
 
 .calendar-day.selected {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: #667eea;
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  border-color: #7dd3fc;
+  box-shadow: 0 8px 24px rgba(125, 211, 252, 0.4);
   animation:
-    glow 1.5s ease-in-out infinite,
+    glowBlue 1.5s ease-in-out infinite,
     scaleIn 0.3s ease-out;
   position: relative;
   z-index: 10;
+}
+
+.calendar-day.is-holiday.selected {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-color: #fca5a5;
+  box-shadow: 0 8px 24px rgba(252, 165, 165, 0.4);
+  animation:
+    glowRed 1.5s ease-in-out infinite,
+    scaleIn 0.3s ease-out;
 }
 
 .calendar-day.selected::after {
@@ -246,17 +265,26 @@
 }
 
 .calendar-day.selected .day-number {
-  color: white;
+  color: #0284c7;
   font-weight: 700;
   position: relative;
   z-index: 1;
 }
 
+.calendar-day.is-holiday.selected .day-number {
+  color: #e11d48;
+}
+
 .calendar-day.selected .day-badge {
-  background: white;
-  color: #667eea;
+  background: #0284c7;
+  color: white;
   position: relative;
   z-index: 1;
+}
+
+.calendar-day.is-holiday.selected .day-badge {
+  background: #e11d48;
+  color: white;
 }
 
 .day-number {

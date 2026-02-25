@@ -1131,10 +1131,28 @@ const AttendanceCalendar: React.FC = () => {
             ))}
             {days.map((day) => {
               const count = getAttendanceCount(day);
-              const isSelected =
-                selectedDayData.length > 0 &&
-                selectedDayData[0]?.tanggal.toString().split("T")[0] ===
-                  `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+              
+              let isSelected = false;
+              if (filterMode === "mingguan") {
+                const now = new Date();
+                const dayOfWeekNow = now.getDay();
+                const startOfWeek = new Date(now);
+                startOfWeek.setDate(now.getDate() - dayOfWeekNow);
+                startOfWeek.setHours(0,0,0,0);
+                
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6);
+                endOfWeek.setHours(23,59,59,999);
+                
+                const currentDayDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+                isSelected = currentDayDate >= startOfWeek && currentDayDate <= endOfWeek;
+              } else if (filterMode === "harian") {
+                isSelected =
+                  selectedDayData.length > 0 &&
+                  selectedDayData[0]?.tanggal.toString().split("T")[0] ===
+                    `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+              }
+
               const dayOfWeek = new Date(
                 currentDate.getFullYear(),
                 currentDate.getMonth(),
