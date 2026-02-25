@@ -13,7 +13,7 @@ const DataPeserta: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'aktif' | 'nonaktif'>('aktif');
   const [modal, setModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif', role: 'user', nonaktifDate: '', tanggalMasuk: '' });
+  const [form, setForm] = useState({ name: '', email: '', username: '', password: '', status: 'Aktif', role: 'user', nonaktifDate: '', tanggalMasuk: '' });
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: string | null }>({ show: false, id: null });
   const [resetPassword, setResetPassword] = useState<{ show: boolean; id: string | null; name: string }>({ show: false, id: null, name: '' });
@@ -63,7 +63,7 @@ const DataPeserta: React.FC = () => {
 
   const openAdd = () => {
     setEditingId(null);
-    setForm({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif', role: 'user', nonaktifDate: '', tanggalMasuk: new Date().toISOString().split('T')[0] });
+    setForm({ name: '', email: '', username: '', password: '', status: 'Aktif', role: 'user', nonaktifDate: '', tanggalMasuk: new Date().toISOString().split('T')[0] });
     setModal(true);
   };
   const openEdit = (id: string) => {
@@ -71,7 +71,7 @@ const DataPeserta: React.FC = () => {
     if (!p) return;
     setEditingId(id);
     const tm = p.tanggalMasuk ? p.tanggalMasuk.split('T')[0] : (p.createdAt ? p.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]);
-    setForm({ name: p.name, email: p.email, username: p.username || '', instansi: p.instansi || '', password: '', status: p.status || 'Aktif', role: p.role || 'user', nonaktifDate: p.nonaktifDate ? p.nonaktifDate.split('T')[0] : '', tanggalMasuk: tm });
+    setForm({ name: p.name, email: p.email, username: p.username || '', password: '', status: p.status || 'Aktif', role: p.role || 'user', nonaktifDate: p.nonaktifDate ? p.nonaktifDate.split('T')[0] : '', tanggalMasuk: tm });
     setModal(true);
   };
 
@@ -109,7 +109,6 @@ const DataPeserta: React.FC = () => {
       name: form.name, 
       email: form.email, 
       username: form.username.trim() || undefined, 
-      instansi: form.instansi, 
       status: form.status,
       nonaktifDate: form.status === 'Nonaktif' ? (form.nonaktifDate || undefined) : undefined,
       tanggalMasuk: form.tanggalMasuk || undefined
@@ -355,10 +354,7 @@ const DataPeserta: React.FC = () => {
                   <label>Username</label>
                   <input type="text" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="Username untuk login" />
                 </div>
-                <div className="form-group">
-                  <label>Instansi</label>
-                  <input type="text" value={form.instansi} onChange={(e) => setForm({ ...form, instansi: e.target.value })} placeholder="Universitas" />
-                </div>
+
                 <div className="form-group">
                   <label>Status Peserta</label>
                   <select
@@ -402,7 +398,7 @@ const DataPeserta: React.FC = () => {
                 )}
               </div>
               <div className="modal-footer">
-                <button className="btn-outline" disabled title="Gunakan tombol ✕ untuk menutup">
+                <button className="btn-outline" onClick={() => setModal(false)}>
                   Batal
                 </button>
                 <button className="btn btn-primary" onClick={save}>

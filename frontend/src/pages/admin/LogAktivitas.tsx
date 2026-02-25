@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { exportExcel } from '../../utils/excelExport';
 import { WorkLogAPI, UsersAPI, TargetSectionAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -9,11 +10,13 @@ const LogAktivitas: React.FC = () => {
   const [logs, setLogs] = useState<WorkLog[]>([]);
   const [search, setSearch] = useState('');
 
-  // Edit & Delete State
-  const [editedLogs, setEditedLogs] = useState<Record<string, Partial<WorkLog>>>({});
-  const [deletedLogIds, setDeletedLogIds] = useState<Set<string>>(new Set());
-  const [editingRowIds, setEditingRowIds] = useState<Set<string>>(new Set());
+  // Edit Modal State
+  const [editModal, setEditModal] = useState<{ show: boolean; log: WorkLog | null }>({ show: false, log: null });
+  const [editForm, setEditForm] = useState({ jenis: '', keterangan: '', berkas: 0, buku: 0, bundle: 0 });
   const [isSaving, setIsSaving] = useState(false);
+
+  // Delete Confirm State
+  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: string | null; name: string }>({ show: false, id: null, name: '' });
 
   // Filter State
   const [filterType, setFilterType] = useState<'bulanan' | 'custom'>('bulanan');
@@ -101,63 +104,54 @@ const LogAktivitas: React.FC = () => {
     }
   }, [filterType, currentDate, dateFrom, dateTo, selectedUsers]);
 
-  // Handle Save edits and deletes
-  const handleSave = async () => {
+  // Open edit modal
+  const openEditModal = (log: WorkLog) => {
+    setEditForm({
+      jenis: log.jenis || '',
+      keterangan: log.keterangan || '',
+      berkas: log.berkas || 0,
+      buku: log.buku || 0,
+      bundle: log.bundle || 0,
+    });
+    setEditModal({ show: true, log });
+  };
+
+  // Save edit from modal
+  const handleSaveEdit = async () => {
+    if (!editModal.log) return;
     setIsSaving(true);
     try {
-      // 1. Process deletions
-      for (const id of Array.from(deletedLogIds)) {
-        await WorkLogAPI.delete(id);
+      const res = await WorkLogAPI.update(editModal.log._id, editForm);
+      if (res && res.success) {
+        showToast('Data berhasil diperbarui', 'success');
+        setEditModal({ show: false, log: null });
+        load();
+      } else {
+        showToast(res?.message || 'Gagal memperbarui data', 'error');
       }
-
-      // 2. Process updates
-      for (const [id, data] of Object.entries(editedLogs)) {
-        if (!deletedLogIds.has(id)) {
-          await WorkLogAPI.update(id, data);
-        }
-      }
-
-      showToast('Perubahan berhasil disimpan', 'success');
-      setEditedLogs({});
-      setDeletedLogIds(new Set());
-      setEditingRowIds(new Set());
-      load();
     } catch (err) {
-      showToast('Gagal menyimpan perubahan', 'error');
+      showToast('Gagal memperbarui data', 'error');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleEditChange = (id: string, field: keyof WorkLog, value: any) => {
-    setEditedLogs((prev) => ({
-      ...prev,
-      [id]: {
-        ...prev[id],
-        [field]: value,
-      },
-    }));
+  // Confirm delete
+  const confirmDelete = async () => {
+    if (!deleteConfirm.id) return;
+    try {
+      const res = await WorkLogAPI.delete(deleteConfirm.id);
+      if (res && res.success) {
+        showToast('Data berhasil dihapus', 'success');
+        load();
+      } else {
+        showToast(res?.message || 'Gagal menghapus data', 'error');
+      }
+    } catch (err) {
+      showToast('Gagal menghapus data', 'error');
+    }
+    setDeleteConfirm({ show: false, id: null, name: '' });
   };
-
-  const toggleDelete = (id: string) => {
-    setDeletedLogIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const toggleEditRow = (id: string) => {
-    setEditingRowIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const hasChanges = Object.keys(editedLogs).length > 0 || deletedLogIds.size > 0;
 
   useEffect(() => {
     load();
@@ -518,26 +512,21 @@ const LogAktivitas: React.FC = () => {
           <div className="pth-left">
             <h3>Aktivitas Terbaru</h3>
           </div>
-          <div className="peserta-search" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            {hasChanges && (
-              <button className="btn btn-primary" onClick={handleSave} disabled={isSaving} style={{ height: '40px', padding: '0 16px', fontSize: '13px', borderRadius: '8px' }}>
-                {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
-              </button>
-            )}
+          <div className="peserta-search">
             <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari aktivitas..." />
           </div>
         </div>
         <div className="log-table-header-wrapper">
           <table className="log-table">
             <colgroup>
+              <col style={{ width: '17%' }} />
+              <col style={{ width: '12%' }} />
               <col style={{ width: '15%' }} />
-              <col style={{ width: '10%' }} />
-              <col style={{ width: '15%' }} />
-              <col style={{ width: '20%' }} />
+              <col style={{ width: '24%' }} />
               <col style={{ width: '8%' }} />
               <col style={{ width: '8%' }} />
               <col style={{ width: '8%' }} />
-              <col style={{ width: '16%' }} />
+              <col style={{ width: '8%' }} />
             </colgroup>
             <thead>
               <tr>
@@ -556,14 +545,14 @@ const LogAktivitas: React.FC = () => {
         <div className="table-container">
           <table className="log-table">
             <colgroup>
+              <col style={{ width: '17%' }} />
+              <col style={{ width: '12%' }} />
               <col style={{ width: '15%' }} />
-              <col style={{ width: '10%' }} />
-              <col style={{ width: '15%' }} />
-              <col style={{ width: '20%' }} />
+              <col style={{ width: '24%' }} />
               <col style={{ width: '8%' }} />
               <col style={{ width: '8%' }} />
               <col style={{ width: '8%' }} />
-              <col style={{ width: '16%' }} />
+              <col style={{ width: '8%' }} />
             </colgroup>
             <tbody>
               {filtered.length === 0 ? (
@@ -576,112 +565,36 @@ const LogAktivitas: React.FC = () => {
                 filtered.map((l, i) => {
                   const name = (l.userId as any)?.name || 'Unknown';
                   const dateStr = l.tanggal ? new Date(l.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
-                  const isDeleted = deletedLogIds.has(l._id);
-                  const isEditing = editingRowIds.has(l._id);
                   return (
-                    <tr key={l._id} style={{ opacity: isDeleted ? 0.5 : 1 }}>
+                    <tr key={l._id}>
                       <td>
                         <div className="user-cell">
-                          <span className="user-name" style={{ textDecoration: isDeleted ? 'line-through' : 'none' }}>
-                            {name}
-                          </span>
+                          <span className="user-name">{name}</span>
                         </div>
                       </td>
-                      <td style={{ textDecoration: isDeleted ? 'line-through' : 'none' }}>{dateStr}</td>
+                      <td>{dateStr}</td>
                       <td>
-                        {isDeleted ? (
-                          <span className="job-badge" style={{ textDecoration: 'line-through' }}>
-                            {l.jenis || '-'}
-                          </span>
-                        ) : isEditing ? (
-                          <select
-                            value={editedLogs[l._id]?.jenis ?? l.jenis ?? ''}
-                            onChange={(e) => handleEditChange(l._id, 'jenis', e.target.value)}
-                            style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--gray-300)', backgroundColor: 'white' }}
-                          >
-                            <option value="">Pilih Jenis Pekerjaan</option>
-                            {jobDesks.map(jd => (
-                              <option key={jd.jenis} value={jd.jenis}>{jd.jenis}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span className="job-badge">{editedLogs[l._id]?.jenis ?? l.jenis ?? '-'}</span>
-                        )}
+                        <span className="job-badge">{l.jenis || '-'}</span>
                       </td>
-                      <td style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={editedLogs[l._id]?.keterangan ?? l.keterangan ?? '-'}>
-                        {isDeleted ? (
-                          <span style={{ textDecoration: 'line-through' }}>{l.keterangan || '-'}</span>
-                        ) : isEditing ? (
-                          <input
-                            type="text"
-                            value={editedLogs[l._id]?.keterangan ?? l.keterangan ?? ''}
-                            onChange={(e) => handleEditChange(l._id, 'keterangan', e.target.value)}
-                            style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid var(--gray-300)' }}
-                          />
-                        ) : (
-                          <>{editedLogs[l._id]?.keterangan ?? l.keterangan ?? '-'}</>
-                        )}
+                      <td style={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={l.keterangan || '-'}>
+                        {l.keterangan || '-'}
                       </td>
                       <td>
-                        {isDeleted ? (
-                          <span className="data-highlight" style={{ textDecoration: 'line-through' }}>
-                            {l.berkas || 0}
-                          </span>
-                        ) : isEditing ? (
-                          <input
-                            type="number"
-                            min="0"
-                            value={editedLogs[l._id]?.berkas ?? l.berkas ?? 0}
-                            onChange={(e) => handleEditChange(l._id, 'berkas', Number(e.target.value))}
-                            style={{ width: '60px', padding: '6px', borderRadius: '4px', border: '1px solid var(--gray-300)', textAlign: 'center' }}
-                          />
-                        ) : (
-                          <span className="data-highlight">{editedLogs[l._id]?.berkas ?? l.berkas ?? 0}</span>
-                        )}
+                        <span className="data-highlight">{l.berkas || 0}</span>
                       </td>
                       <td>
-                        {isDeleted ? (
-                          <span className="data-highlight" style={{ textDecoration: 'line-through' }}>
-                            {l.buku || 0}
-                          </span>
-                        ) : isEditing ? (
-                          <input
-                            type="number"
-                            min="0"
-                            value={editedLogs[l._id]?.buku ?? l.buku ?? 0}
-                            onChange={(e) => handleEditChange(l._id, 'buku', Number(e.target.value))}
-                            style={{ width: '60px', padding: '6px', borderRadius: '4px', border: '1px solid var(--gray-300)', textAlign: 'center' }}
-                          />
-                        ) : (
-                          <span className="data-highlight">{editedLogs[l._id]?.buku ?? l.buku ?? 0}</span>
-                        )}
+                        <span className="data-highlight">{l.buku || 0}</span>
                       </td>
                       <td>
-                        {isDeleted ? (
-                          <span className="data-highlight" style={{ textDecoration: 'line-through' }}>
-                            {l.bundle || 0}
-                          </span>
-                        ) : isEditing ? (
-                          <input
-                            type="number"
-                            min="0"
-                            value={editedLogs[l._id]?.bundle ?? l.bundle ?? 0}
-                            onChange={(e) => handleEditChange(l._id, 'bundle', Number(e.target.value))}
-                            style={{ width: '60px', padding: '6px', borderRadius: '4px', border: '1px solid var(--gray-300)', textAlign: 'center' }}
-                          />
-                        ) : (
-                          <span className="data-highlight">{editedLogs[l._id]?.bundle ?? l.bundle ?? 0}</span>
-                        )}
+                        <span className="data-highlight">{l.bundle || 0}</span>
                       </td>
                       <td style={{ textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                          {!isDeleted && (
-                            <button onClick={() => toggleEditRow(l._id)} className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '12px', height: '32px' }} title={isEditing ? 'Batal Edit' : 'Edit'}>
-                              {isEditing ? 'Batal' : 'Edit'}
-                            </button>
-                          )}
-                          <button onClick={() => toggleDelete(l._id)} className={`btn ${isDeleted ? 'btn-outline' : 'btn-danger'}`} style={{ padding: '6px 12px', fontSize: '12px', height: '32px' }}>
-                            {isDeleted ? 'Batal Hapus' : 'Hapus'}
+                        <div className="action-btns">
+                          <button className="action-btn edit" onClick={() => openEditModal(l)} title="Edit">
+                            ✏️
+                          </button>
+                          <button className="action-btn delete" onClick={() => setDeleteConfirm({ show: true, id: l._id, name })} title="Hapus">
+                            🗑️
                           </button>
                         </div>
                       </td>
@@ -693,6 +606,90 @@ const LogAktivitas: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {editModal.show && editModal.log &&
+        ReactDOM.createPortal(
+          <div className="modal-overlay active">
+            <div className="modal-card">
+              <div className="modal-header">
+                <h3>Edit Log Aktivitas</h3>
+                <div className="modal-close" onClick={() => setEditModal({ show: false, log: null })}>✕</div>
+              </div>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label>Nama Peserta</label>
+                  <input type="text" value={(editModal.log.userId as any)?.name || 'Unknown'} disabled style={{ background: 'var(--gray-100)', cursor: 'not-allowed' }} />
+                </div>
+                <div className="form-group">
+                  <label>Tanggal</label>
+                  <input type="text" value={editModal.log.tanggal ? new Date(editModal.log.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'} disabled style={{ background: 'var(--gray-100)', cursor: 'not-allowed' }} />
+                </div>
+                <div className="form-group">
+                  <label>Jenis Pekerjaan</label>
+                  <select
+                    value={editForm.jenis}
+                    onChange={(e) => setEditForm({ ...editForm, jenis: e.target.value })}
+                    style={{ width: '100%', padding: '12px 16px', background: 'var(--gray-50)', border: '2px solid var(--gray-200)', borderRadius: 'var(--radius-md)', fontSize: '14px' }}
+                  >
+                    <option value="">Pilih Jenis Pekerjaan</option>
+                    {jobDesks.map(jd => (
+                      <option key={jd.jenis} value={jd.jenis}>{jd.jenis}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Keterangan</label>
+                  <input type="text" value={editForm.keterangan} onChange={(e) => setEditForm({ ...editForm, keterangan: e.target.value })} placeholder="Keterangan pekerjaan" />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label>Berkas</label>
+                    <input type="number" min="0" value={editForm.berkas} onChange={(e) => setEditForm({ ...editForm, berkas: Number(e.target.value) })} />
+                  </div>
+                  <div className="form-group">
+                    <label>Buku</label>
+                    <input type="number" min="0" value={editForm.buku} onChange={(e) => setEditForm({ ...editForm, buku: Number(e.target.value) })} />
+                  </div>
+                  <div className="form-group">
+                    <label>Bundle</label>
+                    <input type="number" min="0" value={editForm.bundle} onChange={(e) => setEditForm({ ...editForm, bundle: Number(e.target.value) })} />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button className="btn-outline" onClick={() => setEditModal({ show: false, log: null })}>Batal</button>
+                <button className="btn btn-primary" onClick={handleSaveEdit} disabled={isSaving}>
+                  {isSaving ? 'Menyimpan...' : 'Simpan'}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {/* Delete Confirm Modal */}
+      {deleteConfirm.show &&
+        ReactDOM.createPortal(
+          <div className="modal-overlay active">
+            <div className="modal-card modal-delete-confirm">
+              <div className="modal-header">
+                <h3>Konfirmasi Penghapusan</h3>
+                <div className="modal-close" onClick={() => setDeleteConfirm({ show: false, id: null, name: '' })}>✕</div>
+              </div>
+              <div className="modal-body">
+                <p style={{ textAlign: 'center', color: '#666', marginBottom: '20px' }}>
+                  Apakah Anda yakin ingin menghapus log aktivitas dari <strong>{deleteConfirm.name}</strong>? Tindakan ini tidak dapat dibatalkan.
+                </p>
+              </div>
+              <div className="modal-footer">
+                <button className="btn-outline" onClick={() => setDeleteConfirm({ show: false, id: null, name: '' })}>Batal</button>
+                <button className="btn btn-danger" onClick={confirmDelete}>Hapus</button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </>
   );
 };

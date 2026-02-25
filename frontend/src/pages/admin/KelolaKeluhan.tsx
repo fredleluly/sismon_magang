@@ -94,44 +94,45 @@ const KelolaKeluhan: React.FC = () => {
     return null;
   };
 
+  const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
   const renderCalendarMonth = (offset: number) => {
     const month = new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() + offset);
     const year = month.getFullYear();
     const monthIndex = month.getMonth();
     const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
     const firstDay = new Date(year, monthIndex, 1).getDay();
+    const monthName = monthNames[monthIndex];
     const days: React.ReactNode[] = [];
 
     for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${offset}-${i}`} className="custom-calendar-day empty" />);
+      days.push(<div key={`empty-${offset}-${i}`} className="calendar-cell empty"></div>);
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
       const inRange = isDateInRange(year, monthIndex, d);
       const startEnd = isDateStartEnd(year, monthIndex, d);
-      let cls = 'custom-calendar-day';
-      if (startEnd === 'start') cls += ' range-start';
-      else if (startEnd === 'end') cls += ' range-end';
-      else if (inRange) cls += ' in-range';
+      const isStart = startEnd === 'start';
+      const isEnd = startEnd === 'end';
 
       days.push(
-        <div key={`${offset}-${d}`} className={cls} onClick={() => handleCalendarDateClick(year, monthIndex, d)}>
+        <div key={`${offset}-${d}`} className={`calendar-cell ${inRange ? 'in-range' : ''} ${isStart ? 'start-date' : ''} ${isEnd ? 'end-date' : ''}`} onClick={() => handleCalendarDateClick(year, monthIndex, d)}>
           {d}
         </div>
       );
     }
 
     return (
-      <div className="custom-calendar-month">
-        <div className="custom-calendar-title">
-          {month.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+      <div className="calendar-month-picker">
+        <div className="calendar-month-header">
+          <h3>{monthName} {year}</h3>
         </div>
-        <div className="custom-calendar-header">
-          {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(d => (
-            <div key={d} className="custom-calendar-day-label">{d}</div>
+        <div className="calendar-weekdays">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d) => (
+            <div key={d} className="calendar-weekday">{d}</div>
           ))}
         </div>
-        <div className="custom-calendar-grid">{days}</div>
+        <div className="calendar-days">{days}</div>
       </div>
     );
   };
