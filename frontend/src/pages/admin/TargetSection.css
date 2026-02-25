@@ -382,4 +382,147 @@
   .target-header-grid {
     grid-template-columns: 1fr;
   }
+
+  .target-card-header {
+    padding: 1.25rem 1rem 1rem;
+  }
+
+  .target-card-header h2 {
+    font-size: 1.05rem;
+  }
+
+  .target-card-header p {
+    font-size: 0.75rem;
+  }
+
+  .target-table th {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.65rem;
+    letter-spacing: normal;
+    text-align: center;
+  }
+
+  .target-table td {
+    padding: 0.6rem 0.5rem;
+    font-size: 0.8rem;
+    text-align: center;
+  }
+
+  .th-no,
+  .td-no {
+    width: 30px;
+    padding-left: 1rem;
+    padding-right: 0;
+    text-align: left;
+  }
+
+  .td-jenis {
+    text-align: left;
+  }
+
+  .th-target,
+  .td-target {
+    width: 75px;
+  }
+
+  .th-biaya {
+    width: auto;
+  }
+
+  .target-input {
+    max-width: 60px;
+    padding: 0.35rem 0.1rem;
+    font-size: 0.8rem;
+    margin: 0 auto;
+    display: block;
+    text-align: center;
+  }
+
+  /* Hide default number arrows on mobile for more space */
+  .target-input::-webkit-outer-spin-button,
+  .target-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .target-input {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  .biaya-value {
+    padding: 3px 6px;
+    font-size: 0.75rem;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+
+  .target-card-footer {
+    padding: 1rem 1rem;
+    justify-content: center;
+  }
+  
+  .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .target-table th {
+    padding: 0.4rem 1rem;
+    font-size: 0.5rem;
+    text-align: left;
+  }
+
+  .target-table td {
+    padding: 0.5rem 1rem;
+    font-size: 0.65rem;
+    text-align: left;
+  }
+
+  .th-no,
+  .td-no {
+    width: 25px;
+    padding-left: 1rem;
+    padding-right: 0.2rem;
+    text-align: left;
+  }
+  
+  .td-jenis {
+    font-size: 0.65rem;
+    word-break: break-word;
+    text-align: left;
+  }
+
+  .th-target,
+  .td-target {
+    width: 60px;
+  }
+
+  .target-input {
+    max-width: 50px;
+    padding: 0.25rem 0.1rem;
+    font-size: 0.7rem;
+    margin: 0 auto;
+    display: block;
+    text-align: center;
+  }
+
+  /* Hide default number arrows on mobile for more space */
+  .target-input::-webkit-outer-spin-button,
+  .target-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .target-input {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  .biaya-value {
+    padding: 2px 4px;
+    font-size: 0.6rem;
+    border-radius: 4px;
+    letter-spacing: -0.2px;
+  }
 }
