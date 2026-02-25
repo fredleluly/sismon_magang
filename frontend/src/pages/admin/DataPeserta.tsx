@@ -13,7 +13,7 @@ const DataPeserta: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'aktif' | 'nonaktif'>('aktif');
   const [modal, setModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif', role: 'user', nonaktifDate: '' });
+  const [form, setForm] = useState({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif', role: 'user', nonaktifDate: '', tanggalMasuk: '' });
 
   const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: string | null }>({ show: false, id: null });
   const [resetPassword, setResetPassword] = useState<{ show: boolean; id: string | null; name: string }>({ show: false, id: null, name: '' });
@@ -63,14 +63,15 @@ const DataPeserta: React.FC = () => {
 
   const openAdd = () => {
     setEditingId(null);
-    setForm({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif', role: 'user', nonaktifDate: '' });
+    setForm({ name: '', email: '', username: '', instansi: '', password: '', status: 'Aktif', role: 'user', nonaktifDate: '', tanggalMasuk: new Date().toISOString().split('T')[0] });
     setModal(true);
   };
   const openEdit = (id: string) => {
     const p = peserta.find((x) => x._id === id);
     if (!p) return;
     setEditingId(id);
-    setForm({ name: p.name, email: p.email, username: p.username || '', instansi: p.instansi || '', password: '', status: p.status || 'Aktif', role: p.role || 'user', nonaktifDate: p.nonaktifDate ? p.nonaktifDate.split('T')[0] : '' });
+    const tm = p.tanggalMasuk ? p.tanggalMasuk.split('T')[0] : (p.createdAt ? p.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]);
+    setForm({ name: p.name, email: p.email, username: p.username || '', instansi: p.instansi || '', password: '', status: p.status || 'Aktif', role: p.role || 'user', nonaktifDate: p.nonaktifDate ? p.nonaktifDate.split('T')[0] : '', tanggalMasuk: tm });
     setModal(true);
   };
 
@@ -110,7 +111,8 @@ const DataPeserta: React.FC = () => {
       username: form.username.trim() || undefined, 
       instansi: form.instansi, 
       status: form.status,
-      nonaktifDate: form.status === 'Nonaktif' ? (form.nonaktifDate || undefined) : undefined
+      nonaktifDate: form.status === 'Nonaktif' ? (form.nonaktifDate || undefined) : undefined,
+      tanggalMasuk: form.tanggalMasuk || undefined
     };
 
     if (editingId) {
@@ -142,9 +144,10 @@ const DataPeserta: React.FC = () => {
 
   const avColors = ['av-a', 'av-b', 'av-c', 'av-d', 'av-e'];
 
-  const calculateDuration = (dateStr?: string) => {
-    if (!dateStr) return '0 hari';
-    const start = new Date(dateStr);
+  const calculateDuration = (dateStr?: string, entryDateStr?: string) => {
+    const activeDateStr = entryDateStr || dateStr;
+    if (!activeDateStr) return '0 hari';
+    const start = new Date(activeDateStr);
     const now = new Date();
     const diff = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     return `${diff + 1} hari`;
@@ -235,12 +238,17 @@ const DataPeserta: React.FC = () => {
                     </td>
                     <td>
                       <span className="data-highlight" style={{ color: '#0369a1', fontWeight: '700' }}>
-                        {calculateDuration(p.createdAt)}
+                        {calculateDuration(p.createdAt, p.tanggalMasuk)}
                       </span>
                     </td>
                     <td>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                         <span className={`status-badge ${(p.status || 'Aktif').toLowerCase()}`}>{p.status || 'Aktif'}</span>
+                        {p.status === 'Aktif' && (
+                          <span style={{ fontSize: '11px', color: '#059669', fontWeight: 600 }}>
+                            sejak {(p.tanggalMasuk || p.createdAt) ? new Date(p.tanggalMasuk || p.createdAt || '').toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '-'}
+                          </span>
+                        )}
                         {p.status === 'Nonaktif' && p.nonaktifDate && (
                           <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>
                             dari {new Date(p.nonaktifDate).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: '2-digit' })}
@@ -361,6 +369,10 @@ const DataPeserta: React.FC = () => {
                     <option value="Aktif">Aktif</option>
                     <option value="Nonaktif">Nonaktif</option>
                   </select>
+                </div>
+                <div className="form-group">
+                  <label>Tanggal Masuk</label>
+                  <input type="date" value={form.tanggalMasuk} onChange={(e) => setForm({ ...form, tanggalMasuk: e.target.value })} required />
                 </div>
                 {form.status === 'Nonaktif' && (
                   <div className="form-group">

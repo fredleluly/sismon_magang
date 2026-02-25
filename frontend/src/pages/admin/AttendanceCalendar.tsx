@@ -447,11 +447,12 @@ const AttendanceCalendar: React.FC = () => {
         const currentTarget = new Date(targetDate);
         currentTarget.setHours(0, 0, 0, 0);
 
-        // Filter out if currently viewed date is before the user was registered
-        if (u.createdAt) {
-          const createdAtDate = new Date(u.createdAt);
-          createdAtDate.setHours(0, 0, 0, 0);
-          if (currentTarget < createdAtDate) {
+        // Filter out if currently viewed date is before the user was registered/entered
+        const entryDateInfo = u.tanggalMasuk || u.createdAt;
+        if (entryDateInfo) {
+          const entryDate = new Date(entryDateInfo);
+          entryDate.setHours(0, 0, 0, 0);
+          if (currentTarget < entryDate) {
             return false;
           }
         }

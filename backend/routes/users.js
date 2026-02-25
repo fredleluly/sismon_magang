@@ -177,7 +177,7 @@ router.get('/:id', auth, async (req, res) => {
 // POST /api/users — admin create user
 router.post('/', auth, adminOnly, async (req, res) => {
   try {
-    const { name, email, password, instansi, status, username, role } = req.body;
+    const { name, email, password, instansi, status, username, role, tanggalMasuk } = req.body;
     if (!name || !email) return res.status(400).json({ success: false, message: 'Nama dan email wajib diisi.' });
 
     if (username) {
@@ -202,6 +202,7 @@ router.post('/', auth, adminOnly, async (req, res) => {
       status: status || 'Aktif',
       role: userRole,
       username: username ? username.trim().toLowerCase() : undefined,
+      tanggalMasuk: tanggalMasuk ? new Date(tanggalMasuk) : undefined,
     });
 
     res.status(201).json({
@@ -217,7 +218,7 @@ router.post('/', auth, adminOnly, async (req, res) => {
 // PUT /api/users/:id — admin update user
 router.put('/:id', auth, adminOnly, async (req, res) => {
   try {
-    const { name, email, instansi, status, username, nonaktifDate } = req.body;
+    const { name, email, instansi, status, username, nonaktifDate, tanggalMasuk } = req.body;
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
 
@@ -236,6 +237,7 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
     if (instansi !== undefined) user.instansi = instansi;
     if (status) user.status = status;
     if (nonaktifDate !== undefined) user.nonaktifDate = nonaktifDate ? new Date(nonaktifDate) : null;
+    if (tanggalMasuk !== undefined) user.tanggalMasuk = tanggalMasuk ? new Date(tanggalMasuk) : undefined;
     if (username !== undefined) {
       user.username = username && username.trim() !== '' ? username.trim().toLowerCase() : undefined;
     }

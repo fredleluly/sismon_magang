@@ -41,6 +41,7 @@ router.post('/register', async (req, res) => {
       status: status || "Aktif",
       role: "user",
       username: username ? username.trim().toLowerCase() : undefined,
+      tanggalMasuk: req.body.tanggalMasuk ? new Date(req.body.tanggalMasuk) : undefined,
     });
     const token = generateToken(user);
 

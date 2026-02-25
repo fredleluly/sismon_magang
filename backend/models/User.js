@@ -28,6 +28,7 @@ const userSchema = new mongoose.Schema(
     jabatan: { type: String, default: "" },
     status: { type: String, enum: ["Aktif", "Nonaktif"], default: "Aktif" },
     nonaktifDate: { type: Date, default: null },
+    tanggalMasuk: { type: Date, default: Date.now },
   },
   { timestamps: true },
 );
