@@ -63,7 +63,7 @@ const ProfilePopup: React.FC<Props> = ({ user, onClose, onViewProfile, onLogout 
           <p>{user.email}</p>
           <div style={{ marginTop: '4px' }}>
             <span className="badge-pln" style={{ padding: '2px 10px', fontSize: '11px', borderRadius: '12px', background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', display: 'inline-block', fontWeight: '700' }}>
-              {calculateDuration(user.createdAt)}
+              {user.tanggalMulai ? calculateDuration(user.tanggalMulai) : "0 hari"}
             </span>
           </div>
         </div>
