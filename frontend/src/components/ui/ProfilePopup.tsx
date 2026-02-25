@@ -63,21 +63,12 @@ const ProfilePopup: React.FC<Props> = ({ user, onClose, onViewProfile, onLogout 
           <p>{user.email}</p>
           <div style={{ marginTop: '4px' }}>
             <span className="badge-pln" style={{ padding: '2px 10px', fontSize: '11px', borderRadius: '12px', background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', display: 'inline-block', fontWeight: '700' }}>
-              {user.tanggalMulai ? calculateDuration(user.tanggalMulai) : "0 hari"}
+              {user.tanggalMasuk ? calculateDuration(user.tanggalMasuk) : "0 hari"}
             </span>
           </div>
         </div>
       </div>
       <div className="profile-popup-body">
-        <div className="profile-info-item">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
-          </svg>
-          <div>
-            <span className="label">Instansi</span>
-            <span className="value">{user.instansi || '-'}</span>
-          </div>
-        </div>
         <div className="profile-info-item">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10" />

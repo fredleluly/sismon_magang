@@ -195,7 +195,7 @@
   margin-bottom: 12px;
 }
 
-.pending-item-header>div {
+.pending-item-header > div {
   flex: 1;
 }
 
@@ -247,7 +247,7 @@
   margin-bottom: 12px;
 }
 
-.pending-item-body>div {
+.pending-item-body > div {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -411,7 +411,9 @@
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.12),
+    0 4px 8px rgba(0, 0, 0, 0.06);
   padding: 16px;
   z-index: 100;
   animation: ip-calendarSlideIn 0.2s ease-out;
@@ -673,7 +675,6 @@
 }
 
 @media (max-width: 360px) {
-
   .form-card,
   .pending-list-card {
     padding: 16px;

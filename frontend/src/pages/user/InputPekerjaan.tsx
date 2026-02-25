@@ -6,10 +6,7 @@ import type { WorkLog } from '../../types';
 import CustomSelect from '../../components/CustomSelect';
 import './InputPekerjaan.css';
 
-const MONTH_NAMES = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
-];
+const MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
 const toDateString = (date: Date): string => {
@@ -47,7 +44,7 @@ const InputPekerjaan: React.FC = () => {
     confirmText: string;
     type: 'danger' | 'primary';
     onConfirm: () => void;
-  }>({ show: false, title: '', message: '', confirmText: '', type: 'primary', onConfirm: () => { } });
+  }>({ show: false, title: '', message: '', confirmText: '', type: 'primary', onConfirm: () => {} });
 
   const showConfirm = (title: string, message: string, confirmText: string, type: 'danger' | 'primary', onConfirm: () => void) => {
     setConfirmModal({ show: true, title, message, confirmText, type, onConfirm });
@@ -157,28 +154,22 @@ const InputPekerjaan: React.FC = () => {
   const submitAllPending = async () => {
     if (pendingData.length === 0) return;
 
-    showConfirm(
-      'Kirim Semua Log?',
-      `Apakah Anda yakin ingin mengirim semua ${pendingData.length} log pekerjaan status draft menjadi final? Data yang sudah final tidak dapat diubah lagi.`,
-      'Ya, Kirim Semua',
-      'primary',
-      async () => {
-        closeConfirm();
-        let success = 0;
-        let fail = 0;
-        for (const item of pendingData) {
-          const res = await WorkLogAPI.submit(item._id);
-          if (res && res.success) success++;
-          else fail++;
-        }
-        if (fail === 0) {
-          showToast(`${success} data berhasil dikirim final!`, 'success');
-        } else {
-          showToast(`${success} berhasil, ${fail} gagal dikirim`, 'error');
-        }
-        loadPending();
+    showConfirm('Kirim Semua Log?', `Apakah Anda yakin ingin mengirim semua ${pendingData.length} log pekerjaan status draft menjadi final? Data yang sudah final tidak dapat diubah lagi.`, 'Ya, Kirim Semua', 'primary', async () => {
+      closeConfirm();
+      let success = 0;
+      let fail = 0;
+      for (const item of pendingData) {
+        const res = await WorkLogAPI.submit(item._id);
+        if (res && res.success) success++;
+        else fail++;
       }
-    );
+      if (fail === 0) {
+        showToast(`${success} data berhasil dikirim final!`, 'success');
+      } else {
+        showToast(`${success} berhasil, ${fail} gagal dikirim`, 'error');
+      }
+      loadPending();
+    });
   };
 
   const deletePending = async (id: string) => {
@@ -284,7 +275,19 @@ const InputPekerjaan: React.FC = () => {
                   <line x1="3" y1="10" x2="21" y2="10"></line>
                 </svg>
                 <span>{formattedTanggal}</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ip-calendar-chevron" style={{ transform: showCalendar ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="ip-calendar-chevron"
+                  style={{ transform: showCalendar ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                >
                   <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
               </button>
@@ -309,7 +312,9 @@ const InputPekerjaan: React.FC = () => {
 
                   <div className="ip-calendar-day-names">
                     {DAY_NAMES.map((name, idx) => (
-                      <div key={name} className={`ip-day-name${idx === 0 || idx === 6 ? ' is-weekend' : ''}`}>{name}</div>
+                      <div key={name} className={`ip-day-name${idx === 0 || idx === 6 ? ' is-weekend' : ''}`}>
+                        {name}
+                      </div>
                     ))}
                   </div>
 
@@ -451,61 +456,55 @@ const InputPekerjaan: React.FC = () => {
         </div>
       </div>
 
-
       {/* Confirm Modal (Portal) */}
-      {confirmModal.show && ReactDOM.createPortal(
-        <div className="modal-overlay active" style={{ zIndex: 9999 }}>
-          <div className="modal-card" style={{ maxWidth: '400px', textAlign: 'center' }}>
-            <div className="modal-body" style={{ padding: '32px 24px 24px' }}>
-              <div className={`confirm-icon-wrap ${confirmModal.type}`} style={{
-                margin: '0 auto 16px',
-                width: 64, height: 64,
-                borderRadius: '50%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: confirmModal.type === 'danger' ? '#fee2e2' : '#e0f2fe',
-                color: confirmModal.type === 'danger' ? '#ef4444' : '#0ea5e9'
-              }}>
-                {confirmModal.type === 'danger' ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                  </svg>
-                )}
-              </div>
-
-              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: '#1e293b' }}>
-                {confirmModal.title}
-              </h3>
-              <p style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.5 }}>
-                {confirmModal.message}
-              </p>
-
-              <div style={{ display: 'flex', gap: 12 }}>
-                <button
-                  className="btn-outline"
-                  onClick={closeConfirm}
-                  style={{ flex: 1, justifyContent: 'center' }}
+      {confirmModal.show &&
+        ReactDOM.createPortal(
+          <div className="modal-overlay active" style={{ zIndex: 9999 }}>
+            <div className="modal-card" style={{ maxWidth: '400px', textAlign: 'center' }}>
+              <div className="modal-body" style={{ padding: '32px 24px 24px' }}>
+                <div
+                  className={`confirm-icon-wrap ${confirmModal.type}`}
+                  style={{
+                    margin: '0 auto 16px',
+                    width: 64,
+                    height: 64,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: confirmModal.type === 'danger' ? '#fee2e2' : '#e0f2fe',
+                    color: confirmModal.type === 'danger' ? '#ef4444' : '#0ea5e9',
+                  }}
                 >
-                  Batal
-                </button>
-                <button
-                  className={`btn ${confirmModal.type === 'danger' ? 'btn-danger' : 'btn-primary'}`}
-                  onClick={confirmModal.onConfirm}
-                  style={{ flex: 1, justifyContent: 'center' }}
-                >
-                  {confirmModal.confirmText}
-                </button>
+                  {confirmModal.type === 'danger' ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                  )}
+                </div>
+
+                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: '#1e293b' }}>{confirmModal.title}</h3>
+                <p style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.5 }}>{confirmModal.message}</p>
+
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button className="btn-outline" onClick={closeConfirm} style={{ flex: 1, justifyContent: 'center' }}>
+                    Batal
+                  </button>
+                  <button className={`btn ${confirmModal.type === 'danger' ? 'btn-danger' : 'btn-primary'}`} onClick={confirmModal.onConfirm} style={{ flex: 1, justifyContent: 'center' }}>
+                    {confirmModal.confirmText}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
