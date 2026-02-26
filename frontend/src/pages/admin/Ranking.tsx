@@ -4,10 +4,7 @@ import type { PerformanceEvaluation, User } from '../../types';
 import MonthYearSelector from '../../components/MonthYearSelector';
 import './Ranking.css';
 
-const MONTHS = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-];
+const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
 const Ranking: React.FC = () => {
   const now = new Date();
@@ -24,7 +21,9 @@ const Ranking: React.FC = () => {
     setLoading(false);
   }, [bulan, tahun]);
 
-  useEffect(() => { loadRankings(); }, [loadRankings]);
+  useEffect(() => {
+    loadRankings();
+  }, [loadRankings]);
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return '#10b981';
@@ -71,12 +70,7 @@ const Ranking: React.FC = () => {
       </div>
 
       {/* Filter */}
-      <MonthYearSelector
-        bulan={bulan}
-        tahun={tahun}
-        onBulanChange={setBulan}
-        onTahunChange={setTahun}
-      />
+      <MonthYearSelector bulan={bulan} tahun={tahun} onBulanChange={setBulan} onTahunChange={setTahun} />
 
       {loading ? (
         <div className="rank-loading">Memuat ranking...</div>
@@ -84,7 +78,9 @@ const Ranking: React.FC = () => {
         <div className="rank-empty-card">
           <div className="rank-empty-icon">🏆</div>
           <h3>Belum Ada Ranking</h3>
-          <p>Belum ada penilaian yang difinalisasi untuk {MONTHS[bulan - 1]} {tahun}.</p>
+          <p>
+            Belum ada penilaian yang difinalisasi untuk {MONTHS[bulan - 1]} {tahun}.
+          </p>
         </div>
       ) : (
         <>
@@ -95,7 +91,6 @@ const Ranking: React.FC = () => {
                 <div className="podium-card podium-2">
                   <div className="podium-medal">🥈</div>
                   <div className="podium-name">{(rankings[1].userId as User)?.name || '-'}</div>
-                  <div className="podium-instansi">{(rankings[1].userId as User)?.instansi || '-'}</div>
                   <div className="podium-score" style={{ color: getScoreColor(rankings[1].hasil) }}>
                     {rankings[1].hasil}%
                   </div>
@@ -105,7 +100,6 @@ const Ranking: React.FC = () => {
               <div className="podium-card podium-1">
                 <div className="podium-medal">🥇</div>
                 <div className="podium-name">{(rankings[0].userId as User)?.name || '-'}</div>
-                <div className="podium-instansi">{(rankings[0].userId as User)?.instansi || '-'}</div>
                 <div className="podium-score" style={{ color: getScoreColor(rankings[0].hasil) }}>
                   {rankings[0].hasil}%
                 </div>
@@ -115,7 +109,6 @@ const Ranking: React.FC = () => {
                 <div className="podium-card podium-3">
                   <div className="podium-medal">🥉</div>
                   <div className="podium-name">{(rankings[2].userId as User)?.name || '-'}</div>
-                  <div className="podium-instansi">{(rankings[2].userId as User)?.instansi || '-'}</div>
                   <div className="podium-score" style={{ color: getScoreColor(rankings[2].hasil) }}>
                     {rankings[2].hasil}%
                   </div>
@@ -128,7 +121,9 @@ const Ranking: React.FC = () => {
           {/* Full List */}
           <div className="rank-card">
             <div className="rank-card-header">
-              <h2>Daftar Lengkap — {MONTHS[bulan - 1]} {tahun}</h2>
+              <h2>
+                Daftar Lengkap — {MONTHS[bulan - 1]} {tahun}
+              </h2>
               <span className="rank-count">{rankings.length} peserta</span>
             </div>
             <div className="rank-table-wrap max-h-[500px] overflow-y-auto">
@@ -164,9 +159,7 @@ const Ranking: React.FC = () => {
                           </span>
                         </td>
                         <td>
-                          <span className={`grade-badge grade-${getGrade(ev.hasil).replace('+', 'plus')}`}>
-                            {getGrade(ev.hasil)}
-                          </span>
+                          <span className={`grade-badge grade-${getGrade(ev.hasil).replace('+', 'plus')}`}>{getGrade(ev.hasil)}</span>
                         </td>
                       </tr>
                     );

@@ -771,10 +771,7 @@ const AdminDashboard: React.FC = () => {
               const { ctx, width, height } = chart;
               ctx.save();
               const totalAmount = cumulativeSum;
-              const totalFromData = (data.weeklyProgress || []).reduce(
-                (sum, w) => sum + (w.berkas || 0) + (w.buku || 0) + (w.bundle || 0),
-                0
-              );
+              const totalFromData = (data.weeklyProgress || []).reduce((sum, w) => sum + (w.berkas || 0) + (w.buku || 0) + (w.bundle || 0), 0);
               const displayTotal = totalFromData > 0 ? totalFromData : cumulativeSum;
 
               ctx.textAlign = 'center';
@@ -1162,7 +1159,6 @@ const AdminDashboard: React.FC = () => {
                   <div className="podium-card podium-2">
                     <div className="podium-medal">🥈</div>
                     <div className="podium-name">{(rankings[1].userId as User)?.name || '-'}</div>
-                    <div className="podium-instansi">{(rankings[1].userId as User)?.instansi || '-'}</div>
                     <div className="podium-score" style={{ color: getScoreColor(rankings[1].hasil) }}>
                       {rankings[1].hasil}%
                     </div>
@@ -1172,7 +1168,6 @@ const AdminDashboard: React.FC = () => {
                 <div className="podium-card podium-1">
                   <div className="podium-medal">🥇</div>
                   <div className="podium-name">{(rankings[0].userId as User)?.name || '-'}</div>
-                  <div className="podium-instansi">{(rankings[0].userId as User)?.instansi || '-'}</div>
                   <div className="podium-score" style={{ color: getScoreColor(rankings[0].hasil) }}>
                     {rankings[0].hasil}%
                   </div>
@@ -1182,7 +1177,6 @@ const AdminDashboard: React.FC = () => {
                   <div className="podium-card podium-3">
                     <div className="podium-medal">🥉</div>
                     <div className="podium-name">{(rankings[2].userId as User)?.name || '-'}</div>
-                    <div className="podium-instansi">{(rankings[2].userId as User)?.instansi || '-'}</div>
                     <div className="podium-score" style={{ color: getScoreColor(rankings[2].hasil) }}>
                       {rankings[2].hasil}%
                     </div>
