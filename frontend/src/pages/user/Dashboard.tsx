@@ -5,6 +5,7 @@ import { DashboardAPI, WorkLogAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { UserDashboard, WorkLog, WeeklyProgress, WorkDistribution } from '../../types';
 import { exportExcel } from '../../utils/excelExport';
+import { formatJobType } from '../../utils/jobdesk';
 
 Chart.register(...registerables);
 
@@ -19,7 +20,9 @@ interface JobDeskRecap {
 const JOB_COLORS: Record<string, string> = {
   Sortir: '#4db8e8',
   Register: '#0a6599',
+  Registrasi: '#0a6599',
   'Pencopotan Steples': '#8b5cf6',
+  'Pencopotan Staples': '#8b5cf6',
   Scanning: '#22c55e',
   Rekardus: '#fb923c',
   Stikering: '#ffd600',
@@ -578,7 +581,7 @@ const Dashboard: React.FC = () => {
             ],
             data: recapData.map((recap, index) => ({
               no: index + 1,
-              jobDesk: recap.jobDesk,
+              jobDesk: formatJobType(recap.jobDesk),
               berkas: recap.berkas,
               buku: recap.buku,
               bundle: recap.bundle,
@@ -735,7 +738,7 @@ const Dashboard: React.FC = () => {
     if (donutRef.current) {
       if (donutChart.current) donutChart.current.destroy();
       const wd = data.workDistribution || [];
-      const labels = wd.map((w) => w._id || 'Lainnya');
+      const labels = wd.map((w) => formatJobType(w._id || 'Lainnya'));
       const vals = wd.map((w) => w.count || 0);
       const colors = labels.map((l) => JOB_COLORS[l] || '#94a3b8');
       donutChart.current = new Chart(donutRef.current, {
@@ -779,7 +782,7 @@ const Dashboard: React.FC = () => {
   }, [data]);
 
   const wd = data?.workDistribution || [];
-  const donutLabels = wd.map((w) => w._id || 'Lainnya');
+  const donutLabels = wd.map((w) => formatJobType(w._id || 'Lainnya'));
   const donutColors = donutLabels.map((l) => JOB_COLORS[l] || '#94a3b8');
 
   const handleDashboardPrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
@@ -1259,7 +1262,7 @@ const Dashboard: React.FC = () => {
                     }}
                   >
                     <td style={{ padding: '12px', textAlign: 'left' }}>{index + 1}</td>
-                    <td style={{ padding: '12px', textAlign: 'left' }}>{recap.jobDesk}</td>
+                    <td style={{ padding: '12px', textAlign: 'left' }}>{formatJobType(recap.jobDesk)}</td>
                     <td
                       style={{
                         padding: '12px',

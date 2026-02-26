@@ -4,6 +4,7 @@ import { Chart, registerables } from 'chart.js';
 import { DashboardAPI, getToken, ComplaintAPI, PerformanceAPI, AttendanceAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { AdminDashboard as AdminDashData, PerformanceEvaluation, User } from '../../types';
+import { formatJobType } from '../../utils/jobdesk';
 import './Ranking.css';
 
 Chart.register(...registerables);
@@ -382,7 +383,7 @@ const AdminDashboard: React.FC = () => {
           },
           {
             no: 3,
-            indikator: 'Total Pencopotan Steples',
+            indikator: 'Total Pencopotan Staples',
             nilai: data.totalSteples || 0,
             keterangan: 'Item selesai',
           },
@@ -394,7 +395,7 @@ const AdminDashboard: React.FC = () => {
           },
           {
             no: 5,
-            indikator: 'Total Register',
+            indikator: 'Total Registrasi',
             nilai: data.totalRegister || 0,
             keterangan: 'Item selesai',
           },
@@ -560,7 +561,7 @@ const AdminDashboard: React.FC = () => {
           ],
           wd.map((w, i) => ({
             no: i + 1,
-            jenis: w._id || 'Lainnya',
+            jenis: formatJobType(w._id || 'Lainnya'),
             jumlah: w.count || 0,
             persen: totalCount > 0 ? (((w.count || 0) / totalCount) * 100).toFixed(1) + '%' : '0%',
           })),
@@ -652,7 +653,7 @@ const AdminDashboard: React.FC = () => {
           ra.map((a: any, i: number) => ({
             no: i + 1,
             nama: typeof a.userId === 'string' ? 'Unknown' : a.userId?.name || 'Unknown',
-            jenis: a.jenis || '-',
+            jenis: formatJobType(a.jenis || '-'),
             berkas: a.berkas || 0,
             buku: a.buku || 0,
             bundle: a.bundle || 0,
@@ -1030,7 +1031,7 @@ const AdminDashboard: React.FC = () => {
           </div>
           <div className="admin-stat-card">
             <div className="stat-info">
-              <div className="stat-label">Total Pencopotan Steples</div>
+              <div className="stat-label">Total Pencopotan Staples</div>
               <div className="stat-value" ref={(el) => el && data && animateCounter(el, data.totalSteples || 0)}>
                 0
               </div>
@@ -1048,7 +1049,7 @@ const AdminDashboard: React.FC = () => {
           </div>
           <div className="admin-stat-card">
             <div className="stat-info">
-              <div className="stat-label">Total Register</div>
+              <div className="stat-label">Total Registrasi</div>
               <div className="stat-value" ref={(el) => el && data && animateCounter(el, data.totalRegister || 0)}>
                 0
               </div>

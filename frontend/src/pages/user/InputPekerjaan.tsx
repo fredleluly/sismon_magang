@@ -4,6 +4,7 @@ import { WorkLogAPI, AttendanceAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { WorkLog } from '../../types';
 import CustomSelect from '../../components/CustomSelect';
+import { formatJobType } from '../../utils/jobdesk';
 import './InputPekerjaan.css';
 
 const MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -410,7 +411,7 @@ const InputPekerjaan: React.FC = () => {
               <div key={item._id} className="pending-item">
                 <div className="pending-item-header">
                   <div>
-                    <div className="pending-item-title">{item.jenis}</div>
+                    <div className="pending-item-title">{formatJobType(item.jenis)}</div>
                     <div className="pending-item-date">{formatDate(item.tanggal)}</div>
                   </div>
                   <button className="pending-item-delete" onClick={() => deletePending(item._id)} title="Hapus">

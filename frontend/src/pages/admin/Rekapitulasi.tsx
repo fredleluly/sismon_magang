@@ -3,6 +3,7 @@ import { exportRekapitulasiExcel } from '../../utils/excelExport';
 import { useToast } from '../../context/ToastContext';
 import { UsersAPI, WorkLogAPI, TargetSectionAPI } from '../../services/api';
 import type { User, TargetSection } from '../../types';
+import { formatJobType } from '../../utils/jobdesk';
 
 const formatRupiah = (value: number): string => {
   return new Intl.NumberFormat('id-ID', {
@@ -332,7 +333,7 @@ const Rekapitulasi: React.FC = () => {
 
     // Add section filter info to Excel
     if (selectedSections.length > 0 && selectedSections.length < JENIS_LIST.length) {
-      filterInfoStr += ` | Section: ${selectedSections.join(', ')}`;
+      filterInfoStr += ` | Section: ${selectedSections.map(s => formatJobType(s)).join(', ')}`;
     }
 
     try {
@@ -567,12 +568,14 @@ const Rekapitulasi: React.FC = () => {
                   </div>
                   <div className="rekap-user-dropdown-divider" />
                   <div style={{ maxHeight: '240px', overflowY: 'auto' }}>
-                    {JENIS_LIST.filter((s) => s.toLowerCase().includes(sectionSearch.toLowerCase())).map((s) => (
-                      <div key={s} className="rekap-user-option" onClick={() => toggleSection(s)}>
-                        <input type="checkbox" checked={selectedSections.includes(s)} readOnly />
-                        <span>{s}</span>
-                      </div>
-                    ))}
+                    {JENIS_LIST
+                      .filter((s) => formatJobType(s).toLowerCase().includes(sectionSearch.toLowerCase()))
+                      .map((s) => (
+                        <div key={s} className="rekap-user-option" onClick={() => toggleSection(s)}>
+                          <input type="checkbox" checked={selectedSections.includes(s)} readOnly />
+                          <span>{formatJobType(s)}</span>
+                        </div>
+                      ))}
                   </div>
                 </div>
               )}
@@ -659,7 +662,7 @@ const Rekapitulasi: React.FC = () => {
                     </th>
                     {jenisList.map((j) => (
                       <th key={j} colSpan={4} className="rekap-th-group">
-                        {j.toUpperCase()}
+                        {formatJobType(j).toUpperCase()}
                       </th>
                     ))}
                     <th rowSpan={2} className="rekap-th-total">
@@ -749,7 +752,7 @@ const Rekapitulasi: React.FC = () => {
                     const rate = getBiayaPerBerkas(j);
                     return (
                       <th key={j} colSpan={4} className="rekap-th-group rekap-biaya-th-group">
-                        {j.toUpperCase()}
+                        {formatJobType(j).toUpperCase()}
                         {rate > 0 && <div style={{ fontSize: 10, fontWeight: 500, opacity: 0.75, marginTop: 2 }}>{formatRupiah(rate)}/item</div>}
                       </th>
                     );
