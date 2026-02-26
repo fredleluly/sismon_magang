@@ -66,6 +66,12 @@ const Rekapitulasi: React.FC = () => {
   const [showUserFilter, setShowUserFilter] = useState(false);
   const [userSearch, setUserSearch] = useState('');
   const filterRef = useRef<HTMLDivElement>(null);
+  
+  // Section Filter State
+  const [selectedSections, setSelectedSections] = useState<string[]>([]);
+  const [showSectionFilter, setShowSectionFilter] = useState(false);
+  const [sectionSearch, setSectionSearch] = useState('');
+  const sectionFilterRef = useRef<HTMLDivElement>(null);
 
   // Load users list and target data
   useEffect(() => {
@@ -90,11 +96,14 @@ const Rekapitulasi: React.FC = () => {
     return upahHarian / target.targetPerDay;
   };
 
-  // Close user filter dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
         setShowUserFilter(false);
+      }
+      if (sectionFilterRef.current && !sectionFilterRef.current.contains(e.target as Node)) {
+        setShowSectionFilter(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -227,7 +236,7 @@ const Rekapitulasi: React.FC = () => {
   }, [fetchRecap]);
 
   // Build pivot table data
-  const jenisList = JENIS_LIST;
+  const jenisList = selectedSections.length === 0 ? JENIS_LIST : JENIS_LIST.filter(j => selectedSections.includes(j));
 
   const pivotRows: PivotRow[] = (() => {
     const userMap: Record<string, PivotRow> = {};
@@ -291,6 +300,18 @@ const Rekapitulasi: React.FC = () => {
     }
   };
 
+  const toggleSection = (section: string) => {
+    setSelectedSections((prev) => (prev.includes(section) ? prev.filter((s) => s !== section) : [...prev, section]));
+  };
+
+  const selectAllSections = () => {
+    if (selectedSections.length === JENIS_LIST.length) {
+      setSelectedSections([]);
+    } else {
+      setSelectedSections([...JENIS_LIST]);
+    }
+  };
+
   const exportToExcel = async () => {
     if (pivotRows.length === 0) {
       showToast('Tidak ada data untuk diekspor', 'error');
@@ -307,6 +328,11 @@ const Rekapitulasi: React.FC = () => {
       const f = new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       const t = new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       filterInfoStr = `Custom — ${f} s/d ${t}`;
+    }
+    
+    // Add section filter info to Excel
+    if (selectedSections.length > 0 && selectedSections.length < JENIS_LIST.length) {
+      filterInfoStr += ` | Section: ${selectedSections.join(', ')}`;
     }
 
     try {
@@ -494,6 +520,56 @@ const Rekapitulasi: React.FC = () => {
                         <div key={u._id} className="rekap-user-option" onClick={() => toggleUser(u._id)}>
                           <input type="checkbox" checked={selectedUsers.includes(u._id)} readOnly />
                           <span>{u.name}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Section Filter */}
+            <div className="rekap-filter-group rekap-user-filter rekap-user-filter-container" ref={sectionFilterRef}>
+              <button className="rekap-user-btn" onClick={() => setShowSectionFilter(!showSectionFilter)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                  <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+                {selectedSections.length === 0 ? 'Semua Section' : selectedSections.length === JENIS_LIST.length ? 'Semua Section' : `${selectedSections.length} Section`}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rekap-user-btn-icon-right">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              {showSectionFilter && (
+                <div className="rekap-user-dropdown">
+                  <div style={{ padding: '8px 12px' }}>
+                    <input
+                      type="text"
+                      placeholder="Cari section..."
+                      value={sectionSearch}
+                      onChange={(e) => setSectionSearch(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        width: '100%',
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--gray-300)',
+                        fontSize: '13px',
+                      }}
+                    />
+                  </div>
+                  <div className="rekap-user-option" onClick={selectAllSections}>
+                    <input type="checkbox" checked={selectedSections.length === JENIS_LIST.length && JENIS_LIST.length > 0} readOnly />
+                    <span style={{ fontWeight: 600 }}>Pilih Semua</span>
+                  </div>
+                  <div className="rekap-user-dropdown-divider" />
+                  <div style={{ maxHeight: '240px', overflowY: 'auto' }}>
+                    {JENIS_LIST
+                      .filter((s) => s.toLowerCase().includes(sectionSearch.toLowerCase()))
+                      .map((s) => (
+                        <div key={s} className="rekap-user-option" onClick={() => toggleSection(s)}>
+                          <input type="checkbox" checked={selectedSections.includes(s)} readOnly />
+                          <span>{s}</span>
                         </div>
                       ))}
                   </div>
