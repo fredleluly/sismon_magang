@@ -5,10 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import type { User, PerformanceEvaluation, PerformanceCalculation } from '../../types';
 import './PenilaianPerforma.css';
 
-const MONTHS = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-];
+const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
 const PenilaianPerforma: React.FC = () => {
   const { showToast } = useToast();
@@ -56,7 +53,7 @@ const PenilaianPerforma: React.FC = () => {
     setConfirmModal({ show: true, title, message, confirmText, type, onConfirm });
   };
 
-  const closeConfirm = () => setConfirmModal(prev => ({ ...prev, show: false }));
+  const closeConfirm = () => setConfirmModal((prev) => ({ ...prev, show: false }));
 
   // Add pause/blur effect on modal open
   useEffect(() => {
@@ -100,13 +97,12 @@ const PenilaianPerforma: React.FC = () => {
     if (res && res.success) setEvaluations(res.data || []);
   }, [bulan, tahun]);
 
-  useEffect(() => { loadEvaluations(); }, [loadEvaluations]);
+  useEffect(() => {
+    loadEvaluations();
+  }, [loadEvaluations]);
 
   // Filter users for search
-  const filteredUsers = users.filter(u =>
-    u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users.filter((u) => u.name.toLowerCase().includes(searchQuery.toLowerCase()) || u.email.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const handleSelectUser = async (user: User) => {
     setSelectedUser(user);
@@ -115,11 +111,11 @@ const PenilaianPerforma: React.FC = () => {
     setCalculating(true);
 
     // Check if already evaluated
-    const existing = evaluations.find(e => {
+    const existing = evaluations.find((e) => {
       const uid = typeof e.userId === 'string' ? e.userId : e.userId?._id;
       return uid === user._id;
     });
-    
+
     if (existing) {
       setKuantitas(existing.kuantitas);
       setKualitas(existing.kualitas);
@@ -152,10 +148,11 @@ const PenilaianPerforma: React.FC = () => {
     setSaving(true);
     const res = await PerformanceAPI.save({
       userId: selectedUser._id,
-      bulan, tahun,
+      bulan,
+      tahun,
       absen: calculation.absen,
-      kuantitas,
-      kualitas,
+      kuantitas: Number(kuantitas) || 0,
+      kualitas: Number(kualitas) || 0,
       laporan,
       status,
     });
@@ -182,39 +179,30 @@ const PenilaianPerforma: React.FC = () => {
   const handleSave = (status: 'Draft' | 'Final') => {
     if (!selectedUser || !calculation) return;
     if (status === 'Final') {
-      showConfirm(
-        'Finalisasi Penilaian',
-        'Yakin ingin memfinalisasi penilaian ini? Penilaian yang sudah final tidak bisa diubah.',
-        'Ya, Finalisasi',
-        'success',
-        () => { closeConfirm(); doSave('Final'); }
-      );
+      showConfirm('Finalisasi Penilaian', 'Yakin ingin memfinalisasi penilaian ini? Penilaian yang sudah final tidak bisa diubah.', 'Ya, Finalisasi', 'success', () => {
+        closeConfirm();
+        doSave('Final');
+      });
     } else {
       doSave('Draft');
     }
   };
 
   const handleDelete = (id: string) => {
-    showConfirm(
-      'Hapus Draft',
-      'Yakin ingin menghapus draft penilaian ini?',
-      'Ya, Hapus',
-      'danger',
-      async () => {
-        closeConfirm();
-        const res = await PerformanceAPI.delete(id);
-        if (res && res.success) {
-          showToast('Draft berhasil dihapus', 'success');
-          loadEvaluations();
-        } else {
-          showToast(res?.message || 'Gagal menghapus', 'error');
-        }
+    showConfirm('Hapus Draft', 'Yakin ingin menghapus draft penilaian ini?', 'Ya, Hapus', 'danger', async () => {
+      closeConfirm();
+      const res = await PerformanceAPI.delete(id);
+      if (res && res.success) {
+        showToast('Draft berhasil dihapus', 'success');
+        loadEvaluations();
+      } else {
+        showToast(res?.message || 'Gagal menghapus', 'error');
       }
-    );
+    });
   };
 
   const handleEditExisting = (ev: PerformanceEvaluation) => {
-    const user = typeof ev.userId === 'string' ? users.find(u => u._id === ev.userId) : ev.userId as User;
+    const user = typeof ev.userId === 'string' ? users.find((u) => u._id === ev.userId) : (ev.userId as User);
     if (user) handleSelectUser(user as User);
   };
 
@@ -252,11 +240,7 @@ const PenilaianPerforma: React.FC = () => {
     );
   };
 
-  const getStatusBadge = (status: string) => (
-    <span className={`status-badge ${status === 'Final' ? 'badge-final' : 'badge-draft'}`}>
-      {status}
-    </span>
-  );
+  const getStatusBadge = (status: string) => <span className={`status-badge ${status === 'Final' ? 'badge-final' : 'badge-draft'}`}>{status}</span>;
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return '#10b981';
@@ -282,33 +266,8 @@ const PenilaianPerforma: React.FC = () => {
         </div>
       </div>
 
-      {/* Custom Period Selector */}
-      <div className="period-selector-container">
-        <button className="period-nav-btn" onClick={() => {
-          if (bulan === 1) {
-            setBulan(12);
-            setTahun(tahun - 1);
-          } else {
-            setBulan(bulan - 1);
-          }
-        }}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-        </button>
-        <div className="period-display">
-          <span className="period-label">Periode Penilaian</span>
-          <span className="period-value">{getPeriodLabel(bulan, tahun)}</span>
-        </div>
-        <button className="period-nav-btn" onClick={() => {
-          if (bulan === 12) {
-            setBulan(1);
-            setTahun(tahun + 1);
-          } else {
-            setBulan(bulan + 1);
-          }
-        }}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </button>
-      </div>
+      {/* Month Selector */}
+      <MonthYearSelector bulan={bulan} tahun={tahun} onBulanChange={setBulan} onTahunChange={setTahun} />
 
       {/* Evaluation Form */}
       <div className="eval-card">
@@ -342,13 +301,12 @@ const PenilaianPerforma: React.FC = () => {
                   {filteredUsers.length === 0 ? (
                     <div className="search-empty">Tidak ditemukan</div>
                   ) : (
-                    filteredUsers.map(u => (
-                      <div
-                        key={u._id}
-                        className="search-item"
-                        onClick={() => handleSelectUser(u)}
-                      >
-                        <div className="search-item-name">{u.name}</div>
+                    filteredUsers.map((u) => (
+                      <div key={u._id} className="search-item" onClick={() => handleSelectUser(u)}>
+                        <div className="search-item-name">
+                          {u.name}
+                          {u.status === 'Nonaktif' && <span style={{ fontSize: '11px', color: '#ef4444', marginLeft: '6px', fontWeight: 600 }}>(Nonaktif)</span>}
+                        </div>
                         <div className="search-item-email">{u.email}</div>
                       </div>
                     ))
@@ -387,49 +345,34 @@ const PenilaianPerforma: React.FC = () => {
 
                 {/* Kuantitas */}
                 <div className="score-card score-card-manual">
-                  <div className="score-label">Kuantitas <span className="manual-badge">Manual</span></div>
+                  <div className="score-label">
+                    Kuantitas <span className="manual-badge">Manual</span>
+                  </div>
                   <div className="score-input-wrap">
-                    <input
-                      type="number"
-                      min="0"
-                      max="30"
-                      step="0.01"
-                      value={kuantitas}
-                      onChange={(e) => setKuantitas(Math.min(30, Math.max(0, parseFloat(e.target.value) || 0)))}
-                      className="score-input"
-                    />
+                    <input type="number" min="0" max="30" step="0.01" value={kuantitas} onChange={(e) => setKuantitas(Math.min(30, Math.max(0, parseFloat(e.target.value) || 0)))} className="score-input" />
                   </div>
                   <div className="score-max">maks 30</div>
                 </div>
 
                 {/* Kualitas */}
                 <div className="score-card score-card-manual">
-                  <div className="score-label">Kualitas <span className="manual-badge">Manual</span></div>
+                  <div className="score-label">
+                    Kualitas <span className="manual-badge">Manual</span>
+                  </div>
                   <div className="score-input-wrap">
-                    <input
-                      type="number"
-                      min="0"
-                      max="30"
-                      step="0.01"
-                      value={kualitas}
-                      onChange={(e) => setKualitas(Math.min(30, Math.max(0, parseFloat(e.target.value) || 0)))}
-                      className="score-input"
-                    />
+                    <input type="number" min="0" max="30" step="0.01" value={kualitas} onChange={(e) => setKualitas(Math.min(30, Math.max(0, parseFloat(e.target.value) || 0)))} className="score-input" />
                   </div>
                   <div className="score-max">maks 30</div>
                 </div>
 
                 {/* Laporan */}
                 <div className="score-card score-card-manual">
-                  <div className="score-label">Laporan <span className="manual-badge">Manual</span></div>
+                  <div className="score-label">
+                    Laporan <span className="manual-badge">Manual</span>
+                  </div>
                   <div className="score-checkbox-wrap">
                     <label className="checkbox-label">
-                      <input
-                        type="checkbox"
-                        checked={laporan}
-                        onChange={(e) => setLaporan(e.target.checked)}
-                        className="checkbox-input"
-                      />
+                      <input type="checkbox" checked={laporan} onChange={(e) => setLaporan(e.target.checked)} className="checkbox-input" />
                       <span className="checkbox-custom" />
                       <span>{laporan ? '5' : '0'}</span>
                     </label>
@@ -466,7 +409,9 @@ const PenilaianPerforma: React.FC = () => {
       {/* Existing Evaluations */}
       <div className="eval-card">
         <div className="eval-card-header">
-          <h2>Daftar Penilaian — {getPeriodLabel(bulan, tahun)}</h2>
+          <h2>
+            Daftar Penilaian — {MONTHS[bulan - 1]} {tahun}
+          </h2>
           <p>{evaluations.length} penilaian</p>
         </div>
         <div className="eval-table-wrap max-h-[500px] overflow-y-auto">
@@ -489,11 +434,11 @@ const PenilaianPerforma: React.FC = () => {
               </thead>
               <tbody>
                 {evaluations.map((ev, idx) => {
-                  const user = typeof ev.userId === 'string' ? null : ev.userId as User;
+                  const user = typeof ev.userId === 'string' ? null : (ev.userId as User);
                   return (
                     <tr key={ev._id}>
                       <td>{idx + 1}</td>
-                      <td className="td-name">{user?.name || '-'}</td>
+                      <td className="td-name"><div className="truncate-text" title={user?.name || '-'}>{user?.name || '-'}</div></td>
                       <td>{ev.absen}</td>
                       <td>{ev.kuantitas}</td>
                       <td>{ev.kualitas}</td>
@@ -514,15 +459,18 @@ const PenilaianPerforma: React.FC = () => {
                               </svg>
                             </button>
                             <button className="btn-icon btn-edit-eval" title="Edit" onClick={() => handleEditExisting(ev)}>
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                                <path d="m15 5 4 4" />
                               </svg>
                             </button>
                             <button className="btn-icon btn-delete-eval" title="Hapus" onClick={() => handleDelete(ev._id)}>
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                                <polyline points="3 6 5 6 21 6" />
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M3 6h18" />
+                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                <line x1="10" x2="10" y1="11" y2="17" />
+                                <line x1="14" x2="14" y1="11" y2="17" />
                               </svg>
                             </button>
                           </>
@@ -540,49 +488,45 @@ const PenilaianPerforma: React.FC = () => {
 
       {/* Confirm Modal */}
       {/* Confirm Modal (Portal) */}
-      {confirmModal.show && ReactDOM.createPortal(
-        <div className="modal-overlay active z-[9999]" onClick={(e) => { if (e.target === e.currentTarget) closeConfirm(); }}>
-          <div className="modal-card max-w-[400px] text-center">
-            <div className="modal-body pt-8 px-6 pb-6">
-              <div className={`mx-auto mb-4 w-16 h-16 rounded-full flex items-center justify-center ${confirmModal.type === 'danger' ? 'bg-red-100 text-red-500' : 'bg-green-100 text-green-500'}`}>
-                {confirmModal.type === 'danger' ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                )}
-              </div>
-              
-              <h3 className="text-lg font-bold mb-2 text-gray-800">
-                {confirmModal.title}
-              </h3>
-              <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-                {confirmModal.message}
-              </p>
+      {confirmModal.show &&
+        ReactDOM.createPortal(
+          <div
+            className="modal-overlay active z-[9999]"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) closeConfirm();
+            }}
+          >
+            <div className="modal-card max-w-[400px] text-center">
+              <div className="modal-body pt-8 px-6 pb-6">
+                <div className={`mx-auto mb-4 w-16 h-16 rounded-full flex items-center justify-center ${confirmModal.type === 'danger' ? 'bg-red-100 text-red-500' : 'bg-green-100 text-green-500'}`}>
+                  {confirmModal.type === 'danger' ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  )}
+                </div>
 
-              <div className="flex gap-3">
-                <button 
-                  className="btn-outline flex-1 justify-center" 
-                  onClick={closeConfirm}
-                >
-                  Batal
-                </button>
-                <button 
-                  className={`btn flex-1 justify-center ${confirmModal.type === 'danger' ? 'btn-danger' : 'btn-primary'}`} 
-                  onClick={confirmModal.onConfirm}
-                >
-                  {confirmModal.confirmText}
-                </button>
+                <h3 className="text-lg font-bold mb-2 text-gray-800">{confirmModal.title}</h3>
+                <p className="text-sm text-gray-500 mb-6 leading-relaxed">{confirmModal.message}</p>
+
+                <div className="flex gap-3">
+                  <button className="btn-outline flex-1 justify-center" onClick={closeConfirm}>
+                    Batal
+                  </button>
+                  <button className={`btn flex-1 justify-center ${confirmModal.type === 'danger' ? 'btn-danger' : 'btn-primary'}`} onClick={confirmModal.onConfirm}>
+                    {confirmModal.confirmText}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };

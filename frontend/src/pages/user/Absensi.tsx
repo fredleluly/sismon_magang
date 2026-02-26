@@ -353,7 +353,7 @@ const Absensi: React.FC = () => {
       ctx.fillText(addrText, rightPadding, canvas.height - padding);
     }
 
-    const photo = canvas.toDataURL('image/jpeg', 0.8);
+    const photo = canvas.toDataURL('image/jpeg', 0.4);
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     setCapturedPhoto(photo);

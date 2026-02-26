@@ -44,6 +44,12 @@ const LogAktivitas: React.FC = () => {
   const [userSearch, setUserSearch] = useState('');
   const filterRef = useRef<HTMLDivElement>(null);
 
+  // Section Filter State
+  const [selectedSections, setSelectedSections] = useState<string[]>([]);
+  const [showSectionFilter, setShowSectionFilter] = useState(false);
+  const [sectionSearch, setSectionSearch] = useState('');
+  const sectionFilterRef = useRef<HTMLDivElement>(null);
+
   // Load users for filter
   useEffect(() => {
     const loadUsers = async () => {
@@ -69,6 +75,9 @@ const LogAktivitas: React.FC = () => {
       if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
         setShowUserFilter(false);
       }
+      if (sectionFilterRef.current && !sectionFilterRef.current.contains(event.target as Node)) {
+        setShowSectionFilter(false);
+      }
       const target = event.target as HTMLElement;
       if (!target.closest('.custom-date-picker-dropdown') && !target.closest('.custom-date-range-toggle')) {
         setIsSelectingDateRange(false);
@@ -88,13 +97,13 @@ const LogAktivitas: React.FC = () => {
         const month = currentDate.getMonth();
         const start = new Date(year, month - 1, 26);
         const end = new Date(year, month, 25);
-        
+
         const formatStr = (d: Date) => {
           const m = String(d.getMonth() + 1).padStart(2, '0');
           const day = String(d.getDate()).padStart(2, '0');
           return `${d.getFullYear()}-${m}-${day}`;
         };
-        
+
         query += `&from=${formatStr(start)}&to=${formatStr(end)}`;
       } else if (filterType === 'custom' && dateFrom && dateTo) {
         query += `&from=${dateFrom}&to=${dateTo}`;
@@ -157,7 +166,7 @@ const LogAktivitas: React.FC = () => {
     try {
       if (deleteConfirm.isBulk) {
         if (selectedLogs.length === 0) return;
-        await Promise.all(selectedLogs.map(id => WorkLogAPI.delete(id)));
+        await Promise.all(selectedLogs.map((id) => WorkLogAPI.delete(id)));
         showToast(`${selectedLogs.length} data berhasil dihapus`, 'success');
         setSelectedLogs([]);
         load();
@@ -289,8 +298,24 @@ const LogAktivitas: React.FC = () => {
   };
   // -------------------------
 
+  const toggleSection = (jenis: string) => {
+    setSelectedSections((prev) => (prev.includes(jenis) ? prev.filter((s) => s !== jenis) : [...prev, jenis]));
+  };
+
+  const selectAllSections = () => {
+    if (selectedSections.length === jobDesks.length) {
+      setSelectedSections([]);
+    } else {
+      setSelectedSections(jobDesks.map((j) => j.jenis));
+    }
+  };
+
   const filtered = logs
     .filter((l) => {
+      // Section filter
+      if (selectedSections.length > 0 && selectedSections.length < jobDesks.length) {
+        if (!selectedSections.includes(l.jenis)) return false;
+      }
       const q = search.toLowerCase();
       return (l.userId as any)?.name?.toLowerCase().includes(q) || (l.jenis || '').toLowerCase().includes(q) || (l.keterangan || '').toLowerCase().includes(q);
     })
@@ -528,7 +553,60 @@ const LogAktivitas: React.FC = () => {
                       .map((u) => (
                         <div key={u._id} className="rekap-user-option" onClick={() => toggleUser(u._id)}>
                           <input type="checkbox" checked={selectedUsers.includes(u._id)} readOnly />
-                          <span>{u.name}</span>
+                          <span>
+                            {u.name}
+                            {u.status === 'Nonaktif' && <span style={{ fontSize: '11px', color: '#ef4444', marginLeft: '6px', fontWeight: 600 }}>(Nonaktif)</span>}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Section Filter Dropdown */}
+            <div className="rekap-filter-group rekap-user-filter rekap-user-filter-container" ref={sectionFilterRef}>
+              <button className="rekap-user-btn" onClick={() => setShowSectionFilter(!showSectionFilter)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                  <line x1="12" y1="22.08" x2="12" y2="12" />
+                </svg>
+                {selectedSections.length === 0 ? 'Semua Section' : selectedSections.length === jobDesks.length ? 'Semua Section' : `${selectedSections.length} Section`}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rekap-user-btn-icon-right">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              {showSectionFilter && (
+                <div className="rekap-user-dropdown">
+                  <div style={{ padding: '8px 12px' }}>
+                    <input
+                      type="text"
+                      placeholder="Cari section..."
+                      value={sectionSearch}
+                      onChange={(e) => setSectionSearch(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        width: '100%',
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--gray-300)',
+                        fontSize: '13px',
+                      }}
+                    />
+                  </div>
+                  <div className="rekap-user-option" onClick={selectAllSections}>
+                    <input type="checkbox" checked={selectedSections.length === jobDesks.length && jobDesks.length > 0} readOnly />
+                    <span style={{ fontWeight: 600 }}>Pilih Semua</span>
+                  </div>
+                  <div className="rekap-user-dropdown-divider" />
+                  <div style={{ maxHeight: '240px', overflowY: 'auto' }}>
+                    {jobDesks
+                      .filter((j) => j.jenis.toLowerCase().includes(sectionSearch.toLowerCase()))
+                      .map((j) => (
+                        <div key={j._id} className="rekap-user-option" onClick={() => toggleSection(j.jenis)}>
+                          <input type="checkbox" checked={selectedSections.includes(j.jenis)} readOnly />
+                          <span>{j.jenis}</span>
                         </div>
                       ))}
                   </div>
@@ -582,7 +660,7 @@ const LogAktivitas: React.FC = () => {
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
               <circle cx="9" cy="7" r="4" />
             </svg>
-            {new Set(logs.map(l => (l.userId as any)?._id || l.userId)).size} Peserta
+            {new Set(logs.map((l) => (l.userId as any)?._id || l.userId)).size} Peserta
           </span>
           <span className="rekap-info-badge">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -600,21 +678,21 @@ const LogAktivitas: React.FC = () => {
             <h3>Aktivitas Terbaru</h3>
           </div>
           {selectedLogs.length > 0 && (
-            <button 
-              onClick={() => setDeleteConfirm({ show: true, id: null, name: '', isBulk: true })} 
-              style={{ 
-                padding: '6px 12px', 
-                fontSize: '13px', 
-                background: '#fee2e2', 
-                color: '#ef4444', 
-                border: '1px solid #fca5a5', 
-                borderRadius: '10px', 
+            <button
+              onClick={() => setDeleteConfirm({ show: true, id: null, name: '', isBulk: true })}
+              style={{
+                padding: '6px 12px',
+                fontSize: '13px',
+                background: '#fee2e2',
+                color: '#ef4444',
+                border: '1px solid #fca5a5',
+                borderRadius: '10px',
                 cursor: 'pointer',
                 fontWeight: 600,
                 display: 'inline-flex',
                 alignItems: 'center',
                 transition: 'all 0.2s ease',
-                minWidth: 'fit-content'
+                minWidth: 'fit-content',
               }}
               onMouseOver={(e) => {
                 e.currentTarget.style.background = '#fecaca';
@@ -647,12 +725,7 @@ const LogAktivitas: React.FC = () => {
             <thead>
               <tr>
                 <th style={{ textAlign: 'center' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={selectedLogs.length === filtered.length && filtered.length > 0} 
-                    onChange={toggleAllLogs} 
-                    style={{ cursor: 'pointer' }}
-                  />
+                  <input type="checkbox" checked={selectedLogs.length === filtered.length && filtered.length > 0} onChange={toggleAllLogs} style={{ cursor: 'pointer' }} />
                 </th>
                 <th>Nama Peserta</th>
                 <th>Tanggal</th>
@@ -678,12 +751,7 @@ const LogAktivitas: React.FC = () => {
                   return (
                     <tr key={l._id} className={selectedLogs.includes(l._id) ? 'selected-row' : ''}>
                       <td style={{ textAlign: 'center' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={selectedLogs.includes(l._id)} 
-                          onChange={() => toggleLogSelection(l._id)} 
-                          style={{ cursor: 'pointer' }}
-                        />
+                        <input type="checkbox" checked={selectedLogs.includes(l._id)} onChange={() => toggleLogSelection(l._id)} style={{ cursor: 'pointer' }} />
                       </td>
                       <td>
                         <div className="user-cell">
@@ -709,10 +777,19 @@ const LogAktivitas: React.FC = () => {
                       <td style={{ textAlign: 'center' }}>
                         <div className="action-btns" style={{ justifyContent: 'center' }}>
                           <button className="action-btn edit" onClick={() => openEditModal(l)} title="Edit">
-                            ✏️
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                              <path d="m15 5 4 4" />
+                            </svg>
                           </button>
                           <button className="action-btn delete" onClick={() => setDeleteConfirm({ show: true, id: l._id, name, isBulk: false })} title="Hapus">
-                            🗑️
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M3 6h18" />
+                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                              <line x1="10" x2="10" y1="11" y2="17" />
+                              <line x1="14" x2="14" y1="11" y2="17" />
+                            </svg>
                           </button>
                         </div>
                       </td>

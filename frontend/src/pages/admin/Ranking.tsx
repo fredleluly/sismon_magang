@@ -90,7 +90,7 @@ const Ranking: React.FC = () => {
               {rankings.length >= 2 && (
                 <div className="podium-card podium-2">
                   <div className="podium-medal">🥈</div>
-                  <div className="podium-name">{(rankings[1].userId as User)?.name || '-'}</div>
+                  <div className="podium-name truncate-text" title={(rankings[1].userId as User)?.name || '-'}>{(rankings[1].userId as User)?.name || '-'}</div>
                   <div className="podium-score" style={{ color: getScoreColor(rankings[1].hasil) }}>
                     {rankings[1].hasil}%
                   </div>
@@ -99,7 +99,7 @@ const Ranking: React.FC = () => {
               )}
               <div className="podium-card podium-1">
                 <div className="podium-medal">🥇</div>
-                <div className="podium-name">{(rankings[0].userId as User)?.name || '-'}</div>
+                <div className="podium-name truncate-text" title={(rankings[0].userId as User)?.name || '-'}>{(rankings[0].userId as User)?.name || '-'}</div>
                 <div className="podium-score" style={{ color: getScoreColor(rankings[0].hasil) }}>
                   {rankings[0].hasil}%
                 </div>
@@ -108,7 +108,7 @@ const Ranking: React.FC = () => {
               {rankings.length >= 3 && (
                 <div className="podium-card podium-3">
                   <div className="podium-medal">🥉</div>
-                  <div className="podium-name">{(rankings[2].userId as User)?.name || '-'}</div>
+                  <div className="podium-name truncate-text" title={(rankings[2].userId as User)?.name || '-'}>{(rankings[2].userId as User)?.name || '-'}</div>
                   <div className="podium-score" style={{ color: getScoreColor(rankings[2].hasil) }}>
                     {rankings[2].hasil}%
                   </div>
@@ -147,7 +147,7 @@ const Ranking: React.FC = () => {
                     return (
                       <tr key={ev._id} className={i < 3 ? `top-${i + 1}` : ''}>
                         <td className="td-rank">{getMedalEmoji(i + 1)}</td>
-                        <td className="td-rank-name">{user?.name || '-'}</td>
+                        <td className="td-rank-name"><div className="truncate-text" title={user?.name || '-'}>{user?.name || '-'}</div></td>
 
                         <td>{ev.absen}%</td>
                         <td>{ev.kuantitas}%</td>
