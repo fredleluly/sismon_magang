@@ -41,11 +41,6 @@ const Profil: React.FC = () => {
 
   const handleSave = async () => {
     const data: any = { email, instansi };
-    const raw = username.replace(/[_.-]/g, ' ').replace(/\s+/g, ' ').trim();
-    data.name = raw
-      .split(' ')
-      .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' ');
     data.username = username.trim().toLowerCase();
     // Add tanggalMasuk if provided (send as YYYY-MM-DD to avoid timezone shift)
     if (tanggalMasuk) {
@@ -151,6 +146,27 @@ const Profil: React.FC = () => {
           <h3>Informasi Pribadi</h3>
           <p className="info-sub">Perbarui detail pribadi Anda di sini.</p>
           <div className="profile-form">
+            <div className="form-group">
+              <label>Nama Lengkap</label>
+              <div className="input-wrapper">
+                <span className="input-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </span>
+                <input
+                  type="text"
+                  className="profile-input"
+                  value={user.name}
+                  disabled
+                  style={{
+                    color: 'var(--gray-500)',
+                    background: 'var(--gray-100)',
+                  }}
+                />
+              </div>
+            </div>
             <div className="form-group">
               <label>Username</label>
               <div className="input-wrapper">
