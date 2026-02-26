@@ -271,18 +271,39 @@ const LaporanKendala: React.FC = () => {
 
       {/* Edit Modal */}
       {editingId && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 9999, backdropFilter: 'blur(4px)',
-        }} onClick={cancelEdit}>
-          <div style={{
-            background: '#fff', borderRadius: 16, padding: '24px 28px', width: '100%', maxWidth: 480,
-            boxShadow: '0 20px 60px rgba(0,0,0,0.2)', animation: 'fadeInUp 0.25s ease',
-          }} onClick={(e) => e.stopPropagation()}>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            backdropFilter: 'blur(4px)',
+          }}
+          onClick={cancelEdit}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: 16,
+              padding: '24px 28px',
+              width: '100%',
+              maxWidth: 480,
+              boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+              animation: 'fadeInUp 0.25s ease',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
               <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#1a1a2e' }}>Edit Laporan</h3>
-              <button onClick={cancelEdit} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#94a3b8' }}>✕</button>
+              <button onClick={cancelEdit} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#94a3b8' }}>
+                ✕
+              </button>
             </div>
             <div className="form-group" style={{ marginBottom: 14 }}>
               <label style={{ fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 6, display: 'block' }}>Judul Kendala</label>
@@ -334,16 +355,34 @@ const LaporanKendala: React.FC = () => {
               />
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button onClick={cancelEdit} style={{
-                padding: '10px 20px', background: '#f1f5f9', color: '#475569', border: 'none',
-                borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer',
-              }}>
+              <button
+                onClick={cancelEdit}
+                style={{
+                  padding: '10px 20px',
+                  background: '#f1f5f9',
+                  color: '#475569',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
                 Batal
               </button>
-              <button onClick={handleUpdate} style={{
-                padding: '10px 20px', background: 'linear-gradient(135deg, #0284c7, #0369a1)', color: '#fff',
-                border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer',
-              }}>
+              <button
+                onClick={handleUpdate}
+                style={{
+                  padding: '10px 20px',
+                  background: 'linear-gradient(135deg, #0284c7, #0369a1)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
                 Simpan Perubahan
               </button>
             </div>
@@ -353,19 +392,47 @@ const LaporanKendala: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {deletingId && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 9999, backdropFilter: 'blur(4px)',
-        }} onClick={() => setDeletingId(null)}>
-          <div style={{
-            background: '#fff', borderRadius: 16, padding: '24px 28px', width: '100%', maxWidth: 380,
-            boxShadow: '0 20px 60px rgba(0,0,0,0.2)', textAlign: 'center', animation: 'fadeInUp 0.25s ease',
-          }} onClick={(e) => e.stopPropagation()}>
-            <div style={{
-              width: 56, height: 56, borderRadius: '50%', background: '#fef2f2',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
-            }}>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            backdropFilter: 'blur(4px)',
+          }}
+          onClick={() => setDeletingId(null)}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: 16,
+              padding: '24px 28px',
+              width: '100%',
+              maxWidth: 380,
+              boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+              textAlign: 'center',
+              animation: 'fadeInUp 0.25s ease',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: '50%',
+                background: '#fef2f2',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+              }}
+            >
               <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 6h18" />
                 <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
@@ -375,16 +442,34 @@ const LaporanKendala: React.FC = () => {
             <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 700, color: '#1a1a2e' }}>Hapus Laporan?</h3>
             <p style={{ margin: '0 0 20px', fontSize: 14, color: '#64748b' }}>Laporan yang dihapus tidak dapat dikembalikan.</p>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-              <button onClick={() => setDeletingId(null)} style={{
-                padding: '10px 24px', background: '#f1f5f9', color: '#475569', border: 'none',
-                borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer',
-              }}>
+              <button
+                onClick={() => setDeletingId(null)}
+                style={{
+                  padding: '10px 24px',
+                  background: '#f1f5f9',
+                  color: '#475569',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
                 Batal
               </button>
-              <button onClick={() => handleDelete(deletingId)} style={{
-                padding: '10px 24px', background: 'linear-gradient(135deg, #dc2626, #b91c1c)', color: '#fff',
-                border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer',
-              }}>
+              <button
+                onClick={() => handleDelete(deletingId)}
+                style={{
+                  padding: '10px 24px',
+                  background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
                 Hapus
               </button>
             </div>

@@ -5,13 +5,11 @@ const { auth, adminOnly } = require('../middleware/auth');
 // GET /api/complaints — user: own, admin: all
 router.get('/', auth, async (req, res) => {
   try {
-    const filter = (req.user.role === 'admin' || req.user.role === 'superadmin') ? {} : { userId: req.userId };
+    const filter = req.user.role === 'admin' || req.user.role === 'superadmin' ? {} : { userId: req.userId };
     if (req.query.status) filter.status = req.query.status;
     if (req.query.prioritas) filter.prioritas = req.query.prioritas;
 
-    const complaints = await Complaint.find(filter)
-      .populate('userId', 'name email instansi')
-      .sort({ createdAt: -1 });
+    const complaints = await Complaint.find(filter).populate('userId', 'name email instansi').sort({ createdAt: -1 });
 
     res.json({ success: true, data: complaints });
   } catch (err) {
@@ -29,9 +27,10 @@ router.post('/', auth, async (req, res) => {
 
     const complaint = await Complaint.create({
       userId: req.userId,
-      judul, kategori: kategori || 'Lainnya',
+      judul,
+      kategori: kategori || 'Lainnya',
       prioritas: prioritas || 'Medium',
-      deskripsi
+      deskripsi,
     });
 
     res.status(201).json({ success: true, message: 'Laporan kendala berhasil dikirim.', data: complaint });
@@ -48,8 +47,7 @@ router.put('/:id/status', auth, adminOnly, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Status tidak valid.' });
     }
 
-    const complaint = await Complaint.findByIdAndUpdate(req.params.id, { status }, { new: true })
-      .populate('userId', 'name email');
+    const complaint = await Complaint.findByIdAndUpdate(req.params.id, { status }, { new: true }).populate('userId', 'name email');
     if (!complaint) return res.status(404).json({ success: false, message: 'Laporan tidak ditemukan.' });
 
     res.json({ success: true, message: `Status diubah ke "${status}".`, data: complaint });
