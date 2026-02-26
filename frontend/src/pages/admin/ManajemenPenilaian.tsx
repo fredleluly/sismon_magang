@@ -192,10 +192,10 @@ const ManajemenPenilaian: React.FC = () => {
                   return (
                     <tr key={evaluation._id}>
                       <td>{idx + 1}</td>
-                      <td className="cell-name truncate-text" title={(user as any)?.name || "-"}>
-                        {(user as any)?.name || "-"}
+                      <td className="cell-name">
+                        <div className="truncate-text" title={(user as any)?.name || "-"}>{(user as any)?.name || "-"}</div>
                       </td>
-                      <td className="truncate-text" title={(user as any)?.instansi || "-"}>{(user as any)?.instansi || "-"}</td>
+                      <td><div className="truncate-text" title={(user as any)?.instansi || "-"}>{(user as any)?.instansi || "-"}</div></td>
                       <td className="cell-center">{evaluation.kuantitas}</td>
                       <td className="cell-center">{evaluation.kualitas}</td>
                       <td className="cell-center">

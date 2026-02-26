@@ -2669,3 +2669,12 @@ img {
     font-size: 9px;
   }
 }
+
+/* --- TRUNCATE TEXT UTILITY --- */
+.truncate-text {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+  display: block !important;
+}

@@ -432,7 +432,7 @@ const PenilaianPerforma: React.FC = () => {
                   return (
                     <tr key={ev._id}>
                       <td>{idx + 1}</td>
-                      <td className="td-name truncate-text" title={user?.name || '-'}>{user?.name || '-'}</td>
+                      <td className="td-name"><div className="truncate-text" title={user?.name || '-'}>{user?.name || '-'}</div></td>
                       <td>{ev.absen}</td>
                       <td>{ev.kuantitas}</td>
                       <td>{ev.kualitas}</td>

@@ -176,11 +176,14 @@ router.post('/', auth, adminOnly, async (req, res) => {
       return res.status(400).json({ success: false, message: 'userId, bulan, dan tahun wajib diisi.' });
     }
 
-    if (kualitas !== undefined && (kualitas < 0 || kualitas > 30)) {
+    const numKualitas = kualitas !== undefined && kualitas !== '' ? Number(kualitas) : 0;
+    const numKuantitas = kuantitas !== undefined && kuantitas !== '' ? Number(kuantitas) : 0;
+
+    if (numKualitas < 0 || numKualitas > 30) {
       return res.status(400).json({ success: false, message: 'Kualitas harus antara 0-30.' });
     }
 
-    if (kuantitas !== undefined && (kuantitas < 0 || kuantitas > 30)) {
+    if (numKuantitas < 0 || numKuantitas > 30) {
       return res.status(400).json({ success: false, message: 'Kuantitas harus antara 0-30.' });
     }
 
@@ -195,8 +198,8 @@ router.post('/', auth, adminOnly, async (req, res) => {
     const evaluation = await PerformanceEvaluation.findOneAndUpdate(
       { userId, bulan, tahun },
       {
-        kuantitas: kuantitas || 0,
-        kualitas: kualitas || 0,
+        kuantitas: numKuantitas,
+        kualitas: numKualitas,
         laporan: !!laporan,
         status: status || 'Draft',
         // absen and hasil are NOT saved - will be calculated on GET
@@ -210,7 +213,7 @@ router.post('/', auth, adminOnly, async (req, res) => {
     // Guard against null userId (deleted user)
     const absen = evaluation.userId ? await calculateAbsen(userId, bulan, tahun) : 0;
     const laporanValue = laporan ? 5 : 0;
-    const hasil = parseFloat((absen + (kuantitas || 0) + (kualitas || 0) + laporanValue).toFixed(2));
+    const hasil = parseFloat((absen + numKuantitas + numKualitas + laporanValue).toFixed(2));
 
     // Add calculated fields to response
     const responseData = {
