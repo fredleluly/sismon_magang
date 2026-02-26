@@ -19,6 +19,7 @@
 
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { formatJobType } from './jobdesk';
 
 // ─── Theme Colors ─────────────────────────────────────────────────────────
 const THEME = {
@@ -528,7 +529,7 @@ export async function exportRekapitulasiExcel(
   jenisList.forEach((j) => {
     ws.mergeCells(h1Row, col, h1Row, col + subColCount - 1);
     const cell = ws.getCell(h1Row, col);
-    cell.value = j.toUpperCase();
+    cell.value = formatJobType(j).toUpperCase();
     cell.font = headerFont(11);
     cell.fill = headerFill(THEME.headerBg);
     cell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -847,7 +848,8 @@ export async function exportRekapitulasiExcel(
       ws2.mergeCells(bh1, bc, bh1, bc + subColCount - 1);
       const cell = ws2.getCell(bh1, bc);
       const rate = biayaData.getBiayaPerBerkas(j);
-      cell.value = rate > 0 ? `${j.toUpperCase()} (${formatRp(rate)}/item)` : j.toUpperCase();
+      const label = formatJobType(j).toUpperCase();
+      cell.value = rate > 0 ? `${label} (${formatRp(rate)}/item)` : label;
       cell.font = headerFont(10);
       cell.fill = headerFill(AMBER.headerLight);
       cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };

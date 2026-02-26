@@ -133,8 +133,8 @@ const LaporanKendala: React.FC = () => {
                   onChange={setKategori}
                   options={[
                     { value: 'Sortir', label: 'Sortir' },
-                    { value: 'Register', label: 'Register' },
-                    { value: 'Pencopotan Steples', label: 'Pencopotan Steples' },
+                    { value: 'Register', label: 'Registrasi' },
+                    { value: 'Pencopotan Steples', label: 'Pencopotan Staples' },
                     { value: 'Scanning', label: 'Scanning' },
                     { value: 'Rekardus', label: 'Rekardus' },
                     { value: 'Stikering', label: 'Stikering' },
@@ -322,8 +322,8 @@ const LaporanKendala: React.FC = () => {
                   onChange={setEditKategori}
                   options={[
                     { value: 'Sortir', label: 'Sortir' },
-                    { value: 'Register', label: 'Register' },
-                    { value: 'Pencopotan Steples', label: 'Pencopotan Steples' },
+                    { value: 'Register', label: 'Registrasi' },
+                    { value: 'Pencopotan Steples', label: 'Pencopotan Staples' },
                     { value: 'Scanning', label: 'Scanning' },
                     { value: 'Rekardus', label: 'Rekardus' },
                     { value: 'Stikering', label: 'Stikering' },

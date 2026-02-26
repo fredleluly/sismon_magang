@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { TargetSectionAPI } from "../../services/api";
 import { useToast } from "../../context/ToastContext";
 import type { TargetSection as TargetSectionType } from "../../types";
+import { formatJobType } from "../../utils/jobdesk";
 import "./TargetSection.css";
 
 const DEFAULT_JOB_TYPES = [
@@ -226,7 +227,7 @@ const TargetSection: React.FC = () => {
                 return (
                   <tr key={t.jenis}>
                     <td className="td-no">{i + 1}</td>
-                    <td className="td-jenis">{t.jenis}</td>
+                    <td className="td-jenis">{formatJobType(t.jenis)}</td>
                     <td className="td-target">
                       <input
                         type="number"
