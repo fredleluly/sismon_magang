@@ -165,7 +165,7 @@ const DataPeserta: React.FC = () => {
         </button>
       </div>
 
-      <div className="rekap-tabs" style={{ marginBottom: '20px' }}>
+      <div className="rekap-tabs" style={{ marginBottom: '16px' }}>
         <button className={`rekap-tab-btn ${activeTab === 'aktif' ? 'active' : ''}`} onClick={() => setActiveTab('aktif')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -184,6 +184,16 @@ const DataPeserta: React.FC = () => {
           </svg>
           Peserta Nonaktif
         </button>
+      </div>
+
+      <div style={{ marginBottom: '20px', display: 'flex' }}>
+        <span className="rekap-info-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+          </svg>
+          {peserta.filter((p) => (p.status || 'Aktif') === (activeTab === 'aktif' ? 'Aktif' : 'Nonaktif')).length} Peserta
+        </span>
       </div>
 
       <div className="peserta-table-card">

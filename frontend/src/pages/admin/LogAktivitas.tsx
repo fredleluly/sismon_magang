@@ -17,7 +17,10 @@ const LogAktivitas: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   // Delete Confirm State
-  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: string | null; name: string }>({ show: false, id: null, name: '' });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: string | null; name: string; isBulk?: boolean }>({ show: false, id: null, name: '', isBulk: false });
+
+  // Selection State
+  const [selectedLogs, setSelectedLogs] = useState<string[]>([]);
 
   // Filter State
   const [filterType, setFilterType] = useState<'bulanan' | 'custom'>('bulanan');
@@ -81,9 +84,18 @@ const LogAktivitas: React.FC = () => {
 
       // Add date filter
       if (filterType === 'bulanan') {
-        const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-        const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-        query += `&from=${start.toISOString().split('T')[0]}&to=${end.toISOString().split('T')[0]}`;
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const start = new Date(year, month - 1, 26);
+        const end = new Date(year, month, 25);
+        
+        const formatStr = (d: Date) => {
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${d.getFullYear()}-${m}-${day}`;
+        };
+        
+        query += `&from=${formatStr(start)}&to=${formatStr(end)}`;
       } else if (filterType === 'custom' && dateFrom && dateTo) {
         query += `&from=${dateFrom}&to=${dateTo}`;
       }
@@ -94,10 +106,13 @@ const LogAktivitas: React.FC = () => {
       }
 
       const res = await WorkLogAPI.getAll(query);
-      if (res && res.success) setLogs(res.data || []);
-      else {
+      if (res && res.success) {
+        setLogs(res.data || []);
+        setSelectedLogs([]);
+      } else {
         // If error or no data, default to empty but don't show error toast on initial empty state if just no data found
         setLogs([]);
+        setSelectedLogs([]);
         // showToast('Gagal memuat data', 'error'); // Optional: suppress to avoid noise
       }
     } catch (err) {
@@ -139,19 +154,27 @@ const LogAktivitas: React.FC = () => {
 
   // Confirm delete
   const confirmDelete = async () => {
-    if (!deleteConfirm.id) return;
     try {
-      const res = await WorkLogAPI.delete(deleteConfirm.id);
-      if (res && res.success) {
-        showToast('Data berhasil dihapus', 'success');
+      if (deleteConfirm.isBulk) {
+        if (selectedLogs.length === 0) return;
+        await Promise.all(selectedLogs.map(id => WorkLogAPI.delete(id)));
+        showToast(`${selectedLogs.length} data berhasil dihapus`, 'success');
+        setSelectedLogs([]);
         load();
       } else {
-        showToast(res?.message || 'Gagal menghapus data', 'error');
+        if (!deleteConfirm.id) return;
+        const res = await WorkLogAPI.delete(deleteConfirm.id);
+        if (res && res.success) {
+          showToast('Data berhasil dihapus', 'success');
+          load();
+        } else {
+          showToast(res?.message || 'Gagal menghapus data', 'error');
+        }
       }
     } catch (err) {
       showToast('Gagal menghapus data', 'error');
     }
-    setDeleteConfirm({ show: false, id: null, name: '' });
+    setDeleteConfirm({ show: false, id: null, name: '', isBulk: false });
   };
 
   useEffect(() => {
@@ -167,6 +190,18 @@ const LogAktivitas: React.FC = () => {
       setSelectedUsers([]);
     } else {
       setSelectedUsers(users.map((u) => u._id));
+    }
+  };
+
+  const toggleLogSelection = (id: string) => {
+    setSelectedLogs((prev) => (prev.includes(id) ? prev.filter((logId) => logId !== id) : [...prev, id]));
+  };
+
+  const toggleAllLogs = () => {
+    if (selectedLogs.length === filtered.length && filtered.length > 0) {
+      setSelectedLogs([]);
+    } else {
+      setSelectedLogs(filtered.map((l) => l._id));
     }
   };
 
@@ -276,7 +311,13 @@ const LogAktivitas: React.FC = () => {
     // Build filter info
     let filterInfoStr = '';
     if (filterType === 'bulanan') {
-      filterInfoStr = `Bulanan — ${currentDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}`;
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const start = new Date(year, month - 1, 26);
+      const end = new Date(year, month, 25);
+      const f = start.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      const t = end.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      filterInfoStr = `Bulanan — ${f} s/d ${t}`;
     } else if (filterType === 'custom' && dateFrom && dateTo) {
       const f = new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       const t = new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -507,23 +548,97 @@ const LogAktivitas: React.FC = () => {
         </div>
       </div>
 
+      {/* Info bar */}
+      <div className="rekap-info-bar">
+        <span className="rekap-info-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          {(() => {
+            if (filterType === 'bulanan') {
+              const year = currentDate.getFullYear();
+              const month = currentDate.getMonth();
+              const start = new Date(year, month - 1, 26);
+              const end = new Date(year, month, 25);
+              const f = start.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+              const t = end.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+              return `${f} — ${t}`;
+            } else if (filterType === 'custom' && dateFrom && dateTo) {
+              const f = new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+              const t = new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+              return `${f} — ${t}`;
+            }
+            if (dateFrom) return `Dari ${new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+            if (dateTo) return `Sampai ${new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+            return 'Semua Tanggal';
+          })()}
+        </span>
+        <div className="rekap-info-pair">
+          <span className="rekap-info-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+            </svg>
+            {new Set(filtered.map(l => (l.userId as any)?._id || l.userId)).size} Peserta
+          </span>
+          <span className="rekap-info-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+            </svg>
+            Total: {filtered.length.toLocaleString('id-ID')}
+          </span>
+        </div>
+      </div>
+
       {/* Search Bar */}
       <div className="log-table-card">
-        <div className="peserta-table-header">
+        <div className="peserta-table-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div className="pth-left">
             <h3>Aktivitas Terbaru</h3>
           </div>
-          <div className="peserta-search">
-            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari aktivitas..." />
-          </div>
+          {selectedLogs.length > 0 && (
+            <button 
+              onClick={() => setDeleteConfirm({ show: true, id: null, name: '', isBulk: true })} 
+              style={{ 
+                padding: '6px 12px', 
+                fontSize: '13px', 
+                background: '#fee2e2', 
+                color: '#ef4444', 
+                border: '1px solid #fca5a5', 
+                borderRadius: '10px', 
+                cursor: 'pointer',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                transition: 'all 0.2s ease',
+                minWidth: 'fit-content'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = '#fecaca';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = '#fee2e2';
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              Hapus {selectedLogs.length} Terpilih
+            </button>
+          )}
         </div>
         <div className="table-container">
           <table className="log-table">
             <colgroup>
-              <col style={{ width: '17%' }} />
-              <col style={{ width: '12%' }} />
+              <col style={{ width: '4%' }} />
               <col style={{ width: '15%' }} />
-              <col style={{ width: '24%' }} />
+              <col style={{ width: '12%' }} />
+              <col style={{ width: '14%' }} />
+              <col style={{ width: '23%' }} />
               <col style={{ width: '8%' }} />
               <col style={{ width: '8%' }} />
               <col style={{ width: '8%' }} />
@@ -531,6 +646,14 @@ const LogAktivitas: React.FC = () => {
             </colgroup>
             <thead>
               <tr>
+                <th style={{ textAlign: 'center' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={selectedLogs.length === filtered.length && filtered.length > 0} 
+                    onChange={toggleAllLogs} 
+                    style={{ cursor: 'pointer' }}
+                  />
+                </th>
                 <th>Nama Peserta</th>
                 <th>Tanggal</th>
                 <th>Jenis Pekerjaan</th>
@@ -544,7 +667,7 @@ const LogAktivitas: React.FC = () => {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: 40, color: 'var(--gray-400)' }}>
+                  <td colSpan={9} style={{ textAlign: 'center', padding: 40, color: 'var(--gray-400)' }}>
                     Belum ada data
                   </td>
                 </tr>
@@ -553,7 +676,15 @@ const LogAktivitas: React.FC = () => {
                   const name = (l.userId as any)?.name || 'Unknown';
                   const dateStr = l.tanggal ? new Date(l.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
                   return (
-                    <tr key={l._id}>
+                    <tr key={l._id} className={selectedLogs.includes(l._id) ? 'selected-row' : ''}>
+                      <td style={{ textAlign: 'center' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={selectedLogs.includes(l._id)} 
+                          onChange={() => toggleLogSelection(l._id)} 
+                          style={{ cursor: 'pointer' }}
+                        />
+                      </td>
                       <td>
                         <div className="user-cell">
                           <span className="user-name">{name}</span>
@@ -576,11 +707,11 @@ const LogAktivitas: React.FC = () => {
                         <span className="data-highlight">{l.bundle || 0}</span>
                       </td>
                       <td style={{ textAlign: 'center' }}>
-                        <div className="action-btns">
+                        <div className="action-btns" style={{ justifyContent: 'center' }}>
                           <button className="action-btn edit" onClick={() => openEditModal(l)} title="Edit">
                             ✏️
                           </button>
-                          <button className="action-btn delete" onClick={() => setDeleteConfirm({ show: true, id: l._id, name })} title="Hapus">
+                          <button className="action-btn delete" onClick={() => setDeleteConfirm({ show: true, id: l._id, name, isBulk: false })} title="Hapus">
                             🗑️
                           </button>
                         </div>
@@ -663,17 +794,19 @@ const LogAktivitas: React.FC = () => {
             <div className="modal-card modal-delete-confirm">
               <div className="modal-header">
                 <h3>Konfirmasi Penghapusan</h3>
-                <div className="modal-close" onClick={() => setDeleteConfirm({ show: false, id: null, name: '' })}>
+                <div className="modal-close" onClick={() => setDeleteConfirm({ show: false, id: null, name: '', isBulk: false })}>
                   ✕
                 </div>
               </div>
               <div className="modal-body">
                 <p style={{ textAlign: 'center', color: '#666', marginBottom: '20px' }}>
-                  Apakah Anda yakin ingin menghapus log aktivitas dari <strong>{deleteConfirm.name}</strong>? Tindakan ini tidak dapat dibatalkan.
+                  {deleteConfirm.isBulk
+                    ? `Apakah Anda yakin ingin menghapus ${selectedLogs.length} log aktivitas yang dipilih? Tindakan ini tidak dapat dibatalkan.`
+                    : `Apakah Anda yakin ingin menghapus log aktivitas dari ${deleteConfirm.name}? Tindakan ini tidak dapat dibatalkan.`}
                 </p>
               </div>
               <div className="modal-footer">
-                <button className="btn-outline" onClick={() => setDeleteConfirm({ show: false, id: null, name: '' })}>
+                <button className="btn-outline" onClick={() => setDeleteConfirm({ show: false, id: null, name: '', isBulk: false })}>
                   Batal
                 </button>
                 <button className="btn btn-danger" onClick={confirmDelete}>
