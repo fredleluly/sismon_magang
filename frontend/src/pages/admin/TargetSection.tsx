@@ -7,7 +7,7 @@ import "./TargetSection.css";
 
 const DEFAULT_JOB_TYPES = [
   "Sortir",
-  "Register",
+  "Registrasi",
   "Pencopotan Steples",
   "Scanning",
   "Rekardus",
