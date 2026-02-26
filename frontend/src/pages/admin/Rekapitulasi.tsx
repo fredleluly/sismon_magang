@@ -38,7 +38,7 @@ interface PivotRow {
   grandTotal: number;
 }
 
-const JENIS_LIST = ['Sortir', 'Registrasi', 'Pencopotan Steples', 'Scanning', 'Rekardus', 'Stikering'];
+const JENIS_LIST = ['Sortir', 'Register', 'Pencopotan Steples', 'Scanning', 'Rekardus', 'Stikering'];
 
 const Rekapitulasi: React.FC = () => {
   const { showToast } = useToast();
