@@ -192,10 +192,10 @@ const ManajemenPenilaian: React.FC = () => {
                   return (
                     <tr key={evaluation._id}>
                       <td>{idx + 1}</td>
-                      <td className="cell-name">
+                      <td className="cell-name truncate-text" title={(user as any)?.name || "-"}>
                         {(user as any)?.name || "-"}
                       </td>
-                      <td>{(user as any)?.instansi || "-"}</td>
+                      <td className="truncate-text" title={(user as any)?.instansi || "-"}>{(user as any)?.instansi || "-"}</td>
                       <td className="cell-center">{evaluation.kuantitas}</td>
                       <td className="cell-center">{evaluation.kualitas}</td>
                       <td className="cell-center">
@@ -255,15 +255,12 @@ const ManajemenPenilaian: React.FC = () => {
                               <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
                             </svg>
                           ) : (
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <polyline points="3 6 5 6 21 6"></polyline>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"></path>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M3 6h18" />
+                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                              <line x1="10" x2="10" y1="11" y2="17" />
+                              <line x1="14" x2="14" y1="11" y2="17" />
                             </svg>
                           )}
                         </button>

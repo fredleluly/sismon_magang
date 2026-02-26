@@ -233,13 +233,13 @@ const DataPeserta: React.FC = () => {
                       <div className="user-cell">
                         <div className={`user-avatar ${avColors[i % 5]}`}>{initials}</div>
                         <div>
-                          <div className="user-name">{p.name}</div>
-                          <div className="user-email">{p.email}</div>
+                          <div className="user-name truncate-text" title={p.name}>{p.name}</div>
+                          <div className="user-email truncate-text" title={p.email}>{p.email}</div>
                         </div>
                       </div>
                     </td>
                     <td>
-                      <span className="data-highlight username">{p.username || '-'}</span>
+                      <span className="data-highlight username truncate-text" title={p.username || '-'}>{p.username || '-'}</span>
                     </td>
                     <td>
                       <span className="data-highlight">{(p.totalBerkas || 0).toLocaleString()}</span>
@@ -271,13 +271,22 @@ const DataPeserta: React.FC = () => {
                     <td>
                       <div className="action-btns">
                         <button className="action-btn edit" onClick={() => openEdit(p._id)} title="Edit Peserta">
-                          ✏️
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                            <path d="m15 5 4 4" />
+                          </svg>
                         </button>
                         <button className="action-btn warning" onClick={() => openResetPassword(p._id, p.name)} title="Reset Password" style={{ background: '#f59e0b', color: 'white' }}>
                           🔑
                         </button>
                         <button className="action-btn delete" onClick={() => del(p._id)} title="Hapus Peserta">
-                          🗑️
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 6h18" />
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                            <line x1="10" x2="10" y1="11" y2="17" />
+                            <line x1="14" x2="14" y1="11" y2="17" />
+                          </svg>
                         </button>
                       </div>
                     </td>
