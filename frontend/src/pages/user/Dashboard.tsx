@@ -264,53 +264,14 @@ const Dashboard: React.FC = () => {
   const loadDashboardData = async () => {
     try {
       const range = getDashboardDateRange();
-      if (dashboardFilterType === 'alltime' || !range.from || !range.to) {
-        // Load all-time data
-        const res = await DashboardAPI.getUser();
-        if (res && res.success) {
-          setData(res.data);
-          // Compute % from weeklyProgress (this week vs last week)
-          const wp = res.data.weeklyProgress || [];
-          if (wp.length > 0) {
-            const now = new Date();
-            const thisWeekStart = new Date(now);
-            thisWeekStart.setDate(now.getDate() - now.getDay());
-            const lastWeekStart = new Date(thisWeekStart);
-            lastWeekStart.setDate(lastWeekStart.getDate() - 7);
 
-            let twBerkas = 0,
-              twBuku = 0,
-              twBundle = 0;
-            let lwBerkas = 0,
-              lwBuku = 0,
-              lwBundle = 0;
-
-            wp.forEach((d) => {
-              const date = new Date(d._id);
-              if (date >= thisWeekStart) {
-                twBerkas += d.berkas || 0;
-                twBuku += d.buku || 0;
-                twBundle += d.bundle || 0;
-              } else if (date >= lastWeekStart && date < thisWeekStart) {
-                lwBerkas += d.berkas || 0;
-                lwBuku += d.buku || 0;
-                lwBundle += d.bundle || 0;
-              }
-            });
-
-            setPercentChange({
-              berkas: lwBerkas > 0 ? Math.round(((twBerkas - lwBerkas) / lwBerkas) * 100) : twBerkas > 0 ? 100 : 0,
-              buku: lwBuku > 0 ? Math.round(((twBuku - lwBuku) / lwBuku) * 100) : twBuku > 0 ? 100 : 0,
-              bundle: lwBundle > 0 ? Math.round(((twBundle - lwBundle) / lwBundle) * 100) : twBundle > 0 ? 100 : 0,
-            });
-          } else {
-            setPercentChange({ berkas: 0, buku: 0, bundle: 0 });
-          }
-        }
-        return;
+      // Build query params - for all-time, no date filter
+      let queryParams = 'status=Selesai&limit=10000';
+      if (dashboardFilterType !== 'alltime' && range.from && range.to) {
+        queryParams = `from=${range.from}&to=${range.to}&status=Selesai&limit=10000`;
       }
 
-      const res = await WorkLogAPI.getAll(`from=${range.from}&to=${range.to}&status=Selesai&limit=1000`);
+      const res = await WorkLogAPI.getAll(queryParams);
       if (res && res.success) {
         const works = res.data || [];
 
@@ -359,27 +320,64 @@ const Dashboard: React.FC = () => {
         setData(aggregatedData);
 
         // Fetch previous period for % comparison
-        const fromDate = new Date(range.from);
-        const toDate = new Date(range.to);
-        const periodMs = toDate.getTime() - fromDate.getTime();
-        const prevFrom = new Date(fromDate.getTime() - periodMs - 86400000);
-        const prevTo = new Date(fromDate.getTime() - 86400000);
+        if (dashboardFilterType === 'alltime') {
+          // For all-time: compare this week vs last week
+          const now = new Date();
+          const thisWeekStart = new Date(now);
+          thisWeekStart.setDate(now.getDate() - now.getDay());
+          const lastWeekStart = new Date(thisWeekStart);
+          lastWeekStart.setDate(lastWeekStart.getDate() - 7);
 
-        try {
-          const prevRes = await WorkLogAPI.getAll(`from=${toDateString(prevFrom)}&to=${toDateString(prevTo)}&status=Selesai&limit=1000`);
-          if (prevRes && prevRes.success) {
-            const prevWorks = prevRes.data || [];
-            const prevBerkas = prevWorks.reduce((s, w) => s + (w.berkas || 0), 0);
-            const prevBuku = prevWorks.reduce((s, w) => s + (w.buku || 0), 0);
-            const prevBundle = prevWorks.reduce((s, w) => s + (w.bundle || 0), 0);
+          let twBerkas = 0,
+            twBuku = 0,
+            twBundle = 0;
+          let lwBerkas = 0,
+            lwBuku = 0,
+            lwBundle = 0;
 
-            setPercentChange({
-              berkas: prevBerkas > 0 ? Math.round(((totalBerkas - prevBerkas) / prevBerkas) * 100) : totalBerkas > 0 ? 100 : 0,
-              buku: prevBuku > 0 ? Math.round(((totalBuku - prevBuku) / prevBuku) * 100) : totalBuku > 0 ? 100 : 0,
-              bundle: prevBundle > 0 ? Math.round(((totalBundle - prevBundle) / prevBundle) * 100) : totalBundle > 0 ? 100 : 0,
-            });
+          aggregatedData.weeklyProgress.forEach((d) => {
+            const date = new Date(d._id);
+            if (date >= thisWeekStart) {
+              twBerkas += d.berkas || 0;
+              twBuku += d.buku || 0;
+              twBundle += d.bundle || 0;
+            } else if (date >= lastWeekStart && date < thisWeekStart) {
+              lwBerkas += d.berkas || 0;
+              lwBuku += d.buku || 0;
+              lwBundle += d.bundle || 0;
+            }
+          });
+
+          setPercentChange({
+            berkas: lwBerkas > 0 ? Math.round(((twBerkas - lwBerkas) / lwBerkas) * 100) : twBerkas > 0 ? 100 : 0,
+            buku: lwBuku > 0 ? Math.round(((twBuku - lwBuku) / lwBuku) * 100) : twBuku > 0 ? 100 : 0,
+            bundle: lwBundle > 0 ? Math.round(((twBundle - lwBundle) / lwBundle) * 100) : twBundle > 0 ? 100 : 0,
+          });
+        } else if (range.from && range.to) {
+          const fromDate = new Date(range.from);
+          const toDate = new Date(range.to);
+          const periodMs = toDate.getTime() - fromDate.getTime();
+          const prevFrom = new Date(fromDate.getTime() - periodMs - 86400000);
+          const prevTo = new Date(fromDate.getTime() - 86400000);
+
+          try {
+            const prevRes = await WorkLogAPI.getAll(`from=${toDateString(prevFrom)}&to=${toDateString(prevTo)}&status=Selesai&limit=10000`);
+            if (prevRes && prevRes.success) {
+              const prevWorks = prevRes.data || [];
+              const prevBerkas = prevWorks.reduce((s, w) => s + (w.berkas || 0), 0);
+              const prevBuku = prevWorks.reduce((s, w) => s + (w.buku || 0), 0);
+              const prevBundle = prevWorks.reduce((s, w) => s + (w.bundle || 0), 0);
+
+              setPercentChange({
+                berkas: prevBerkas > 0 ? Math.round(((totalBerkas - prevBerkas) / prevBerkas) * 100) : totalBerkas > 0 ? 100 : 0,
+                buku: prevBuku > 0 ? Math.round(((totalBuku - prevBuku) / prevBuku) * 100) : totalBuku > 0 ? 100 : 0,
+                bundle: prevBundle > 0 ? Math.round(((totalBundle - prevBundle) / prevBundle) * 100) : totalBundle > 0 ? 100 : 0,
+              });
+            }
+          } catch {
+            setPercentChange({ berkas: 0, buku: 0, bundle: 0 });
           }
-        } catch {
+        } else {
           setPercentChange({ berkas: 0, buku: 0, bundle: 0 });
         }
       }
@@ -994,8 +992,44 @@ const Dashboard: React.FC = () => {
             <h3>Progres Kerja</h3>
             <p>Jumlah item yang diproses per hari</p>
           </div>
-          <div className="chart-canvas-wrapper">
+          <div className="chart-canvas-wrapper" style={{ position: 'relative' }}>
             <canvas ref={weeklyRef} />
+            {data && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  textAlign: 'center',
+                  pointerEvents: 'none',
+                  zIndex: 1,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '3.5rem',
+                    fontWeight: '800',
+                    color: 'rgba(96, 165, 250, 0.25)',
+                    lineHeight: '1',
+                    letterSpacing: '-2px',
+                  }}
+                >
+                  {((data.totalBerkas || 0) + (data.totalBuku || 0) + (data.totalBundle || 0)).toLocaleString()}
+                </div>
+                <div
+                  style={{
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    color: 'rgba(96, 165, 250, 0.3)',
+                    marginTop: '2px',
+                    letterSpacing: '1px',
+                  }}
+                >
+                  Total Item
+                </div>
+              </div>
+            )}
           </div>
         </div>
         <div className="chart-card">
