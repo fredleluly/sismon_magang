@@ -64,9 +64,10 @@ const MonitoringPekerjaan: React.FC = () => {
     const month = currentDate.getMonth();
 
     if (filterType === 'harian') {
-      // Today
-      const today = new Date();
-      return { from: toDateString(today), to: toDateString(today) };
+      // Load full month so user can click any day
+      const startOfMonth = new Date(year, month, 1);
+      const endOfMonth = new Date(year, month + 1, 0);
+      return { from: toDateString(startOfMonth), to: toDateString(endOfMonth) };
     } else if (filterType === 'mingguan') {
       // Current week (Sunday to Saturday)
       const curr = new Date(now);
@@ -97,8 +98,18 @@ const MonitoringPekerjaan: React.FC = () => {
 
       const res = await WorkLogAPI.getAll(`from=${range.from}&to=${range.to}&status=Selesai&limit=1000`);
       if (res && res.success) {
-        setWorkData(res.data || []);
-        calculateStats(res.data || []);
+        const allData = res.data || [];
+        setWorkData(allData);
+        // In harian mode, stats should reflect selected day only
+        if (filterType === 'harian') {
+          const todayStr = toDateString(new Date());
+          const todayData = allData.filter((w: WorkLog) => w.tanggal.split('T')[0] === todayStr);
+          setSelectedDayData(todayData);
+          setSelectedDayDate(todayStr);
+          calculateStats(todayData);
+        } else {
+          calculateStats(allData);
+        }
       } else {
         showToast('Gagal memuat data pekerjaan', 'error');
       }
@@ -137,6 +148,10 @@ const MonitoringPekerjaan: React.FC = () => {
     setSelectedDayData(dayData);
     setSelectedHoliday(isHoliday);
     setSelectedDayDate(targetDate);
+    // Update stats to show selected day's data when in harian mode
+    if (filterType === 'harian') {
+      calculateStats(dayData);
+    }
   };
 
   const getWorkCount = (day: number) => {
@@ -152,6 +167,18 @@ const MonitoringPekerjaan: React.FC = () => {
     setSelectedDayData([]);
     if (type !== 'custom') {
       setIsSelectingDateRange(false);
+    }
+    // Auto-select today and show today's stats when switching to harian
+    if (type === 'harian') {
+      const today = new Date();
+      const todayStr = toDateString(today);
+      const todayData = workData.filter((w) => w.tanggal.split('T')[0] === todayStr);
+      setSelectedDayData(todayData);
+      setSelectedDayDate(todayStr);
+      calculateStats(todayData);
+    } else {
+      // Reset stats to full workData for non-harian modes
+      calculateStats(workData);
     }
   };
 

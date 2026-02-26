@@ -12,6 +12,16 @@ const LaporanKendala: React.FC = () => {
   const [deskripsi, setDeskripsi] = useState('');
   const [logs, setLogs] = useState<Complaint[]>([]);
 
+  // Edit state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editJudul, setEditJudul] = useState('');
+  const [editKategori, setEditKategori] = useState('');
+  const [editPrioritas, setEditPrioritas] = useState('');
+  const [editDeskripsi, setEditDeskripsi] = useState('');
+
+  // Delete confirmation state
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     const res = await ComplaintAPI.getAll();
     if (res && res.success) setLogs(res.data || []);
@@ -30,6 +40,50 @@ const LaporanKendala: React.FC = () => {
       setDeskripsi('');
       load();
     } else showToast(res?.message || 'Gagal mengirim', 'error');
+  };
+
+  const startEdit = (log: Complaint) => {
+    setEditingId(log._id);
+    setEditJudul(log.judul);
+    setEditKategori(log.kategori);
+    setEditPrioritas(log.prioritas);
+    setEditDeskripsi(log.deskripsi);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditJudul('');
+    setEditKategori('');
+    setEditPrioritas('');
+    setEditDeskripsi('');
+  };
+
+  const handleUpdate = async () => {
+    if (!editingId) return;
+    const res = await ComplaintAPI.update(editingId, {
+      judul: editJudul,
+      kategori: editKategori,
+      prioritas: editPrioritas as any,
+      deskripsi: editDeskripsi,
+    });
+    if (res && res.success) {
+      showToast('Laporan berhasil diperbarui!', 'success');
+      cancelEdit();
+      load();
+    } else {
+      showToast(res?.message || 'Gagal memperbarui laporan', 'error');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const res = await ComplaintAPI.delete(id);
+    if (res && res.success) {
+      showToast('Laporan berhasil dihapus!', 'success');
+      setDeletingId(null);
+      load();
+    } else {
+      showToast(res?.message || 'Gagal menghapus laporan', 'error');
+    }
   };
 
   return (
@@ -130,6 +184,7 @@ const LaporanKendala: React.FC = () => {
               {logs.map((log, i) => {
                 const date = new Date(log.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
                 const prioClass = log.prioritas === 'High' ? 'high' : log.prioritas === 'Medium' ? 'medium' : 'low';
+                const canModify = log.status === 'Menunggu';
                 const statusBadge =
                   log.status === 'Selesai' ? (
                     <span style={{ color: '#059669', fontSize: 11, fontWeight: 600 }}>✓ Selesai</span>
@@ -142,7 +197,60 @@ const LaporanKendala: React.FC = () => {
                   <div key={log._id} className="riwayat-item" style={{ animation: `fadeInUp 0.3s ease ${i * 0.08}s both` }}>
                     <div className="ri-header">
                       <span className="ri-title">{log.judul}</span>
-                      <span className="ri-date">{date}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span className="ri-date">{date}</span>
+                        {canModify && (
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            <button
+                              onClick={() => startEdit(log)}
+                              title="Edit laporan"
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: 4,
+                                borderRadius: 6,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'background 0.2s',
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = '#e0f2fe')}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                                <path d="m15 5 4 4" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => setDeletingId(log._id)}
+                              title="Hapus laporan"
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: 4,
+                                borderRadius: 6,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'background 0.2s',
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = '#fef2f2')}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M3 6h18" />
+                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                <line x1="10" x2="10" y1="11" y2="17" />
+                                <line x1="14" x2="14" y1="11" y2="17" />
+                              </svg>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="ri-desc">
                       {log.deskripsi.substring(0, 80)}
@@ -160,6 +268,129 @@ const LaporanKendala: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {editingId && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 9999, backdropFilter: 'blur(4px)',
+        }} onClick={cancelEdit}>
+          <div style={{
+            background: '#fff', borderRadius: 16, padding: '24px 28px', width: '100%', maxWidth: 480,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.2)', animation: 'fadeInUp 0.25s ease',
+          }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#1a1a2e' }}>Edit Laporan</h3>
+              <button onClick={cancelEdit} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#94a3b8' }}>✕</button>
+            </div>
+            <div className="form-group" style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 6, display: 'block' }}>Judul Kendala</label>
+              <input
+                type="text"
+                value={editJudul}
+                onChange={(e) => setEditJudul(e.target.value.toUpperCase())}
+                style={{ width: '100%', padding: '12px 14px', background: '#f8fafc', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: 14, boxSizing: 'border-box' }}
+              />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+              <div className="form-group">
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 6, display: 'block' }}>Kategori</label>
+                <CustomSelect
+                  value={editKategori}
+                  onChange={setEditKategori}
+                  options={[
+                    { value: 'Sortir', label: 'Sortir' },
+                    { value: 'Register', label: 'Register' },
+                    { value: 'Pencopotan Steples', label: 'Pencopotan Steples' },
+                    { value: 'Scanning', label: 'Scanning' },
+                    { value: 'Rekardus', label: 'Rekardus' },
+                    { value: 'Stikering', label: 'Stikering' },
+                    { value: 'Sistem', label: 'Sistem' },
+                    { value: 'Lainnya', label: 'Lainnya' },
+                  ]}
+                />
+              </div>
+              <div className="form-group">
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 6, display: 'block' }}>Prioritas</label>
+                <CustomSelect
+                  value={editPrioritas}
+                  onChange={setEditPrioritas}
+                  options={[
+                    { value: 'Low', label: 'Low' },
+                    { value: 'Medium', label: 'Medium' },
+                    { value: 'High', label: 'High' },
+                  ]}
+                />
+              </div>
+            </div>
+            <div className="form-group" style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 6, display: 'block' }}>Deskripsi</label>
+              <textarea
+                value={editDeskripsi}
+                onChange={(e) => setEditDeskripsi(e.target.value)}
+                rows={3}
+                style={{ width: '100%', padding: '12px 14px', background: '#f8fafc', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: 14, resize: 'vertical', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={cancelEdit} style={{
+                padding: '10px 20px', background: '#f1f5f9', color: '#475569', border: 'none',
+                borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+              }}>
+                Batal
+              </button>
+              <button onClick={handleUpdate} style={{
+                padding: '10px 20px', background: 'linear-gradient(135deg, #0284c7, #0369a1)', color: '#fff',
+                border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+              }}>
+                Simpan Perubahan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingId && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 9999, backdropFilter: 'blur(4px)',
+        }} onClick={() => setDeletingId(null)}>
+          <div style={{
+            background: '#fff', borderRadius: 16, padding: '24px 28px', width: '100%', maxWidth: 380,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.2)', textAlign: 'center', animation: 'fadeInUp 0.25s ease',
+          }} onClick={(e) => e.stopPropagation()}>
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%', background: '#fef2f2',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 6h18" />
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+              </svg>
+            </div>
+            <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 700, color: '#1a1a2e' }}>Hapus Laporan?</h3>
+            <p style={{ margin: '0 0 20px', fontSize: 14, color: '#64748b' }}>Laporan yang dihapus tidak dapat dikembalikan.</p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+              <button onClick={() => setDeletingId(null)} style={{
+                padding: '10px 24px', background: '#f1f5f9', color: '#475569', border: 'none',
+                borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+              }}>
+                Batal
+              </button>
+              <button onClick={() => handleDelete(deletingId)} style={{
+                padding: '10px 24px', background: 'linear-gradient(135deg, #dc2626, #b91c1c)', color: '#fff',
+                border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+              }}>
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

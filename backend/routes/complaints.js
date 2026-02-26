@@ -58,6 +58,61 @@ router.put('/:id/status', auth, adminOnly, async (req, res) => {
   }
 });
 
+// PUT /api/complaints/:id — user updates own complaint (only if status is 'Menunggu')
+router.put('/:id', auth, async (req, res) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id);
+    if (!complaint) return res.status(404).json({ success: false, message: 'Laporan tidak ditemukan.' });
+
+    // Only owner can edit
+    if (!complaint.userId.equals(req.userId)) {
+      return res.status(403).json({ success: false, message: 'Anda tidak memiliki akses.' });
+    }
+
+    // Only allow editing if status is still 'Menunggu'
+    if (complaint.status !== 'Menunggu') {
+      return res.status(400).json({ success: false, message: 'Laporan yang sudah diproses tidak dapat diedit.' });
+    }
+
+    const { judul, kategori, prioritas, deskripsi } = req.body;
+    if (judul) complaint.judul = judul;
+    if (kategori) complaint.kategori = kategori;
+    if (prioritas) complaint.prioritas = prioritas;
+    if (deskripsi) complaint.deskripsi = deskripsi;
+
+    await complaint.save();
+    res.json({ success: true, message: 'Laporan berhasil diperbarui.', data: complaint });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// DELETE /api/complaints/:id — user deletes own complaint (only if status is 'Menunggu')
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id);
+    if (!complaint) return res.status(404).json({ success: false, message: 'Laporan tidak ditemukan.' });
+
+    // Owner or admin can delete
+    const isOwner = complaint.userId.equals(req.userId);
+    const isAdmin = req.user.role === 'admin' || req.user.role === 'superadmin';
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ success: false, message: 'Anda tidak memiliki akses.' });
+    }
+
+    // User can only delete if status is 'Menunggu', admin can always delete
+    if (isOwner && !isAdmin && complaint.status !== 'Menunggu') {
+      return res.status(400).json({ success: false, message: 'Laporan yang sudah diproses tidak dapat dihapus.' });
+    }
+
+    await Complaint.findByIdAndDelete(req.params.id);
+    res.json({ success: true, message: 'Laporan berhasil dihapus.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // GET /api/complaints/stats — admin: complaint stats
 router.get('/stats', auth, adminOnly, async (req, res) => {
   try {

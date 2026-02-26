@@ -282,6 +282,8 @@ export const AttendanceAPI = {
 export const ComplaintAPI = {
   getAll: (params = '') => API.get<Complaint[]>(`/complaints${params ? '?' + params : ''}`),
   create: (data: Partial<Complaint>) => API.post<Complaint>('/complaints', data),
+  update: (id: string, data: Partial<Complaint>) => API.put<Complaint>(`/complaints/${id}`, data),
+  delete: (id: string) => API.delete<void>(`/complaints/${id}`),
   updateStatus: (id: string, status: string) => API.put<Complaint>(`/complaints/${id}/status`, { status }),
   getStats: () => API.get('/complaints/stats'),
 };

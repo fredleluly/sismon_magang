@@ -110,7 +110,13 @@ const Profil: React.FC = () => {
             <div className="profile-username">@{user.username || user.name.toLowerCase().replace(/\s/g, '')}</div>
             <div className="profile-role">Peserta Magang</div>
             <div className="profile-badges">
-              <span className="badge-aktif">Aktif</span>
+              {user.status === 'Nonaktif' ? (
+                <span className="badge-aktif" style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
+                  Nonaktif
+                </span>
+              ) : (
+                <span className="badge-aktif">Aktif</span>
+              )}
               <span className="badge-pln">PLN ICON+</span>
               <span className="badge-pln" style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', fontWeight: '700' }}>
                 {tanggalMasuk ? calculateDuration(tanggalMasuk) : '0 hari'}

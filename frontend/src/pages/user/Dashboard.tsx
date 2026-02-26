@@ -55,7 +55,7 @@ const Dashboard: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // Dashboard filter states
-  const [dashboardFilterType, setDashboardFilterType] = useState<'bulanan' | 'custom'>('bulanan');
+  const [dashboardFilterType, setDashboardFilterType] = useState<'alltime' | 'bulanan' | 'custom'>('alltime');
   const [dashboardDateRangeStart, setDashboardDateRangeStart] = useState<string>('');
   const [dashboardDateRangeEnd, setDashboardDateRangeEnd] = useState<string>('');
   const [isDashboardSelectingDateRange, setIsDashboardSelectingDateRange] = useState(false);
@@ -103,7 +103,9 @@ const Dashboard: React.FC = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
-    if (dashboardFilterType === 'bulanan') {
+    if (dashboardFilterType === 'alltime') {
+      return { from: '', to: '', allTime: true };
+    } else if (dashboardFilterType === 'bulanan') {
       const startOfMonth = new Date(year, month, 1);
       const endOfMonth = new Date(year, month + 1, 0);
       return { from: toDateString(startOfMonth), to: toDateString(endOfMonth) };
@@ -262,8 +264,8 @@ const Dashboard: React.FC = () => {
   const loadDashboardData = async () => {
     try {
       const range = getDashboardDateRange();
-      if (!range.from || !range.to) {
-        // Load default data if no date range
+      if (dashboardFilterType === 'alltime' || !range.from || !range.to) {
+        // Load all-time data
         const res = await DashboardAPI.getUser();
         if (res && res.success) {
           setData(res.data);
@@ -796,6 +798,15 @@ const Dashboard: React.FC = () => {
           <div className="dashboard-filter-group">
             <button
               onClick={() => {
+                setDashboardFilterType('alltime');
+                setIsDashboardSelectingDateRange(false);
+              }}
+              className={`dashboard-filter-btn ${dashboardFilterType === 'alltime' ? 'active' : ''}`}
+            >
+              All Time
+            </button>
+            <button
+              onClick={() => {
                 setDashboardFilterType('bulanan');
                 setIsDashboardSelectingDateRange(false);
               }}
@@ -836,7 +847,7 @@ const Dashboard: React.FC = () => {
                   </svg>
                 </button>
               </div>
-            ) : (
+            ) : dashboardFilterType === 'custom' ? (
               <div className="dashboard-custom-date">
                 <button onClick={() => setIsDashboardSelectingDateRange(!isDashboardSelectingDateRange)} className="dashboard-custom-trigger">
                   {dashboardTempDateRangeStart && dashboardTempDateRangeEnd
@@ -907,7 +918,7 @@ const Dashboard: React.FC = () => {
                     document.body,
                   )}
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
