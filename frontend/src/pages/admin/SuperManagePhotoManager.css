@@ -3,10 +3,33 @@
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  border: 1.5px solid #e0e7ef;
-  padding: 28px 28px 20px 28px;
-  max-width: 600px;
-  margin: 0 auto;
+  border: 1px solid #f0f0f0;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+.super-photo-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.super-photo-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  border-color: #e2e8f0;
+}
+.super-photo-card:hover::before {
+  opacity: 1;
 }
 .super-photo-header {
   display: flex;
@@ -63,40 +86,45 @@
 }
 .super-photo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+  gap: 10px;
   margin: 18px 0 0 0;
 }
 .super-photo-date {
   background: #f8fafc;
   border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 12px 0 8px 0;
+  border-radius: 8px;
+  padding: 8px 0 6px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 0px;
   cursor: pointer;
   position: relative;
   transition:
     border 0.2s,
-    box-shadow 0.2s;
+    box-shadow 0.2s,
+    transform 0.2s;
+}
+.super-photo-date:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 .super-photo-date.selected {
-  border: 2px solid #6366f1;
+  border: 1.5px solid #6366f1;
   background: #eef2ff;
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
 }
 .super-photo-date-check {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 4px;
+  right: 4px;
 }
 .super-photo-date-checkbox {
-  width: 18px;
-  height: 18px;
-  border: 2px solid #cbd5e1;
-  border-radius: 5px;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 4px;
   background: #fff;
 }
 .super-photo-date.selected .super-photo-date-checkbox {
@@ -104,22 +132,22 @@
   background: #6366f1;
 }
 .super-photo-date-day {
-  font-size: 22px;
+  font-size: 16px;
   font-weight: 700;
   color: #1e293b;
-  margin-bottom: 2px;
+  margin-bottom: 0px;
 }
 .super-photo-date-month {
-  font-size: 13px;
+  font-size: 10px;
   color: #64748b;
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .super-photo-date-count {
   display: flex;
   align-items: center;
   gap: 3px;
-  font-size: 12px;
+  font-size: 10px;
   color: #64748b;
   font-weight: 600;
 }

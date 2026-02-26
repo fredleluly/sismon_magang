@@ -13,7 +13,7 @@ const SuperManagePhotoManager: React.FC = () => {
   const [photoStatsLoading, setPhotoStatsLoading] = useState(false);
   const [showDeletePhotoConfirm, setShowDeletePhotoConfirm] = useState(false);
   const [deletingPhotos, setDeletingPhotos] = useState(false);
-  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
 
   const loadPhotoStats = async () => {
@@ -80,7 +80,7 @@ const SuperManagePhotoManager: React.FC = () => {
         <span className="super-photo-title">Kelola Foto Absensi</span>
         <span className="super-photo-badge">SUPERADMIN</span>
       </div>
-      <div className="super-photo-desc">Pilih tanggal untuk menghapus foto absensi peserta. Hanya foto yang dihapus, data kehadiran tetap tersimpan.</div>
+      <div className="super-photo-desc">Pilih tanggal untuk menghapus foto absensi peserta.</div>
       {photoStatsLoading ? (
         <div style={{ textAlign: 'center', margin: '24px 0' }}>
           <span>Memuat data foto...</span>
@@ -114,7 +114,7 @@ const SuperManagePhotoManager: React.FC = () => {
                   <div key={dateStr} className={`super-photo-date${isSelected ? ' selected' : ''}`} onClick={() => togglePhotoDate(dateStr)}>
                     <div className="super-photo-date-check">
                       {isSelected ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
                       ) : (
@@ -124,7 +124,7 @@ const SuperManagePhotoManager: React.FC = () => {
                     <span className="super-photo-date-day">{dayNum}</span>
                     <span className="super-photo-date-month">{monthS.toUpperCase()}</span>
                     <span className="super-photo-date-count">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                         <circle cx="8.5" cy="8.5" r="1.5" />
                         <polyline points="21 15 16 10 5 21" />

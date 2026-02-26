@@ -752,7 +752,7 @@ const Rekapitulasi: React.FC = () => {
                     <>
                       {pivotRows.map((row) => (
                         <tr key={row.userId}>
-                          <td className="rekap-td-name">{row.userName}</td>
+                          <td className="rekap-td-name">{row.userName.toUpperCase()}</td>
                           {jenisList.map((j) => {
                             const c = row.cells[j] || { berkas: 0, buku: 0, bundle: 0, total: 0 };
                             return (
@@ -838,7 +838,7 @@ const Rekapitulasi: React.FC = () => {
                   let rowGrandBiaya = 0;
                   return (
                     <tr key={row.userId + '-biaya'}>
-                      <td className="rekap-td-name">{row.userName}</td>
+                      <td className="rekap-td-name">{row.userName.toUpperCase()}</td>
                       {jenisList.map((j) => {
                         const c = row.cells[j] || { berkas: 0, buku: 0, bundle: 0, total: 0 };
                         const rate = getBiayaPerBerkas(j);
