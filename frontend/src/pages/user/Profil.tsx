@@ -88,8 +88,15 @@ const Profil: React.FC = () => {
     if (!dateStr) return '0 hari';
     const start = new Date(dateStr);
     const now = new Date();
-    const diff = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    return `${diff + 1} hari`; // count today as 1st day
+    let months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+    let dayStart = new Date(start.getFullYear(), start.getMonth() + months, start.getDate());
+    if (dayStart > now) {
+      months--;
+      dayStart = new Date(start.getFullYear(), start.getMonth() + months, start.getDate());
+    }
+    const days = Math.floor((now.getTime() - dayStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    if (months <= 0) return `${days} hari`;
+    return days > 0 ? `${months} bulan ${days} hari` : `${months} bulan`;
   };
 
   const initials = user.name

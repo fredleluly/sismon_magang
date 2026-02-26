@@ -44,8 +44,8 @@ const RecapPekerjaan: React.FC = () => {
     const month = currentDate.getMonth();
 
     if (filterType === 'bulanan') {
-      const startOfMonth = new Date(year, month, 1);
-      const endOfMonth = new Date(year, month + 1, 0);
+      const startOfMonth = new Date(year, month - 1, 26);
+      const endOfMonth = new Date(year, month, 25);
       return { from: toDateString(startOfMonth), to: toDateString(endOfMonth) };
     } else if (filterType === 'custom' && dateRangeStart && dateRangeEnd) {
       return { from: dateRangeStart, to: dateRangeEnd };

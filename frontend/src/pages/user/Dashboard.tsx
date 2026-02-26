@@ -109,8 +109,8 @@ const Dashboard: React.FC = () => {
     if (dashboardFilterType === 'alltime') {
       return { from: '', to: '', allTime: true };
     } else if (dashboardFilterType === 'bulanan') {
-      const startOfMonth = new Date(year, month, 1);
-      const endOfMonth = new Date(year, month + 1, 0);
+      const startOfMonth = new Date(year, month - 1, 26);
+      const endOfMonth = new Date(year, month, 25);
       return { from: toDateString(startOfMonth), to: toDateString(endOfMonth) };
     } else if (dashboardFilterType === 'custom' && dashboardDateRangeStart && dashboardDateRangeEnd) {
       return { from: dashboardDateRangeStart, to: dashboardDateRangeEnd };
@@ -394,8 +394,8 @@ const Dashboard: React.FC = () => {
     const month = currentDate.getMonth();
 
     if (recapFilterType === 'bulanan') {
-      const startOfMonth = new Date(year, month, 1);
-      const endOfMonth = new Date(year, month + 1, 0);
+      const startOfMonth = new Date(year, month - 1, 26);
+      const endOfMonth = new Date(year, month, 25);
       return { from: toDateString(startOfMonth), to: toDateString(endOfMonth) };
     } else if (recapFilterType === 'custom' && recapDateRangeStart && recapDateRangeEnd) {
       return { from: recapDateRangeStart, to: recapDateRangeEnd };

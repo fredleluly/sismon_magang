@@ -41,8 +41,8 @@ const KelolaKeluhan: React.FC = () => {
     if (filterType === 'bulanan') {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
-      const start = new Date(year, month, 1);
-      const end = new Date(year, month + 1, 0);
+      const start = new Date(year, month - 1, 26);
+      const end = new Date(year, month, 25);
       const startStr = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
       const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
       setDateFrom(startStr);
