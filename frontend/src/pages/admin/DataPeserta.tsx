@@ -241,13 +241,19 @@ const DataPeserta: React.FC = () => {
                       <div className="user-cell">
                         <div className={`user-avatar ${avColors[i % 5]}`}>{initials}</div>
                         <div>
-                          <div className="user-name truncate-text" title={p.name}>{p.name}</div>
-                          <div className="user-email truncate-text" title={p.email}>{p.email}</div>
+                          <div className="user-name truncate-text" title={p.name}>
+                            {p.name}
+                          </div>
+                          <div className="user-email truncate-text" title={p.email}>
+                            {p.email}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td>
-                      <span className="data-highlight username truncate-text" title={p.username || '-'}>{p.username || '-'}</span>
+                      <span className="data-highlight username truncate-text" title={p.username || '-'}>
+                        {p.username || '-'}
+                      </span>
                     </td>
                     <td>
                       <span className="data-highlight">{(p.totalBerkas || 0).toLocaleString()}</span>
@@ -398,18 +404,12 @@ const DataPeserta: React.FC = () => {
                 </div>
                 <div className="form-group">
                   <label>Tanggal Masuk</label>
-                  <CustomDatePicker 
-                    value={form.tanggalMasuk}
-                    onChange={(val) => setForm({ ...form, tanggalMasuk: val })}
-                  />
+                  <CustomDatePicker value={form.tanggalMasuk} onChange={(val) => setForm({ ...form, tanggalMasuk: val })} />
                 </div>
                 {form.status === 'Nonaktif' && (
                   <div className="form-group">
                     <label>Tanggal Nonaktif</label>
-                    <CustomDatePicker 
-                      value={form.nonaktifDate}
-                      onChange={(val) => setForm({ ...form, nonaktifDate: val })}
-                    />
+                    <CustomDatePicker value={form.nonaktifDate} onChange={(val) => setForm({ ...form, nonaktifDate: val })} />
                     <small style={{ color: '#666', marginTop: 4, display: 'block' }}>Mulai tanggal ini dan seterusnya, data absen belum absen akan dihilangkan.</small>
                   </div>
                 )}

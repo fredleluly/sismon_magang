@@ -170,20 +170,18 @@ const RecapPekerjaan: React.FC = () => {
       const isEnd = startEnd === 'end';
 
       days.push(
-        <div
-          key={day}
-          className={`calendar-cell ${inRange ? 'in-range' : ''} ${isStart ? 'start-date' : ''} ${isEnd ? 'end-date' : ''}`}
-          onClick={() => handleCalendarDateClick(year, monthIndex, day)}
-        >
+        <div key={day} className={`calendar-cell ${inRange ? 'in-range' : ''} ${isStart ? 'start-date' : ''} ${isEnd ? 'end-date' : ''}`} onClick={() => handleCalendarDateClick(year, monthIndex, day)}>
           {day}
-        </div>
+        </div>,
       );
     }
 
     return (
       <div className="calendar-month-picker">
         <div className="calendar-month-header">
-          <h3>{monthName} {year}</h3>
+          <h3>
+            {monthName} {year}
+          </h3>
         </div>
         <div className="calendar-weekdays">
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
@@ -196,8 +194,6 @@ const RecapPekerjaan: React.FC = () => {
       </div>
     );
   };
-
-
 
   const downloadExcelByFilter = async () => {
     try {
@@ -231,40 +227,39 @@ const RecapPekerjaan: React.FC = () => {
       await exportExcel({
         fileName: filename,
         companyName: 'SISMON Magang',
-        sheets: [{
-          sheetName: 'Recap',
-          title: 'RECAP PEKERJAAN',
-          subtitle: dateRangeStr,
-          infoLines: [
-            `Total Job Desk: ${dataToDownload.length} jenis`,
-            `Grand Total: ${grandTotal} item`,
-          ],
-          columns: [
-            { header: 'No', key: 'no', width: 6, type: 'number' },
-            { header: 'Job Desk', key: 'jobDesk', width: 22 },
-            { header: 'Berkas', key: 'berkas', width: 12, type: 'number' },
-            { header: 'Buku', key: 'buku', width: 12, type: 'number' },
-            { header: 'Bundle', key: 'bundle', width: 12, type: 'number' },
-            { header: 'Total', key: 'total', width: 12, type: 'number' },
-          ],
-          data: dataToDownload.map((recap, index) => ({
-            no: index + 1,
-            jobDesk: recap.jobDesk,
-            berkas: recap.berkas,
-            buku: recap.buku,
-            bundle: recap.bundle,
-            total: recap.total,
-          })),
-          summaryRow: {
-            no: '',
-            jobDesk: '',
-            berkas: totalBerkas,
-            buku: totalBuku,
-            bundle: totalBundle,
-            total: grandTotal,
+        sheets: [
+          {
+            sheetName: 'Recap',
+            title: 'RECAP PEKERJAAN',
+            subtitle: dateRangeStr,
+            infoLines: [`Total Job Desk: ${dataToDownload.length} jenis`, `Grand Total: ${grandTotal} item`],
+            columns: [
+              { header: 'No', key: 'no', width: 6, type: 'number' },
+              { header: 'Job Desk', key: 'jobDesk', width: 22 },
+              { header: 'Berkas', key: 'berkas', width: 12, type: 'number' },
+              { header: 'Buku', key: 'buku', width: 12, type: 'number' },
+              { header: 'Bundle', key: 'bundle', width: 12, type: 'number' },
+              { header: 'Total', key: 'total', width: 12, type: 'number' },
+            ],
+            data: dataToDownload.map((recap, index) => ({
+              no: index + 1,
+              jobDesk: recap.jobDesk,
+              berkas: recap.berkas,
+              buku: recap.buku,
+              bundle: recap.bundle,
+              total: recap.total,
+            })),
+            summaryRow: {
+              no: '',
+              jobDesk: '',
+              berkas: totalBerkas,
+              buku: totalBuku,
+              bundle: totalBundle,
+              total: grandTotal,
+            },
+            summaryLabel: 'TOTAL',
           },
-          summaryLabel: 'TOTAL',
-        }],
+        ],
       });
       showToast('Excel berhasil diunduh!', 'success');
     } catch (error) {
@@ -287,10 +282,7 @@ const RecapPekerjaan: React.FC = () => {
       {/* Filter Bar */}
       <div className="recap-filter-bar">
         <div className="filter-buttons">
-          <button
-            className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`}
-            onClick={() => handleFilterChange('bulanan')}
-          >
+          <button className={`filter-btn ${filterType === 'bulanan' ? 'active' : ''}`} onClick={() => handleFilterChange('bulanan')}>
             Monthly
           </button>
           <button
@@ -308,15 +300,8 @@ const RecapPekerjaan: React.FC = () => {
 
         {filterType === 'custom' && (
           <div className="custom-date-range-container">
-            <button
-              className="custom-date-range-toggle"
-              onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}
-            >
-              {tempDateRangeStart && tempDateRangeEnd
-                ? `${tempDateRangeStart} - ${tempDateRangeEnd}`
-                : dateRangeStart && dateRangeEnd
-                  ? `${dateRangeStart} - ${dateRangeEnd}`
-                  : 'Select date range'}
+            <button className="custom-date-range-toggle" onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}>
+              {tempDateRangeStart && tempDateRangeEnd ? `${tempDateRangeStart} - ${tempDateRangeEnd}` : dateRangeStart && dateRangeEnd ? `${dateRangeStart} - ${dateRangeEnd}` : 'Select date range'}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -417,14 +402,7 @@ const RecapPekerjaan: React.FC = () => {
                   gap: '6px',
                 }}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  style={{ width: '14px', height: '14px' }}
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '14px', height: '14px' }}>
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
@@ -470,7 +448,9 @@ const RecapPekerjaan: React.FC = () => {
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colSpan={2} className="summary-cell">TOTAL</td>
+                      <td colSpan={2} className="summary-cell">
+                        TOTAL
+                      </td>
                       <td className="number-cell summary-value">{recapData.reduce((sum, r) => sum + r.berkas, 0)}</td>
                       <td className="number-cell summary-value">{recapData.reduce((sum, r) => sum + r.buku, 0)}</td>
                       <td className="number-cell summary-value">{recapData.reduce((sum, r) => sum + r.bundle, 0)}</td>
@@ -494,8 +474,6 @@ const RecapPekerjaan: React.FC = () => {
           )}
         </div>
       </div>
-
-
     </>
   );
 };

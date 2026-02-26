@@ -45,7 +45,7 @@ const ProfilePopup: React.FC<Props> = ({ user, onClose, onViewProfile, onLogout 
   if (!user) return null;
 
   const calculateDuration = (dateStr?: string) => {
-    if (!dateStr) return "0 hari";
+    if (!dateStr) return '0 hari';
     const start = new Date(dateStr);
     const now = new Date();
     let months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
@@ -70,7 +70,7 @@ const ProfilePopup: React.FC<Props> = ({ user, onClose, onViewProfile, onLogout 
           <p>{user.email}</p>
           <div style={{ marginTop: '4px' }}>
             <span className="badge-pln" style={{ padding: '2px 10px', fontSize: '11px', borderRadius: '12px', background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', display: 'inline-block', fontWeight: '700' }}>
-              {user.tanggalMasuk ? calculateDuration(user.tanggalMasuk) : "0 hari"}
+              {user.tanggalMasuk ? calculateDuration(user.tanggalMasuk) : '0 hari'}
             </span>
           </div>
         </div>
