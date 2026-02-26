@@ -45,11 +45,18 @@ const ProfilePopup: React.FC<Props> = ({ user, onClose, onViewProfile, onLogout 
   if (!user) return null;
 
   const calculateDuration = (dateStr?: string) => {
-    if (!dateStr) return "0 hari";
+    if (!dateStr) return '0 hari';
     const start = new Date(dateStr);
     const now = new Date();
-    const diff = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    return `${diff + 1} hari`;
+    let months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+    let dayStart = new Date(start.getFullYear(), start.getMonth() + months, start.getDate());
+    if (dayStart > now) {
+      months--;
+      dayStart = new Date(start.getFullYear(), start.getMonth() + months, start.getDate());
+    }
+    const days = Math.floor((now.getTime() - dayStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    if (months <= 0) return `${days} hari`;
+    return days > 0 ? `${months} bulan ${days} hari` : `${months} bulan`;
   };
 
   const initials = getInitials(user.name);
@@ -63,7 +70,7 @@ const ProfilePopup: React.FC<Props> = ({ user, onClose, onViewProfile, onLogout 
           <p>{user.email}</p>
           <div style={{ marginTop: '4px' }}>
             <span className="badge-pln" style={{ padding: '2px 10px', fontSize: '11px', borderRadius: '12px', background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd', display: 'inline-block', fontWeight: '700' }}>
-              {user.tanggalMasuk ? calculateDuration(user.tanggalMasuk) : "0 hari"}
+              {user.tanggalMasuk ? calculateDuration(user.tanggalMasuk) : '0 hari'}
             </span>
           </div>
         </div>

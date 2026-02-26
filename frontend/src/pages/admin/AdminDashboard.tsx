@@ -66,8 +66,8 @@ const AdminDashboard: React.FC = () => {
     } else if (filterType === 'bulanan') {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
-      const start = new Date(year, month, 1);
-      const end = new Date(year, month + 1, 0);
+      const start = new Date(year, month - 1, 26);
+      const end = new Date(year, month, 25);
       q = `?startDate=${toDateString(start)}&endDate=${toDateString(end)}`;
     } else if (filterType === 'custom' && dateRangeStart && dateRangeEnd) {
       q = `?startDate=${dateRangeStart}&endDate=${dateRangeEnd}`;

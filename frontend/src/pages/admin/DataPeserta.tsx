@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import type { User } from '../../types';
 import CustomDatePicker from '../../components/CustomDatePicker';
+import CustomSelect from '../../components/CustomSelect';
 
 const DataPeserta: React.FC = () => {
   const { showToast } = useToast();
@@ -149,8 +150,15 @@ const DataPeserta: React.FC = () => {
     if (!activeDateStr) return '0 hari';
     const start = new Date(activeDateStr);
     const now = new Date();
-    const diff = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    return `${diff + 1} hari`;
+    let months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+    let dayStart = new Date(start.getFullYear(), start.getMonth() + months, start.getDate());
+    if (dayStart > now) {
+      months--;
+      dayStart = new Date(start.getFullYear(), start.getMonth() + months, start.getDate());
+    }
+    const days = Math.floor((now.getTime() - dayStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    if (months <= 0) return `${days} hari`;
+    return days > 0 ? `${months} bulan ${days} hari` : `${months} bulan`;
   };
 
   return (
@@ -233,13 +241,19 @@ const DataPeserta: React.FC = () => {
                       <div className="user-cell">
                         <div className={`user-avatar ${avColors[i % 5]}`}>{initials}</div>
                         <div>
-                          <div className="user-name truncate-text" title={p.name}>{p.name}</div>
-                          <div className="user-email truncate-text" title={p.email}>{p.email}</div>
+                          <div className="user-name truncate-text" title={p.name}>
+                            {p.name}
+                          </div>
+                          <div className="user-email truncate-text" title={p.email}>
+                            {p.email}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td>
-                      <span className="data-highlight username truncate-text" title={p.username || '-'}>{p.username || '-'}</span>
+                      <span className="data-highlight username truncate-text" title={p.username || '-'}>
+                        {p.username || '-'}
+                      </span>
                     </td>
                     <td>
                       <span className="data-highlight">{(p.totalBerkas || 0).toLocaleString()}</span>
@@ -379,43 +393,37 @@ const DataPeserta: React.FC = () => {
 
                 <div className="form-group">
                   <label>Status Peserta</label>
-                  <select
+                  <CustomSelect
                     value={form.status}
-                    onChange={(e) => setForm({ ...form, status: e.target.value })}
-                    style={{ width: '100%', padding: '12px 16px', background: 'var(--gray-50)', border: '2px solid var(--gray-200)', borderRadius: 'var(--radius-md)', fontSize: '14px' }}
-                  >
-                    <option value="Aktif">Aktif</option>
-                    <option value="Nonaktif">Nonaktif</option>
-                  </select>
+                    onChange={(val) => setForm({ ...form, status: val })}
+                    options={[
+                      { value: 'Aktif', label: 'Aktif' },
+                      { value: 'Nonaktif', label: 'Nonaktif' },
+                    ]}
+                  />
                 </div>
                 <div className="form-group">
                   <label>Tanggal Masuk</label>
-                  <CustomDatePicker 
-                    value={form.tanggalMasuk}
-                    onChange={(val) => setForm({ ...form, tanggalMasuk: val })}
-                  />
+                  <CustomDatePicker value={form.tanggalMasuk} onChange={(val) => setForm({ ...form, tanggalMasuk: val })} />
                 </div>
                 {form.status === 'Nonaktif' && (
                   <div className="form-group">
                     <label>Tanggal Nonaktif</label>
-                    <CustomDatePicker 
-                      value={form.nonaktifDate}
-                      onChange={(val) => setForm({ ...form, nonaktifDate: val })}
-                    />
+                    <CustomDatePicker value={form.nonaktifDate} onChange={(val) => setForm({ ...form, nonaktifDate: val })} />
                     <small style={{ color: '#666', marginTop: 4, display: 'block' }}>Mulai tanggal ini dan seterusnya, data absen belum absen akan dihilangkan.</small>
                   </div>
                 )}
                 {!editingId && user?.role === 'superadmin' && (
                   <div className="form-group">
                     <label>Role</label>
-                    <select
+                    <CustomSelect
                       value={form.role}
-                      onChange={(e) => setForm({ ...form, role: e.target.value })}
-                      style={{ width: '100%', padding: '12px 16px', background: 'var(--gray-50)', border: '2px solid var(--gray-200)', borderRadius: 'var(--radius-md)', fontSize: '14px' }}
-                    >
-                      <option value="user">User (Peserta Magang)</option>
-                      <option value="admin">Admin</option>
-                    </select>
+                      onChange={(val) => setForm({ ...form, role: val })}
+                      options={[
+                        { value: 'user', label: 'User (Peserta Magang)' },
+                        { value: 'admin', label: 'Admin' },
+                      ]}
+                    />
                   </div>
                 )}
                 {!editingId && (
