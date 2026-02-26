@@ -625,8 +625,8 @@ const AttendanceCalendar: React.FC = () => {
           </h3>
         </div>
         <div className="calendar-weekdays">
-          {["S", "M", "T", "W", "T", "F", "S"].map((d) => (
-            <div key={d} className="calendar-weekday">
+          {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+            <div key={i} className="calendar-weekday">
               {d}
             </div>
           ))}
