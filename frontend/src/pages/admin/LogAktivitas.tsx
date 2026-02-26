@@ -582,13 +582,13 @@ const LogAktivitas: React.FC = () => {
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
               <circle cx="9" cy="7" r="4" />
             </svg>
-            {new Set(filtered.map(l => (l.userId as any)?._id || l.userId)).size} Peserta
+            {new Set(logs.map(l => (l.userId as any)?._id || l.userId)).size} Peserta
           </span>
           <span className="rekap-info-badge">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
             </svg>
-            Total: {filtered.length.toLocaleString('id-ID')}
+            Total: {logs.length.toLocaleString('id-ID')}
           </span>
         </div>
       </div>

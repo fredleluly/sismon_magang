@@ -27,10 +27,15 @@ router.get('/', auth, async (req, res) => {
       if (req.query.to) filter.tanggal.$lte = new Date(req.query.to);
     }
 
-    const logs = await WorkLog.find(filter)
-      .populate('userId', 'name email instansi')
-      .sort({ createdAt: -1 })
-      .limit(parseInt(req.query.limit) || 100);
+    let logQuery = WorkLog.find(filter).populate('userId', 'name email instansi').sort({ createdAt: -1 });
+    
+    // Only apply limit if it is explicitly requested (e.g., from dashboard or user pages),
+    // Otherwise return all matched data (for admin reporting and log aktivitas rendering)
+    if (req.query.limit) {
+      logQuery = logQuery.limit(parseInt(req.query.limit));
+    }
+
+    const logs = await logQuery;
 
     res.json({ success: true, data: logs });
   } catch (err) {
