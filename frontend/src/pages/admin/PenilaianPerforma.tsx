@@ -266,8 +266,33 @@ const PenilaianPerforma: React.FC = () => {
         </div>
       </div>
 
-      {/* Month Selector */}
-      <MonthYearSelector bulan={bulan} tahun={tahun} onBulanChange={setBulan} onTahunChange={setTahun} />
+      {/* Custom Period Selector */}
+      <div className="period-selector-container">
+        <button className="period-nav-btn" onClick={() => {
+          if (bulan === 1) {
+            setBulan(12);
+            setTahun(tahun - 1);
+          } else {
+            setBulan(bulan - 1);
+          }
+        }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+        <div className="period-display">
+          <span className="period-label">Periode Penilaian</span>
+          <span className="period-value">{getPeriodLabel(bulan, tahun)}</span>
+        </div>
+        <button className="period-nav-btn" onClick={() => {
+          if (bulan === 12) {
+            setBulan(1);
+            setTahun(tahun + 1);
+          } else {
+            setBulan(bulan + 1);
+          }
+        }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </div>
 
       {/* Evaluation Form */}
       <div className="eval-card">
@@ -409,9 +434,7 @@ const PenilaianPerforma: React.FC = () => {
       {/* Existing Evaluations */}
       <div className="eval-card">
         <div className="eval-card-header">
-          <h2>
-            Daftar Penilaian — {MONTHS[bulan - 1]} {tahun}
-          </h2>
+          <h2>Daftar Penilaian — {getPeriodLabel(bulan, tahun)}</h2>
           <p>{evaluations.length} penilaian</p>
         </div>
         <div className="eval-table-wrap max-h-[500px] overflow-y-auto">
