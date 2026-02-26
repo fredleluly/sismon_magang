@@ -12,8 +12,9 @@ const DEBUG = process.env.NODE_ENV === 'development';
 
 // ===== Helper: get working days in a month (excluding weekends + holidays) =====
 async function getWorkingDays(bulan, tahun) {
-  const startDate = new Date(tahun, bulan - 1, 1);
-  const endDate = new Date(tahun, bulan, 0); // last day of month
+  // Start from 26th of previous month to 25th of current month
+  const startDate = new Date(tahun, bulan - 2, 26);
+  const endDate = new Date(tahun, bulan - 1, 25, 23, 59, 59, 999);
 
   // Get holidays from attendance records
   const holidays = await Attendance.find({
@@ -36,8 +37,9 @@ async function getWorkingDays(bulan, tahun) {
 
 // ===== Helper: calculate absen for a user/month =====
 async function calculateAbsen(userId, bulan, tahun) {
-  const startDate = new Date(tahun, bulan - 1, 1);
-  const endDate = new Date(tahun, bulan, 0);
+  // Start from 26th of previous month to 25th of current month
+  const startDate = new Date(tahun, bulan - 2, 26);
+  const endDate = new Date(tahun, bulan - 1, 25, 23, 59, 59, 999);
 
   const workingDays = await getWorkingDays(bulan, tahun);
   const totalWorkingDays = workingDays.length;
@@ -99,8 +101,9 @@ router.get('/calculate/:userId', auth, adminOnly, async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
 
-    const startDate = new Date(tahun, bulan - 1, 1);
-    const endDate = new Date(tahun, bulan, 0);
+    // Start from 26th of previous month to 25th of current month
+    const startDate = new Date(tahun, bulan - 2, 26);
+    const endDate = new Date(tahun, bulan - 1, 25, 23, 59, 59, 999);
 
     // --- ABSEN (max 35%) ---
     // New system: per-day points
