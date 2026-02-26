@@ -1,5 +1,30 @@
 /* ===== MANAJEMEN PENILAIAN =====*/
 
+.back-to-supermanage-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-to-supermanage-btn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+  border-color: #cbd5e1;
+}
+
+.back-to-supermanage-btn svg {
+  flex-shrink: 0;
+}
 
 .manajemen-card {
   background: #fff;
@@ -312,8 +337,6 @@
 
 /* Tablet - 768px */
 @media (max-width: 768px) {
-
-
   .card-header {
     flex-direction: column;
     align-items: flex-start;
@@ -362,7 +385,6 @@
 
 /* Small tablet / large phone - 600px */
 @media (max-width: 600px) {
-
   .card-header {
     padding: 14px 16px;
   }
@@ -436,7 +458,6 @@
 
 /* Mobile - 480px */
 @media (max-width: 480px) {
-
   .card-header {
     padding: 12px;
   }
@@ -546,7 +567,6 @@
 
 /* Extra small - 360px */
 @media (max-width: 360px) {
-
   .card-header {
     padding: 10px;
   }

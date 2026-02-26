@@ -276,6 +276,9 @@ export const AttendanceAPI = {
     }),
   bulkHoliday: (tanggal: string) => API.post<{ created: number; updated: number; total: number }>('/attendance/bulk-holiday', { tanggal }),
   cancelHoliday: (tanggal: string) => API.post<{ deleted: number }>('/attendance/cancel-holiday', { tanggal }),
+  // Superadmin: photo management
+  getPhotoStats: (month: number, year: number) => API.get<Record<string, number>>(`/attendance/photos/stats?month=${month}&year=${year}`),
+  bulkDeletePhotos: (dates: string[]) => API.post<{ totalUpdated: number; totalFilesDeleted: number; totalDates: number }>('/attendance/photos/bulk-delete', { dates }),
 };
 
 // ===== COMPLAINTS API =====

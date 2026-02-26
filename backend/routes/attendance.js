@@ -3,7 +3,7 @@ const Attendance = require('../models/Attendance');
 const QRCode = require('../models/QRCode');
 const LateThreshold = require('../models/LateThreshold');
 const User = require('../models/User');
-const { auth, adminOnly } = require('../middleware/auth');
+const { auth, adminOnly, superadminOnly } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -1123,12 +1123,7 @@ router.get('/cleanup-photos', (req, res) => {
 router.get('/cleanup-photos/list-images', async (req, res) => {
   try {
     const records = await Attendance.find({
-      $or: [
-        { fotoAbsensi: { $ne: '' } },
-        { fotoUrl: { $ne: '' } },
-        { fotoPulang: { $ne: '' } },
-        { fotoPulangUrl: { $ne: '' } },
-      ],
+      $or: [{ fotoAbsensi: { $ne: '' } }, { fotoUrl: { $ne: '' } }, { fotoPulang: { $ne: '' } }, { fotoPulangUrl: { $ne: '' } }],
     });
 
     const images = [];
@@ -1222,15 +1217,13 @@ router.get('/cleanup-photos/preview', async (req, res) => {
 
     const records = await Attendance.find({
       tanggal: { $gte: fromDate, $lte: toDate },
-      $or: [
-        { fotoAbsensi: { $ne: '' } },
-        { fotoUrl: { $ne: '' } },
-        { fotoPulang: { $ne: '' } },
-        { fotoPulangUrl: { $ne: '' } },
-      ],
+      $or: [{ fotoAbsensi: { $ne: '' } }, { fotoUrl: { $ne: '' } }, { fotoPulang: { $ne: '' } }, { fotoPulangUrl: { $ne: '' } }],
     });
 
-    let fotoMasukBase64 = 0, fotoMasukFile = 0, fotoPulangBase64 = 0, fotoPulangFile = 0;
+    let fotoMasukBase64 = 0,
+      fotoMasukFile = 0,
+      fotoPulangBase64 = 0,
+      fotoPulangFile = 0;
     for (const r of records) {
       if (r.fotoAbsensi) fotoMasukBase64++;
       if (r.fotoUrl) fotoMasukFile++;
@@ -1280,12 +1273,7 @@ router.delete('/cleanup-photos', async (req, res) => {
 
     const records = await Attendance.find({
       tanggal: dateFilter,
-      $or: [
-        { fotoAbsensi: { $ne: '' } },
-        { fotoUrl: { $ne: '' } },
-        { fotoPulang: { $ne: '' } },
-        { fotoPulangUrl: { $ne: '' } },
-      ],
+      $or: [{ fotoAbsensi: { $ne: '' } }, { fotoUrl: { $ne: '' } }, { fotoPulang: { $ne: '' } }, { fotoPulangUrl: { $ne: '' } }],
     });
 
     let cleanedCount = 0;
@@ -1320,6 +1308,103 @@ router.delete('/cleanup-photos', async (req, res) => {
         recordsCleaned: cleanedCount,
         filesDeleted,
       },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/attendance/photos/stats — superadmin: get photo count per date for a month
+router.get('/photos/stats', auth, superadminOnly, async (req, res) => {
+  try {
+    const { month, year } = req.query;
+    const m = parseInt(month) !== undefined && !isNaN(parseInt(month)) ? parseInt(month) : new Date().getMonth();
+    const y = parseInt(year) || new Date().getFullYear();
+
+    const startOfMonth = new Date(y, m, 1);
+    const endOfMonth = new Date(y, m + 1, 0, 23, 59, 59, 999);
+
+    const records = await Attendance.aggregate([
+      {
+        $match: {
+          tanggal: { $gte: startOfMonth, $lte: endOfMonth },
+          $or: [{ fotoAbsensi: { $exists: true, $ne: '' } }, { fotoUrl: { $exists: true, $ne: '' } }, { fotoPulang: { $exists: true, $ne: '' } }, { fotoPulangUrl: { $exists: true, $ne: '' } }],
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$tanggal' } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    const stats = {};
+    records.forEach((r) => {
+      stats[r._id] = r.count;
+    });
+
+    res.json({ success: true, data: stats });
+  } catch (err) {
+    console.error('Error getting photo stats:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/attendance/photos/bulk-delete — superadmin: delete attendance photos by date range
+router.post('/photos/bulk-delete', auth, superadminOnly, async (req, res) => {
+  try {
+    const { dates } = req.body;
+    if (!dates || !Array.isArray(dates) || dates.length === 0) {
+      return res.status(400).json({ success: false, message: 'Pilih minimal satu tanggal.' });
+    }
+
+    let totalUpdated = 0;
+    let totalFilesDeleted = 0;
+
+    for (const dateStr of dates) {
+      const startOfDay = new Date(dateStr);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(dateStr);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const records = await Attendance.find({
+        tanggal: { $gte: startOfDay, $lte: endOfDay },
+        $or: [{ fotoAbsensi: { $exists: true, $ne: '' } }, { fotoUrl: { $exists: true, $ne: '' } }, { fotoPulang: { $exists: true, $ne: '' } }, { fotoPulangUrl: { $exists: true, $ne: '' } }],
+      });
+
+      for (const record of records) {
+        if (record.fotoUrl) {
+          const filePath = path.join(__dirname, '..', record.fotoUrl);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            totalFilesDeleted++;
+          }
+        }
+        if (record.fotoPulangUrl) {
+          const filePath = path.join(__dirname, '..', record.fotoPulangUrl);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            totalFilesDeleted++;
+          }
+        }
+
+        record.fotoAbsensi = '';
+        record.fotoUrl = '';
+        record.fotoTimestamp = '';
+        record.fotoPulang = '';
+        record.fotoPulangUrl = '';
+        record.fotoPulangTimestamp = '';
+        await record.save();
+        totalUpdated++;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Berhasil menghapus foto dari ${totalUpdated} record absensi (${totalFilesDeleted} file dihapus) untuk ${dates.length} tanggal.`,
+      data: { totalUpdated, totalFilesDeleted, totalDates: dates.length },
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -1424,7 +1509,5 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
-
-
 
 module.exports = router;

@@ -1,28 +1,17 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { createPortal } from "react-dom";
-import { PerformanceAPI } from "../../services/api";
-import { useToast } from "../../context/ToastContext";
-import type { PerformanceEvaluation, User } from "../../types";
-import MonthYearSelector from "../../components/MonthYearSelector";
-import "./ManajemenPenilaian.css";
+import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
+import { PerformanceAPI } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
+import type { PerformanceEvaluation, User } from '../../types';
+import MonthYearSelector from '../../components/MonthYearSelector';
+import './ManajemenPenilaian.css';
 
-const MONTHS = [
-  "Januari",
-  "Februari",
-  "Maret",
-  "April",
-  "Mei",
-  "Juni",
-  "Juli",
-  "Agustus",
-  "September",
-  "Oktober",
-  "November",
-  "Desember",
-];
+const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
 const ManajemenPenilaian: React.FC = () => {
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const now = new Date();
 
   const [bulan, setBulan] = useState(now.getMonth() + 1);
@@ -36,7 +25,7 @@ const ManajemenPenilaian: React.FC = () => {
     show: boolean;
     evaluationId: string;
     userName: string;
-  }>({ show: false, evaluationId: "", userName: "" });
+  }>({ show: false, evaluationId: '', userName: '' });
 
   // Load finalized evaluations
   const loadEvaluations = useCallback(async () => {
@@ -45,16 +34,14 @@ const ManajemenPenilaian: React.FC = () => {
       const res = await PerformanceAPI.getAll(bulan, tahun);
       if (res && res.success) {
         // Filter hanya yang status "Final"
-        const finalizedOnly = (res.data || []).filter(
-          (e: PerformanceEvaluation) => e.status === "Final",
-        );
+        const finalizedOnly = (res.data || []).filter((e: PerformanceEvaluation) => e.status === 'Final');
         setEvaluations(finalizedOnly);
       } else {
-        showToast("Gagal memuat penilaian", "error");
+        showToast('Gagal memuat penilaian', 'error');
       }
     } catch (error) {
       console.error(error);
-      showToast("Gagal memuat penilaian", "error");
+      showToast('Gagal memuat penilaian', 'error');
     } finally {
       setLoading(false);
     }
@@ -65,7 +52,7 @@ const ManajemenPenilaian: React.FC = () => {
   }, [loadEvaluations]);
 
   const handleDeleteClick = (evalId: string, userName: string) => {
-    console.log("handleDeleteClick", evalId, userName);
+    console.log('handleDeleteClick', evalId, userName);
     // ensure state update happens even if called from nested handlers
     setConfirmModal((prev) => ({
       ...prev,
@@ -77,22 +64,20 @@ const ManajemenPenilaian: React.FC = () => {
 
   // Immediate delete (fallback) - prompts with window.confirm then resets to Draft
   const handleDeleteImmediate = async (evalId: string, userName: string) => {
-    const ok = window.confirm(
-      `Hapus penilaian ${userName}? Ini akan mereset menjadi Draft.`,
-    );
+    const ok = window.confirm(`Hapus penilaian ${userName}? Ini akan mereset menjadi Draft.`);
     if (!ok) return;
     setDeleting(evalId);
     try {
       const res = await PerformanceAPI.resetToDraft(evalId);
       if (res && res.success) {
-        showToast("Penilaian berhasil direset ke Draft", "success");
+        showToast('Penilaian berhasil direset ke Draft', 'success');
         setEvaluations((prev) => prev.filter((e) => e._id !== evalId));
       } else {
-        showToast(res?.message || "Gagal mereset penilaian", "error");
+        showToast(res?.message || 'Gagal mereset penilaian', 'error');
       }
     } catch (error) {
       console.error(error);
-      showToast("Gagal mereset penilaian", "error");
+      showToast('Gagal mereset penilaian', 'error');
     } finally {
       setDeleting(null);
     }
@@ -106,49 +91,51 @@ const ManajemenPenilaian: React.FC = () => {
       const res = await PerformanceAPI.resetToDraft(evalId);
 
       if (res && res.success) {
-        showToast("Penilaian berhasil direset ke Draft", "success");
+        showToast('Penilaian berhasil direset ke Draft', 'success');
         setEvaluations((prev) => prev.filter((e) => e._id !== evalId));
-        setConfirmModal({ show: false, evaluationId: "", userName: "" });
+        setConfirmModal({ show: false, evaluationId: '', userName: '' });
       } else {
-        showToast(res?.message || "Gagal mereset penilaian", "error");
+        showToast(res?.message || 'Gagal mereset penilaian', 'error');
       }
     } catch (error) {
       console.error(error);
-      showToast("Gagal mereset penilaian", "error");
+      showToast('Gagal mereset penilaian', 'error');
     } finally {
       setDeleting(null);
     }
   };
 
   const getGradeColor = (score: number) => {
-    if (score >= 80) return "#10b981";
-    if (score >= 60) return "#f59e0b";
-    if (score >= 40) return "#f97316";
-    return "#ef4444";
+    if (score >= 80) return '#10b981';
+    if (score >= 60) return '#f59e0b';
+    if (score >= 40) return '#f97316';
+    return '#ef4444';
   };
 
   const getGrade = (score: number) => {
-    if (score >= 90) return "A+";
-    if (score >= 80) return "A";
-    if (score >= 70) return "B";
-    if (score >= 60) return "C";
-    if (score >= 50) return "D";
-    return "E";
+    if (score >= 90) return 'A+';
+    if (score >= 80) return 'A';
+    if (score >= 70) return 'B';
+    if (score >= 60) return 'C';
+    if (score >= 50) return 'D';
+    return 'E';
   };
 
   return (
     <>
+      <button className="back-to-supermanage-btn" onClick={() => navigate('/admin/super-manage')}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 12H5" />
+          <polyline points="12 19 5 12 12 5" />
+        </svg>
+        Kembali ke Super Manage
+      </button>
       <div className="page-header">
         <h1>Manajemen Penilaian</h1>
         <p>Kelola penilaian yang sudah difinalisasi (Superadmin)</p>
       </div>
 
-      <MonthYearSelector
-        bulan={bulan}
-        tahun={tahun}
-        onBulanChange={setBulan}
-        onTahunChange={setTahun}
-      />
+      <MonthYearSelector bulan={bulan} tahun={tahun} onBulanChange={setBulan} onTahunChange={setTahun} />
 
       <div className="manajemen-card">
         <div className="card-header">
@@ -163,8 +150,7 @@ const ManajemenPenilaian: React.FC = () => {
         ) : evaluations.length === 0 ? (
           <div className="empty-state">
             <p>
-              Tidak ada penilaian yang difinalisasi pada bulan{" "}
-              {MONTHS[bulan - 1]} {tahun}
+              Tidak ada penilaian yang difinalisasi pada bulan {MONTHS[bulan - 1]} {tahun}
             </p>
           </div>
         ) : (
@@ -185,38 +171,35 @@ const ManajemenPenilaian: React.FC = () => {
               </thead>
               <tbody>
                 {evaluations.map((evaluation, idx) => {
-                  const user =
-                    typeof evaluation.userId === "string"
-                      ? { name: evaluation.userId, instansi: "-" }
-                      : evaluation.userId;
+                  const user = typeof evaluation.userId === 'string' ? { name: evaluation.userId, instansi: '-' } : evaluation.userId;
                   return (
                     <tr key={evaluation._id}>
                       <td>{idx + 1}</td>
                       <td className="cell-name">
-                        <div className="truncate-text" title={(user as any)?.name || "-"}>{(user as any)?.name || "-"}</div>
+                        <div className="truncate-text" title={(user as any)?.name || '-'}>
+                          {(user as any)?.name || '-'}
+                        </div>
                       </td>
-                      <td><div className="truncate-text" title={(user as any)?.instansi || "-"}>{(user as any)?.instansi || "-"}</div></td>
+                      <td>
+                        <div className="truncate-text" title={(user as any)?.instansi || '-'}>
+                          {(user as any)?.instansi || '-'}
+                        </div>
+                      </td>
                       <td className="cell-center">{evaluation.kuantitas}</td>
                       <td className="cell-center">{evaluation.kualitas}</td>
                       <td className="cell-center">
                         <span
                           className="badge-sm"
                           style={{
-                            background: evaluation.laporan
-                              ? "#10b98133"
-                              : "#ef444733",
-                            color: evaluation.laporan ? "#10b981" : "#ef4444",
+                            background: evaluation.laporan ? '#10b98133' : '#ef444733',
+                            color: evaluation.laporan ? '#10b981' : '#ef4444',
                           }}
                         >
-                          {evaluation.laporan ? "✓ Ada" : "✗ Tidak"}
+                          {evaluation.laporan ? '✓ Ada' : '✗ Tidak'}
                         </span>
                       </td>
                       <td className="cell-center">
-                        <strong
-                          style={{ color: getGradeColor(evaluation.hasil) }}
-                        >
-                          {evaluation.hasil}%
-                        </strong>
+                        <strong style={{ color: getGradeColor(evaluation.hasil) }}>{evaluation.hasil}%</strong>
                       </td>
                       <td className="cell-center">
                         <span
@@ -235,8 +218,8 @@ const ManajemenPenilaian: React.FC = () => {
                             e.preventDefault();
                             e.stopPropagation();
                             const evalId = evaluation._id;
-                            const userName = (user as any)?.name || "Unknown";
-                            console.log("DELETE CLICKED", evalId, userName);
+                            const userName = (user as any)?.name || 'Unknown';
+                            console.log('DELETE CLICKED', evalId, userName);
                             handleDeleteClick(evalId, userName);
                           }}
                           disabled={deleting === evaluation._id}
@@ -244,14 +227,7 @@ const ManajemenPenilaian: React.FC = () => {
                           style={{ position: 'relative', zIndex: 100 }}
                         >
                           {deleting === evaluation._id ? (
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              style={{ animation: "spin 1s linear infinite" }}
-                            >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
                               <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
                             </svg>
                           ) : (
@@ -275,25 +251,11 @@ const ManajemenPenilaian: React.FC = () => {
       </div>
 
       {createPortal(
-        <div
-          className={`modal-overlay ${confirmModal.show ? 'active' : ''}`}
-          onClick={() => setConfirmModal({ ...confirmModal, show: false })}
-        >
-          <div
-            className="modal-content reset-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className={`modal-overlay ${confirmModal.show ? 'active' : ''}`} onClick={() => setConfirmModal({ ...confirmModal, show: false })}>
+          <div className="modal-content reset-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-body-inner">
               <div className="modal-icon-wrapper">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="32"
-                  height="32"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#f97316"
-                  strokeWidth="1.5"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="1.5">
                   <path d="M3 6h18"></path>
                   <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
                   <path d="M10 11v6"></path>
@@ -305,39 +267,25 @@ const ManajemenPenilaian: React.FC = () => {
                 <h3 className="modal-title">Reset Penilaian ke Draft</h3>
                 <p className="modal-text">
                   Anda yakin ingin mereset penilaian
-                  <strong style={{ marginLeft: 6 }}>
-                    {confirmModal.userName}
-                  </strong>
-                  ?
+                  <strong style={{ marginLeft: 6 }}>{confirmModal.userName}</strong>?
                 </p>
                 <p className="modal-subtext">
-                  Tindakan ini akan mereset penilaian menjadi{" "}
-                  <strong>Draft</strong>.
+                  Tindakan ini akan mereset penilaian menjadi <strong>Draft</strong>.
                 </p>
               </div>
             </div>
 
             <div className="modal-actions">
-              <button
-                className="btn-secondary"
-                onClick={() =>
-                  setConfirmModal({ ...confirmModal, show: false })
-                }
-                disabled={deleting !== null}
-              >
+              <button className="btn-secondary" onClick={() => setConfirmModal({ ...confirmModal, show: false })} disabled={deleting !== null}>
                 Batal
               </button>
-              <button
-                className="btn-danger"
-                onClick={handleConfirmDelete}
-                disabled={deleting !== null}
-              >
-                {deleting ? "Menghapus..." : "Reset ke Draft"}
+              <button className="btn-danger" onClick={handleConfirmDelete} disabled={deleting !== null}>
+                {deleting ? 'Menghapus...' : 'Reset ke Draft'}
               </button>
             </div>
           </div>
         </div>,
-        document.body
+        document.body,
       )}
     </>
   );

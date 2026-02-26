@@ -185,17 +185,13 @@
 }
 
 .calendar-day.has-data::before {
-  content: "";
+  content: '';
   position: absolute;
   top: -50%;
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(
-    circle,
-    rgba(34, 197, 94, 0.1) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.1) 0%, transparent 70%);
   animation: pulse 2s ease-in-out infinite;
 }
 
@@ -253,14 +249,10 @@
 }
 
 .calendar-day.selected::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    circle at center,
-    rgba(255, 255, 255, 0.2) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
   border-radius: 8px;
 }
 
@@ -506,17 +498,13 @@
 }
 
 .stat-box::before {
-  content: "";
+  content: '';
   position: absolute;
   top: -50%;
   right: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(
-    circle,
-    rgba(102, 126, 234, 0.1) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -2439,11 +2427,423 @@
 }
 
 .reason-tooltip::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 100%;
   left: 10px;
   border-width: 5px;
   border-style: solid;
   border-color: #1e293b transparent transparent transparent;
+}
+
+/* ===== CALENDAR LEFT COLUMN ===== */
+.calendar-left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* ===== PHOTO MANAGEMENT CARD ===== */
+.photo-management-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
+  animation: slideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.photo-management-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.photo-management-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.photo-management-title svg {
+  color: #dc2626;
+}
+
+.photo-management-title h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.photo-management-badge {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid #fecaca;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.photo-management-desc {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.photo-stats-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.spinner-small {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e2e8f0;
+  border-top: 2px solid #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.photo-stats-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  gap: 12px;
+}
+
+.photo-stats-empty p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.photo-dates-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.photo-dates-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.photo-select-all-btn {
+  background: none;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.photo-select-all-btn:hover {
+  background: #f1f5f9;
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.photo-dates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.photo-dates-grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.photo-dates-grid::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.photo-dates-grid::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.photo-date-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.photo-date-item:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+}
+
+.photo-date-item.selected {
+  border-color: #dc2626;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+}
+
+.photo-date-item.selected:hover {
+  border-color: #b91c1c;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+}
+
+.photo-date-check {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo-date-check svg {
+  color: #dc2626;
+}
+
+.photo-date-checkbox {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #cbd5e1;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.photo-date-item:hover .photo-date-checkbox {
+  border-color: #dc2626;
+}
+
+.photo-date-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.photo-date-day {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1.2;
+}
+
+.photo-date-item.selected .photo-date-day {
+  color: #dc2626;
+}
+
+.photo-date-month {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.photo-date-count {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.photo-date-count svg {
+  color: #94a3b8;
+}
+
+.photo-date-item.selected .photo-date-count {
+  color: #dc2626;
+}
+
+.photo-date-item.selected .photo-date-count svg {
+  color: #dc2626;
+}
+
+.photo-delete-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.photo-selected-info {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.photo-delete-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+
+.photo-delete-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.35);
+  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+}
+
+/* ===== DELETE PHOTO MODAL ===== */
+.delete-photo-modal {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 440px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+.delete-photo-modal-header {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 16px 16px 0 0;
+}
+
+.delete-photo-modal-body {
+  padding: 20px 24px;
+}
+
+.delete-photo-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.delete-photo-warning svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.delete-photo-date-list {
+  padding: 0;
+}
+
+.delete-photo-date-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.delete-photo-date-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.delete-photo-modal-footer {
+  padding: 16px 24px;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  gap: 10px;
+  border-radius: 0 0 16px 16px;
+}
+
+/* ===== RESPONSIVE PHOTO MANAGEMENT ===== */
+@media (max-width: 768px) {
+  .photo-dates-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+
+  .photo-management-card {
+    padding: 16px;
+  }
+
+  .photo-management-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .photo-delete-action {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .photo-delete-btn {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .photo-dates-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .photo-date-day {
+    font-size: 16px;
+  }
+
+  .delete-photo-modal {
+    max-width: calc(100vw - 32px);
+  }
 }
