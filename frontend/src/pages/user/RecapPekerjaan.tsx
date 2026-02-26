@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
 import { WorkLogAPI } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { WorkLog } from '../../types';
@@ -38,6 +39,27 @@ const RecapPekerjaan: React.FC = () => {
   const [workData, setWorkData] = useState<WorkLog[]>([]);
   const [recapData, setRecapData] = useState<JobDeskRecap[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Body scroll lock on mobile when date picker is open
+  useEffect(() => {
+    if (window.innerWidth <= 768) {
+      if (isSelectingDateRange) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = 'unset';
+      }
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isSelectingDateRange]);
 
   const getDateRangeForFilter = () => {
     const year = currentDate.getFullYear();
@@ -184,8 +206,8 @@ const RecapPekerjaan: React.FC = () => {
           </h3>
         </div>
         <div className="calendar-weekdays">
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
-            <div key={day} className="calendar-weekday">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+            <div key={i} className="calendar-weekday">
               {day}
             </div>
           ))}
@@ -319,7 +341,7 @@ const RecapPekerjaan: React.FC = () => {
               </svg>
             </button>
 
-            {isSelectingDateRange && (
+            {isSelectingDateRange && !isMobile && (
               <div className="custom-date-picker-dropdown">
                 <div className="custom-date-picker-header">
                   <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>
@@ -374,6 +396,45 @@ const RecapPekerjaan: React.FC = () => {
                   </button>
                 </div>
               </div>
+            )}
+
+            {isSelectingDateRange && isMobile && ReactDOM.createPortal(
+              <div className="mobile-date-picker-overlay" onClick={(e) => { if (e.target === e.currentTarget) setIsSelectingDateRange(false); }}>
+                <div className="custom-date-picker-dropdown mobile-portal">
+                  <div className="custom-date-picker-header">
+                    <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>←</button>
+                    <span>Select Date Range</span>
+                    <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>→</button>
+                  </div>
+                  <div className="custom-calendars-container">
+                    {renderCalendarMonth(0)}
+                    {renderCalendarMonth(1)}
+                  </div>
+                  <div className="custom-date-range-info">
+                    {tempDateRangeStart && !tempDateRangeEnd && <p>Select end date</p>}
+                    {tempDateRangeStart && tempDateRangeEnd && <p>{tempDateRangeStart} to {tempDateRangeEnd}</p>}
+                  </div>
+                  <div className="custom-date-picker-footer">
+                    <button className="custom-date-apply-btn" onClick={() => {
+                      if (tempDateRangeStart && tempDateRangeEnd) {
+                        setDateRangeStart(tempDateRangeStart);
+                        setDateRangeEnd(tempDateRangeEnd);
+                        setIsSelectingDateRange(false);
+                        setIsSelectingStart(true);
+                      } else {
+                        showToast('Select start and end dates first', 'error');
+                      }
+                    }}>Apply</button>
+                    <button className="custom-date-cancel-btn" onClick={() => {
+                      setIsSelectingDateRange(false);
+                      setTempDateRangeStart('');
+                      setTempDateRangeEnd('');
+                      setIsSelectingStart(true);
+                    }}>Cancel</button>
+                  </div>
+                </div>
+              </div>,
+              document.body
             )}
           </div>
         )}

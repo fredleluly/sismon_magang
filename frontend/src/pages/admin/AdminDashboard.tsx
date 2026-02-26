@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { Chart, registerables } from 'chart.js';
 // ExcelJS and file-saver are dynamically imported in exportToExcel
 import { DashboardAPI, getToken, ComplaintAPI, PerformanceAPI, AttendanceAPI } from '../../services/api';
@@ -50,6 +51,29 @@ const AdminDashboard: React.FC = () => {
   const [isSelectingDateRange, setIsSelectingDateRange] = useState(false);
   const [datePickerMonth, setDatePickerMonth] = useState(new Date());
   const [isSelectingStart, setIsSelectingStart] = useState(true);
+  const [tempDateRangeStart, setTempDateRangeStart] = useState<string>('');
+  const [tempDateRangeEnd, setTempDateRangeEnd] = useState<string>('');
+
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Body scroll lock on mobile when date picker is open
+  useEffect(() => {
+    if (window.innerWidth <= 768) {
+      if (isSelectingDateRange) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = 'unset';
+      }
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isSelectingDateRange]);
 
   // Helper to get date string YYYY-MM-DD
   const toDateString = (date: Date) => {
@@ -98,11 +122,90 @@ const AdminDashboard: React.FC = () => {
 
   const handleFilterChange = (type: 'alltime' | 'bulanan' | 'custom') => {
     setFilterType(type);
-    if (type === 'bulanan') setCurrentDate(new Date());
+    if (type !== 'custom') {
+      setIsSelectingDateRange(false);
+    }
   };
 
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+
+  // Calendar helper functions (matching user pages pattern)
+  const handleDatePickerPrevMonth = () => setDatePickerMonth(new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() - 1));
+  const handleDatePickerNextMonth = () => setDatePickerMonth(new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() + 1));
+
+  const handleCalendarDateClick = (year: number, month: number, day: number) => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    if (isSelectingStart) {
+      setTempDateRangeStart(dateStr);
+      setTempDateRangeEnd('');
+      setIsSelectingStart(false);
+    } else {
+      if (new Date(dateStr) >= new Date(tempDateRangeStart)) {
+        setTempDateRangeEnd(dateStr);
+      } else {
+        showToast('Pilih tanggal akhir yang lebih besar dari tanggal awal', 'error');
+      }
+    }
+  };
+
+  const isDateInRange = (year: number, month: number, day: number): boolean => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    if (!tempDateRangeStart) return false;
+    if (!tempDateRangeEnd) return dateStr >= tempDateRangeStart;
+    return dateStr >= tempDateRangeStart && dateStr <= tempDateRangeEnd;
+  };
+
+  const isDateStartEnd = (year: number, month: number, day: number): 'start' | 'end' | null => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    if (dateStr === tempDateRangeStart) return 'start';
+    if (dateStr === tempDateRangeEnd) return 'end';
+    return null;
+  };
+
+  const renderCalendarMonth = (offset: number) => {
+    const month = new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() + offset);
+    const year = month.getFullYear();
+    const monthIndex = month.getMonth();
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+    const firstDay = new Date(year, monthIndex, 1).getDay();
+    const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    const monthName = monthNames[monthIndex];
+
+    const days = [];
+    for (let i = 0; i < firstDay; i++) {
+      days.push(<div key={`empty-${i}`} className="calendar-cell empty"></div>);
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+      const inRange = isDateInRange(year, monthIndex, day);
+      const startEnd = isDateStartEnd(year, monthIndex, day);
+      const isStart = startEnd === 'start';
+      const isEnd = startEnd === 'end';
+      days.push(
+        <div
+          key={day}
+          className={`calendar-cell ${inRange ? 'in-range' : ''} ${isStart ? 'start-date' : ''} ${isEnd ? 'end-date' : ''}`}
+          onClick={() => handleCalendarDateClick(year, monthIndex, day)}
+        >
+          {day}
+        </div>
+      );
+    }
+
+    return (
+      <div className="calendar-month-picker">
+        <div className="calendar-month-header">
+          <h3>{monthName} {year}</h3>
+        </div>
+        <div className="calendar-weekdays">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+            <div key={i} className="calendar-weekday">{d}</div>
+          ))}
+        </div>
+        <div className="calendar-days">{days}</div>
+      </div>
+    );
+  };
 
   const loadComplaints = async () => {
     try {
@@ -924,85 +1027,89 @@ const AdminDashboard: React.FC = () => {
             ) : (
               <div className="dashboard-custom-date">
                 <button onClick={() => setIsSelectingDateRange(!isSelectingDateRange)} className="dashboard-custom-trigger">
-                  {dateRangeStart && dateRangeEnd ? `${dateRangeStart} - ${dateRangeEnd}` : 'Pilih Tanggal'}
+                  {tempDateRangeStart && tempDateRangeEnd
+                    ? `${tempDateRangeStart} - ${tempDateRangeEnd}`
+                    : dateRangeStart && dateRangeEnd
+                      ? `${dateRangeStart} - ${dateRangeEnd}`
+                      : 'Pilih Tanggal'}
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="6 9 12 15 18 9"></polyline>
                   </svg>
                 </button>
 
-                {isSelectingDateRange && (
-                  <div className="dashboard-date-popup">
-                    <div className="mb-3">
-                      <p className="text-xs text-gray-500 mb-1">{isSelectingStart ? 'Pilih Tanggal Awal' : 'Pilih Tanggal Akhir'}</p>
-                      <div className="text-sm font-semibold">
-                        {dateRangeStart || '-'} s/d {dateRangeEnd || '-'}
-                      </div>
+                {isSelectingDateRange && !isMobile && (
+                  <div className="custom-date-picker-dropdown" style={{ position: 'absolute', top: '100%', left: 0, zIndex: 9999 }}>
+                    <div className="custom-date-picker-header">
+                      <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>←</button>
+                      <span>Pilih Rentang Tanggal</span>
+                      <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>→</button>
                     </div>
-
-                    <div className="flex justify-between items-center mb-3">
-                      <button onClick={() => setDatePickerMonth(new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() - 1))} className="p-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="15 18 9 12 15 6"></polyline>
-                        </svg>
-                      </button>
-                      <span className="text-sm font-semibold">
-                        {datePickerMonth.toLocaleDateString('id-ID', {
-                          month: 'long',
-                          year: 'numeric',
-                        })}
-                      </span>
-                      <button onClick={() => setDatePickerMonth(new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() + 1))} className="p-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                      </button>
+                    <div className="custom-calendars-container">
+                      {renderCalendarMonth(0)}
+                      {renderCalendarMonth(1)}
                     </div>
-
-                    <div className="grid grid-cols-7 gap-0.5 mb-2">
-                      {['M', 'S', 'S', 'R', 'K', 'J', 'S'].map((d) => (
-                        <div key={d} className="text-[11px] text-center text-gray-400 p-1">
-                          {d}
-                        </div>
-                      ))}
-                      {Array.from({
-                        length: new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth(), 1).getDay(),
-                      }).map((_, i) => (
-                        <div key={`e-${i}`} />
-                      ))}
-                      {Array.from({
-                        length: new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() + 1, 0).getDate(),
-                      }).map((_, i) => {
-                        const d = i + 1;
-                        const dateStr = `${datePickerMonth.getFullYear()}-${String(datePickerMonth.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                        const isSelected = dateStr === dateRangeStart || dateStr === dateRangeEnd;
-                        const inRange = dateRangeStart && dateRangeEnd && dateStr > dateRangeStart && dateStr < dateRangeEnd;
-
-                        return (
-                          <div
-                            key={d}
-                            onClick={() => {
-                              if (isSelectingStart) {
-                                setDateRangeStart(dateStr);
-                                setDateRangeEnd('');
-                                setIsSelectingStart(false);
-                              } else {
-                                if (dateStr >= dateRangeStart) {
-                                  setDateRangeEnd(dateStr);
-                                  setIsSelectingDateRange(false);
-                                  setIsSelectingStart(true);
-                                } else {
-                                  showToast('Tanggal akhir harus lebih besar', 'error');
-                                }
-                              }
-                            }}
-                            className={`p-1.5 text-center text-[13px] cursor-pointer rounded ${isSelected ? 'bg-primary-500 text-white' : inRange ? 'bg-primary-50' : 'hover:bg-gray-100'}`}
-                          >
-                            {d}
-                          </div>
-                        );
-                      })}
+                    <div className="custom-date-range-info">
+                      {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
+                      {tempDateRangeStart && tempDateRangeEnd && <p>{tempDateRangeStart} sampai {tempDateRangeEnd}</p>}
+                    </div>
+                    <div className="custom-date-picker-footer">
+                      <button className="custom-date-apply-btn" onClick={() => {
+                        if (tempDateRangeStart && tempDateRangeEnd) {
+                          setDateRangeStart(tempDateRangeStart);
+                          setDateRangeEnd(tempDateRangeEnd);
+                          setIsSelectingDateRange(false);
+                          setIsSelectingStart(true);
+                        } else {
+                          showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
+                        }
+                      }}>Terapkan</button>
+                      <button className="custom-date-cancel-btn" onClick={() => {
+                        setIsSelectingDateRange(false);
+                        setTempDateRangeStart('');
+                        setTempDateRangeEnd('');
+                        setIsSelectingStart(true);
+                      }}>Batal</button>
                     </div>
                   </div>
+                )}
+
+                {isSelectingDateRange && isMobile && ReactDOM.createPortal(
+                  <div className="mobile-date-picker-overlay" onClick={(e) => { if (e.target === e.currentTarget) { setIsSelectingDateRange(false); setTempDateRangeStart(''); setTempDateRangeEnd(''); setIsSelectingStart(true); } }}>
+                    <div className="custom-date-picker-dropdown mobile-portal">
+                      <div className="custom-date-picker-header">
+                        <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>←</button>
+                        <span>Pilih Rentang Tanggal</span>
+                        <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>→</button>
+                      </div>
+                      <div className="custom-calendars-container">
+                        {renderCalendarMonth(0)}
+                        {renderCalendarMonth(1)}
+                      </div>
+                      <div className="custom-date-range-info">
+                        {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
+                        {tempDateRangeStart && tempDateRangeEnd && <p>{tempDateRangeStart} sampai {tempDateRangeEnd}</p>}
+                      </div>
+                      <div className="custom-date-picker-footer">
+                        <button className="custom-date-apply-btn" onClick={() => {
+                          if (tempDateRangeStart && tempDateRangeEnd) {
+                            setDateRangeStart(tempDateRangeStart);
+                            setDateRangeEnd(tempDateRangeEnd);
+                            setIsSelectingDateRange(false);
+                            setIsSelectingStart(true);
+                          } else {
+                            showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
+                          }
+                        }}>Terapkan</button>
+                        <button className="custom-date-cancel-btn" onClick={() => {
+                          setIsSelectingDateRange(false);
+                          setTempDateRangeStart('');
+                          setTempDateRangeEnd('');
+                          setIsSelectingStart(true);
+                        }}>Batal</button>
+                      </div>
+                    </div>
+                  </div>,
+                  document.body
                 )}
               </div>
             )}

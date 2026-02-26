@@ -282,8 +282,8 @@ const MonitoringPekerjaan: React.FC = () => {
           </h3>
         </div>
         <div className="calendar-weekdays">
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
-            <div key={day} className="calendar-weekday">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+            <div key={i} className="calendar-weekday">
               {day}
             </div>
           ))}
@@ -486,8 +486,8 @@ const MonitoringPekerjaan: React.FC = () => {
           </h4>
         </div>
         <div className="calendar-weekdays-sm">
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
-            <div key={day} className="calendar-weekday-sm">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+            <div key={i} className="calendar-weekday-sm">
               {day}
             </div>
           ))}
@@ -550,8 +550,8 @@ const MonitoringPekerjaan: React.FC = () => {
           </button>
         </div>
         <div className="export-harian-weekdays">
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
-            <div key={day} className="export-harian-weekday">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+            <div key={i} className="export-harian-weekday">
               {day}
             </div>
           ))}
