@@ -66,7 +66,7 @@ const Rekapitulasi: React.FC = () => {
   const [showUserFilter, setShowUserFilter] = useState(false);
   const [userSearch, setUserSearch] = useState('');
   const filterRef = useRef<HTMLDivElement>(null);
-  
+
   // Section Filter State
   const [selectedSections, setSelectedSections] = useState<string[]>([]);
   const [showSectionFilter, setShowSectionFilter] = useState(false);
@@ -78,7 +78,7 @@ const Rekapitulasi: React.FC = () => {
     (async () => {
       const res = await UsersAPI.getAll();
       if (res && res.success) {
-        const peserta = (res.data || []).filter((u: User) => u.role === 'user' && u.status === 'Aktif');
+        const peserta = (res.data || []).filter((u: User) => u.role === 'user');
         setUsers(peserta);
       }
     })();
@@ -236,7 +236,7 @@ const Rekapitulasi: React.FC = () => {
   }, [fetchRecap]);
 
   // Build pivot table data
-  const jenisList = selectedSections.length === 0 ? JENIS_LIST : JENIS_LIST.filter(j => selectedSections.includes(j));
+  const jenisList = selectedSections.length === 0 ? JENIS_LIST : JENIS_LIST.filter((j) => selectedSections.includes(j));
 
   const pivotRows: PivotRow[] = (() => {
     const userMap: Record<string, PivotRow> = {};
@@ -329,7 +329,7 @@ const Rekapitulasi: React.FC = () => {
       const t = new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       filterInfoStr = `Custom — ${f} s/d ${t}`;
     }
-    
+
     // Add section filter info to Excel
     if (selectedSections.length > 0 && selectedSections.length < JENIS_LIST.length) {
       filterInfoStr += ` | Section: ${selectedSections.join(', ')}`;
@@ -519,7 +519,10 @@ const Rekapitulasi: React.FC = () => {
                       .map((u) => (
                         <div key={u._id} className="rekap-user-option" onClick={() => toggleUser(u._id)}>
                           <input type="checkbox" checked={selectedUsers.includes(u._id)} readOnly />
-                          <span>{u.name}</span>
+                          <span>
+                            {u.name}
+                            {u.status === 'Nonaktif' && <span style={{ fontSize: '11px', color: '#ef4444', marginLeft: '6px', fontWeight: 600 }}>(Nonaktif)</span>}
+                          </span>
                         </div>
                       ))}
                   </div>
@@ -564,14 +567,12 @@ const Rekapitulasi: React.FC = () => {
                   </div>
                   <div className="rekap-user-dropdown-divider" />
                   <div style={{ maxHeight: '240px', overflowY: 'auto' }}>
-                    {JENIS_LIST
-                      .filter((s) => s.toLowerCase().includes(sectionSearch.toLowerCase()))
-                      .map((s) => (
-                        <div key={s} className="rekap-user-option" onClick={() => toggleSection(s)}>
-                          <input type="checkbox" checked={selectedSections.includes(s)} readOnly />
-                          <span>{s}</span>
-                        </div>
-                      ))}
+                    {JENIS_LIST.filter((s) => s.toLowerCase().includes(sectionSearch.toLowerCase())).map((s) => (
+                      <div key={s} className="rekap-user-option" onClick={() => toggleSection(s)}>
+                        <input type="checkbox" checked={selectedSections.includes(s)} readOnly />
+                        <span>{s}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

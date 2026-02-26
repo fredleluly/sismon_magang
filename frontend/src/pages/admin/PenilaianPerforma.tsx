@@ -6,10 +6,7 @@ import type { User, PerformanceEvaluation, PerformanceCalculation } from '../../
 import MonthYearSelector from '../../components/MonthYearSelector';
 import './PenilaianPerforma.css';
 
-const MONTHS = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-];
+const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
 const PenilaianPerforma: React.FC = () => {
   const { showToast } = useToast();
@@ -50,7 +47,7 @@ const PenilaianPerforma: React.FC = () => {
     setConfirmModal({ show: true, title, message, confirmText, type, onConfirm });
   };
 
-  const closeConfirm = () => setConfirmModal(prev => ({ ...prev, show: false }));
+  const closeConfirm = () => setConfirmModal((prev) => ({ ...prev, show: false }));
 
   // Add pause/blur effect on modal open
   useEffect(() => {
@@ -94,13 +91,12 @@ const PenilaianPerforma: React.FC = () => {
     if (res && res.success) setEvaluations(res.data || []);
   }, [bulan, tahun]);
 
-  useEffect(() => { loadEvaluations(); }, [loadEvaluations]);
+  useEffect(() => {
+    loadEvaluations();
+  }, [loadEvaluations]);
 
   // Filter users for search
-  const filteredUsers = users.filter(u =>
-    u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users.filter((u) => u.name.toLowerCase().includes(searchQuery.toLowerCase()) || u.email.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const handleSelectUser = async (user: User) => {
     setSelectedUser(user);
@@ -109,11 +105,11 @@ const PenilaianPerforma: React.FC = () => {
     setCalculating(true);
 
     // Check if already evaluated
-    const existing = evaluations.find(e => {
+    const existing = evaluations.find((e) => {
       const uid = typeof e.userId === 'string' ? e.userId : e.userId?._id;
       return uid === user._id;
     });
-    
+
     if (existing) {
       setKuantitas(existing.kuantitas);
       setKualitas(existing.kualitas);
@@ -146,7 +142,8 @@ const PenilaianPerforma: React.FC = () => {
     setSaving(true);
     const res = await PerformanceAPI.save({
       userId: selectedUser._id,
-      bulan, tahun,
+      bulan,
+      tahun,
       absen: calculation.absen,
       kuantitas,
       kualitas,
@@ -176,81 +173,62 @@ const PenilaianPerforma: React.FC = () => {
   const handleSave = (status: 'Draft' | 'Final') => {
     if (!selectedUser || !calculation) return;
     if (status === 'Final') {
-      showConfirm(
-        'Finalisasi Penilaian',
-        'Yakin ingin memfinalisasi penilaian ini? Penilaian yang sudah final tidak bisa diubah.',
-        'Ya, Finalisasi',
-        'success',
-        () => { closeConfirm(); doSave('Final'); }
-      );
+      showConfirm('Finalisasi Penilaian', 'Yakin ingin memfinalisasi penilaian ini? Penilaian yang sudah final tidak bisa diubah.', 'Ya, Finalisasi', 'success', () => {
+        closeConfirm();
+        doSave('Final');
+      });
     } else {
       doSave('Draft');
     }
   };
 
   const handleDelete = (id: string) => {
-    showConfirm(
-      'Hapus Draft',
-      'Yakin ingin menghapus draft penilaian ini?',
-      'Ya, Hapus',
-      'danger',
-      async () => {
-        closeConfirm();
-        const res = await PerformanceAPI.delete(id);
-        if (res && res.success) {
-          showToast('Draft berhasil dihapus', 'success');
-          loadEvaluations();
-        } else {
-          showToast(res?.message || 'Gagal menghapus', 'error');
-        }
+    showConfirm('Hapus Draft', 'Yakin ingin menghapus draft penilaian ini?', 'Ya, Hapus', 'danger', async () => {
+      closeConfirm();
+      const res = await PerformanceAPI.delete(id);
+      if (res && res.success) {
+        showToast('Draft berhasil dihapus', 'success');
+        loadEvaluations();
+      } else {
+        showToast(res?.message || 'Gagal menghapus', 'error');
       }
-    );
+    });
   };
 
   const handleEditExisting = (ev: PerformanceEvaluation) => {
-    const user = typeof ev.userId === 'string' ? users.find(u => u._id === ev.userId) : ev.userId as User;
+    const user = typeof ev.userId === 'string' ? users.find((u) => u._id === ev.userId) : (ev.userId as User);
     if (user) handleSelectUser(user as User);
   };
 
   const handleDirectFinalize = (ev: PerformanceEvaluation) => {
-    const user = typeof ev.userId === 'string' ? null : ev.userId as User;
-    showConfirm(
-      'Finalisasi Penilaian',
-      `Yakin ingin memfinalisasi penilaian ${user?.name || ''}? Penilaian yang sudah final tidak bisa diubah.`,
-      'Ya, Finalisasi',
-      'success',
-      async () => {
-        closeConfirm();
-        setSaving(true);
-        try {
-          const res = await PerformanceAPI.save({
-            userId: typeof ev.userId === 'string' ? ev.userId : (ev.userId as User)._id,
-            bulan: ev.bulan,
-            tahun: ev.tahun,
-            absen: ev.absen,
-            kuantitas: ev.kuantitas,
-            kualitas: ev.kualitas,
-            laporan: ev.laporan,
-            status: 'Final',
-          });
-          if (res && res.success) {
-            showToast('Penilaian berhasil difinalisasi!', 'success');
-            loadEvaluations();
-          } else {
-            showToast(res?.message || 'Gagal memfinalisasi', 'error');
-          }
-        } finally {
-          setSaving(false);
+    const user = typeof ev.userId === 'string' ? null : (ev.userId as User);
+    showConfirm('Finalisasi Penilaian', `Yakin ingin memfinalisasi penilaian ${user?.name || ''}? Penilaian yang sudah final tidak bisa diubah.`, 'Ya, Finalisasi', 'success', async () => {
+      closeConfirm();
+      setSaving(true);
+      try {
+        const res = await PerformanceAPI.save({
+          userId: typeof ev.userId === 'string' ? ev.userId : (ev.userId as User)._id,
+          bulan: ev.bulan,
+          tahun: ev.tahun,
+          absen: ev.absen,
+          kuantitas: ev.kuantitas,
+          kualitas: ev.kualitas,
+          laporan: ev.laporan,
+          status: 'Final',
+        });
+        if (res && res.success) {
+          showToast('Penilaian berhasil difinalisasi!', 'success');
+          loadEvaluations();
+        } else {
+          showToast(res?.message || 'Gagal memfinalisasi', 'error');
         }
+      } finally {
+        setSaving(false);
       }
-    );
+    });
   };
 
-  const getStatusBadge = (status: string) => (
-    <span className={`status-badge ${status === 'Final' ? 'badge-final' : 'badge-draft'}`}>
-      {status}
-    </span>
-  );
+  const getStatusBadge = (status: string) => <span className={`status-badge ${status === 'Final' ? 'badge-final' : 'badge-draft'}`}>{status}</span>;
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return '#10b981';
@@ -277,12 +255,7 @@ const PenilaianPerforma: React.FC = () => {
       </div>
 
       {/* Month Selector */}
-      <MonthYearSelector
-        bulan={bulan}
-        tahun={tahun}
-        onBulanChange={setBulan}
-        onTahunChange={setTahun}
-      />
+      <MonthYearSelector bulan={bulan} tahun={tahun} onBulanChange={setBulan} onTahunChange={setTahun} />
 
       {/* Evaluation Form */}
       <div className="eval-card">
@@ -316,13 +289,12 @@ const PenilaianPerforma: React.FC = () => {
                   {filteredUsers.length === 0 ? (
                     <div className="search-empty">Tidak ditemukan</div>
                   ) : (
-                    filteredUsers.map(u => (
-                      <div
-                        key={u._id}
-                        className="search-item"
-                        onClick={() => handleSelectUser(u)}
-                      >
-                        <div className="search-item-name">{u.name}</div>
+                    filteredUsers.map((u) => (
+                      <div key={u._id} className="search-item" onClick={() => handleSelectUser(u)}>
+                        <div className="search-item-name">
+                          {u.name}
+                          {u.status === 'Nonaktif' && <span style={{ fontSize: '11px', color: '#ef4444', marginLeft: '6px', fontWeight: 600 }}>(Nonaktif)</span>}
+                        </div>
                         <div className="search-item-email">{u.email}</div>
                       </div>
                     ))
@@ -343,7 +315,9 @@ const PenilaianPerforma: React.FC = () => {
             <>
               <div className="result-header">
                 <h3>Hasil Perhitungan — {calculation.userName}</h3>
-                <span className="result-period">{MONTHS[bulan - 1]} {tahun}</span>
+                <span className="result-period">
+                  {MONTHS[bulan - 1]} {tahun}
+                </span>
               </div>
 
               <div className="score-grid">
@@ -361,49 +335,34 @@ const PenilaianPerforma: React.FC = () => {
 
                 {/* Kuantitas */}
                 <div className="score-card score-card-manual">
-                  <div className="score-label">Kuantitas <span className="manual-badge">Manual</span></div>
+                  <div className="score-label">
+                    Kuantitas <span className="manual-badge">Manual</span>
+                  </div>
                   <div className="score-input-wrap">
-                    <input
-                      type="number"
-                      min="0"
-                      max="30"
-                      step="0.01"
-                      value={kuantitas}
-                      onChange={(e) => setKuantitas(Math.min(30, Math.max(0, parseFloat(e.target.value) || 0)))}
-                      className="score-input"
-                    />
+                    <input type="number" min="0" max="30" step="0.01" value={kuantitas} onChange={(e) => setKuantitas(Math.min(30, Math.max(0, parseFloat(e.target.value) || 0)))} className="score-input" />
                   </div>
                   <div className="score-max">maks 30</div>
                 </div>
 
                 {/* Kualitas */}
                 <div className="score-card score-card-manual">
-                  <div className="score-label">Kualitas <span className="manual-badge">Manual</span></div>
+                  <div className="score-label">
+                    Kualitas <span className="manual-badge">Manual</span>
+                  </div>
                   <div className="score-input-wrap">
-                    <input
-                      type="number"
-                      min="0"
-                      max="30"
-                      step="0.01"
-                      value={kualitas}
-                      onChange={(e) => setKualitas(Math.min(30, Math.max(0, parseFloat(e.target.value) || 0)))}
-                      className="score-input"
-                    />
+                    <input type="number" min="0" max="30" step="0.01" value={kualitas} onChange={(e) => setKualitas(Math.min(30, Math.max(0, parseFloat(e.target.value) || 0)))} className="score-input" />
                   </div>
                   <div className="score-max">maks 30</div>
                 </div>
 
                 {/* Laporan */}
                 <div className="score-card score-card-manual">
-                  <div className="score-label">Laporan <span className="manual-badge">Manual</span></div>
+                  <div className="score-label">
+                    Laporan <span className="manual-badge">Manual</span>
+                  </div>
                   <div className="score-checkbox-wrap">
                     <label className="checkbox-label">
-                      <input
-                        type="checkbox"
-                        checked={laporan}
-                        onChange={(e) => setLaporan(e.target.checked)}
-                        className="checkbox-input"
-                      />
+                      <input type="checkbox" checked={laporan} onChange={(e) => setLaporan(e.target.checked)} className="checkbox-input" />
                       <span className="checkbox-custom" />
                       <span>{laporan ? '5' : '0'}</span>
                     </label>
@@ -440,7 +399,9 @@ const PenilaianPerforma: React.FC = () => {
       {/* Existing Evaluations */}
       <div className="eval-card">
         <div className="eval-card-header">
-          <h2>Daftar Penilaian — {MONTHS[bulan - 1]} {tahun}</h2>
+          <h2>
+            Daftar Penilaian — {MONTHS[bulan - 1]} {tahun}
+          </h2>
           <p>{evaluations.length} penilaian</p>
         </div>
         <div className="eval-table-wrap max-h-[500px] overflow-y-auto">
@@ -463,7 +424,7 @@ const PenilaianPerforma: React.FC = () => {
               </thead>
               <tbody>
                 {evaluations.map((ev, idx) => {
-                  const user = typeof ev.userId === 'string' ? null : ev.userId as User;
+                  const user = typeof ev.userId === 'string' ? null : (ev.userId as User);
                   return (
                     <tr key={ev._id}>
                       <td>{idx + 1}</td>
@@ -514,49 +475,45 @@ const PenilaianPerforma: React.FC = () => {
 
       {/* Confirm Modal */}
       {/* Confirm Modal (Portal) */}
-      {confirmModal.show && ReactDOM.createPortal(
-        <div className="modal-overlay active z-[9999]" onClick={(e) => { if (e.target === e.currentTarget) closeConfirm(); }}>
-          <div className="modal-card max-w-[400px] text-center">
-            <div className="modal-body pt-8 px-6 pb-6">
-              <div className={`mx-auto mb-4 w-16 h-16 rounded-full flex items-center justify-center ${confirmModal.type === 'danger' ? 'bg-red-100 text-red-500' : 'bg-green-100 text-green-500'}`}>
-                {confirmModal.type === 'danger' ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                )}
-              </div>
-              
-              <h3 className="text-lg font-bold mb-2 text-gray-800">
-                {confirmModal.title}
-              </h3>
-              <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-                {confirmModal.message}
-              </p>
+      {confirmModal.show &&
+        ReactDOM.createPortal(
+          <div
+            className="modal-overlay active z-[9999]"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) closeConfirm();
+            }}
+          >
+            <div className="modal-card max-w-[400px] text-center">
+              <div className="modal-body pt-8 px-6 pb-6">
+                <div className={`mx-auto mb-4 w-16 h-16 rounded-full flex items-center justify-center ${confirmModal.type === 'danger' ? 'bg-red-100 text-red-500' : 'bg-green-100 text-green-500'}`}>
+                  {confirmModal.type === 'danger' ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  )}
+                </div>
 
-              <div className="flex gap-3">
-                <button 
-                  className="btn-outline flex-1 justify-center" 
-                  onClick={closeConfirm}
-                >
-                  Batal
-                </button>
-                <button 
-                  className={`btn flex-1 justify-center ${confirmModal.type === 'danger' ? 'btn-danger' : 'btn-primary'}`} 
-                  onClick={confirmModal.onConfirm}
-                >
-                  {confirmModal.confirmText}
-                </button>
+                <h3 className="text-lg font-bold mb-2 text-gray-800">{confirmModal.title}</h3>
+                <p className="text-sm text-gray-500 mb-6 leading-relaxed">{confirmModal.message}</p>
+
+                <div className="flex gap-3">
+                  <button className="btn-outline flex-1 justify-center" onClick={closeConfirm}>
+                    Batal
+                  </button>
+                  <button className={`btn flex-1 justify-center ${confirmModal.type === 'danger' ? 'btn-danger' : 'btn-primary'}`} onClick={confirmModal.onConfirm}>
+                    {confirmModal.confirmText}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
