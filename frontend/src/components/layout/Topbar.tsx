@@ -55,6 +55,16 @@ const Topbar: React.FC<TopbarProps> = ({ user, onMenuClick, onAvatarClick }) => 
         </svg>
       </button>
       <span className="topbar-title">Sistem Monitoring Magang</span>
+      
+      <div className="topbar-center">
+        {user && (user.role === 'admin' || user.role === 'superadmin') && 
+          currentTime.getDate() === 26 && currentTime.getHours() < 16 && (
+          <div className="topbar-warning">
+            ⚠️ Admin Jangan Lupa Penilaian & Rekap Ya.
+          </div>
+        )}
+      </div>
+
       <div className="topbar-right">
         <div className="topbar-clock">
           <div className="clock-icon">

@@ -411,6 +411,38 @@ img {
   color: var(--primary-600);
 }
 
+.topbar-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@keyframes warningPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(255, 71, 87, 0.4);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 6px 16px rgba(255, 71, 87, 0.6);
+  }
+}
+
+.topbar-warning {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent-red), #ff6b81);
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  animation: warningPulse 2s ease-in-out infinite;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  cursor: default;
+}
+
 .topbar-right {
   display: flex;
   align-items: center;
@@ -3349,6 +3381,10 @@ img {
 
   .topbar-title {
     font-size: 16px;
+  }
+
+  .topbar-center {
+    display: none;
   }
 
   .topbar-search {
