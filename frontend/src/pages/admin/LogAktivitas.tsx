@@ -23,7 +23,7 @@ const LogAktivitas: React.FC = () => {
   const [selectedLogs, setSelectedLogs] = useState<string[]>([]);
 
   // Filter State
-  const [filterType, setFilterType] = useState<'bulanan' | 'custom'>('bulanan');
+  const [filterType, setFilterType] = useState<'bulanan' | 'custom' | 'semua'>('bulanan');
   const [currentDate, setCurrentDate] = useState(new Date()); // For monthly view
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -129,6 +129,7 @@ const LogAktivitas: React.FC = () => {
       } else if (filterType === 'custom' && dateFrom && dateTo) {
         query += `&from=${dateFrom}&to=${dateTo}`;
       }
+      // 'semua' filter does not include date boundaries in query
 
       // Add user filter
       if (selectedUsers.length > 0) {
@@ -368,6 +369,8 @@ const LogAktivitas: React.FC = () => {
       const f = new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       const t = new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       filterInfoStr = `Custom — ${f} s/d ${t}`;
+    } else if (filterType === 'semua') {
+      filterInfoStr = `Semua Waktu`;
     }
 
     const data = filtered.map((l, i) => ({
@@ -436,6 +439,16 @@ const LogAktivitas: React.FC = () => {
             >
               Custom
             </button>
+            <button
+              className={`filter-btn ${filterType === 'semua' ? 'active' : ''}`}
+              onClick={() => {
+                setFilterType('semua');
+                setDateFrom('');
+                setDateTo('');
+              }}
+            >
+              All Time
+            </button>
           </div>
 
           <div className="month-user-row">
@@ -453,7 +466,7 @@ const LogAktivitas: React.FC = () => {
                   </svg>
                 </button>
               </div>
-            ) : (
+            ) : filterType === 'custom' ? (
               <div className="custom-date-range-container">
                 <button className="custom-date-range-toggle" onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}>
                   {dateFrom && dateTo ? `${dateFrom} - ${dateTo}` : 'Pilih Rentang Tanggal'}
@@ -570,7 +583,7 @@ const LogAktivitas: React.FC = () => {
                   document.body
                 )}
               </div>
-            )}
+            ) : null}
 
             {/* User Filter Dropdown */}
             <div className="rekap-filter-group rekap-user-filter rekap-user-filter-container" ref={filterRef}>
@@ -709,6 +722,7 @@ const LogAktivitas: React.FC = () => {
               const t = new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
               return `${f} — ${t}`;
             }
+            if (filterType === 'semua') return 'Semua Waktu';
             if (dateFrom) return `Dari ${new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
             if (dateTo) return `Sampai ${new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
             return 'Semua Tanggal';

@@ -14,7 +14,7 @@ const KelolaKeluhan: React.FC = () => {
   const [prioFilter, setPrioFilter] = useState('');
 
   // ── Date Filter State (same as Rekapitulasi) ──
-  const [filterType, setFilterType] = useState<'bulanan' | 'custom'>('bulanan');
+  const [filterType, setFilterType] = useState<'bulanan' | 'custom' | 'semua'>('bulanan');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -69,6 +69,9 @@ const KelolaKeluhan: React.FC = () => {
       const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
       setDateFrom(startStr);
       setDateTo(endStr);
+    } else if (filterType === 'semua') {
+      setDateFrom('');
+      setDateTo('');
     }
   }, [filterType, currentDate]);
 
@@ -192,6 +195,7 @@ const KelolaKeluhan: React.FC = () => {
   };
 
   const formatDateLabel = () => {
+    if (filterType === 'semua') return 'Semua Waktu';
     if (dateFrom && dateTo) {
       const f = new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
       const t = new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -199,7 +203,7 @@ const KelolaKeluhan: React.FC = () => {
     }
     if (dateFrom) return `Dari ${new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
     if (dateTo) return `Sampai ${new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
-    return 'Semua Tanggal';
+    return 'Semua Waktu';
   };
 
   // ── Export Excel ──
@@ -218,6 +222,8 @@ const KelolaKeluhan: React.FC = () => {
       const f = new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       const t = new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       filterInfoStr = `Custom — ${f} s/d ${t}`;
+    } else if (filterType === 'semua') {
+      filterInfoStr = 'All Time';
     }
 
     const infoLines = [`Filter: ${filterInfoStr}`, `Total: ${filtered.length} keluhan`, `Menunggu: ${menunggu} | Diproses: ${diproses} | Selesai: ${selesai}`];
@@ -315,6 +321,16 @@ const KelolaKeluhan: React.FC = () => {
             >
               Custom
             </button>
+            <button
+              className={`filter-btn ${filterType === 'semua' ? 'active' : ''}`}
+              onClick={() => {
+                setFilterType('semua');
+                setDateFrom('');
+                setDateTo('');
+              }}
+            >
+              All Time
+            </button>
           </div>
 
           {filterType === 'bulanan' ? (
@@ -331,7 +347,7 @@ const KelolaKeluhan: React.FC = () => {
                 </svg>
               </button>
             </div>
-          ) : (
+          ) : filterType === 'custom' ? (
             <div className="custom-date-range-container" ref={dateRangeRef}>
               <button className="custom-date-range-toggle" onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}>
                 {dateFrom && dateTo ? `${dateFrom} - ${dateTo}` : 'Pilih Rentang Tanggal'}
@@ -448,7 +464,7 @@ const KelolaKeluhan: React.FC = () => {
                 document.body
               )}
             </div>
-          )}
+          ) : null}
 
           {/* Search + Status + Priority filters */}
           <div className="keluhan-filters-row">

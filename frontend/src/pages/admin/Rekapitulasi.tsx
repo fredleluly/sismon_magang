@@ -51,7 +51,7 @@ const Rekapitulasi: React.FC = () => {
   const [upahHarian, setUpahHarian] = useState(0);
 
   // Filters
-  const [filterType, setFilterType] = useState<'bulanan' | 'custom'>('bulanan');
+  const [filterType, setFilterType] = useState<'bulanan' | 'custom' | 'semua'>('bulanan');
   const [activeTab, setActiveTab] = useState<'pekerjaan' | 'biaya'>('pekerjaan');
   const [currentDate, setCurrentDate] = useState(new Date()); // For monthly view
   const [dateFrom, setDateFrom] = useState('');
@@ -148,6 +148,9 @@ const Rekapitulasi: React.FC = () => {
 
       setDateFrom(fmt(start));
       setDateTo(fmt(end));
+    } else if (filterType === 'semua') {
+      setDateFrom('');
+      setDateTo('');
     }
   }, [filterType, currentDate]);
 
@@ -351,6 +354,8 @@ const Rekapitulasi: React.FC = () => {
       const f = new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       const t = new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
       filterInfoStr = `Custom — ${f} s/d ${t}`;
+    } else if (filterType === 'semua') {
+      filterInfoStr = 'Semua Waktu';
     }
 
     // Add section filter info to Excel
@@ -368,6 +373,7 @@ const Rekapitulasi: React.FC = () => {
   };
 
   const formatDateLabel = () => {
+    if (filterType === 'semua') return 'Semua Waktu';
     if (dateFrom && dateTo) {
       const f = new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
       const t = new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -375,7 +381,7 @@ const Rekapitulasi: React.FC = () => {
     }
     if (dateFrom) return `Dari ${new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
     if (dateTo) return `Sampai ${new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
-    return 'Semua Tanggal';
+    return 'Semua Waktu';
   };
 
   return (
@@ -404,6 +410,16 @@ const Rekapitulasi: React.FC = () => {
             >
               Custom
             </button>
+            <button
+              className={`filter-btn ${filterType === 'semua' ? 'active' : ''}`}
+              onClick={() => {
+                setFilterType('semua');
+                setDateFrom('');
+                setDateTo('');
+              }}
+            >
+              All Time
+            </button>
           </div>
 
           <div className="month-user-row">
@@ -421,7 +437,7 @@ const Rekapitulasi: React.FC = () => {
                   </svg>
                 </button>
               </div>
-            ) : (
+            ) : filterType === 'custom' ? (
               <div className="custom-date-range-container">
                 <button className="custom-date-range-toggle" onClick={() => setIsSelectingDateRange(!isSelectingDateRange)}>
                   {dateFrom && dateTo ? `${dateFrom} - ${dateTo}` : 'Pilih Rentang Tanggal'}
@@ -538,7 +554,7 @@ const Rekapitulasi: React.FC = () => {
                   document.body
                 )}
               </div>
-            )}
+            ) : null}
 
             <div className="rekap-filter-group rekap-user-filter rekap-user-filter-container" ref={filterRef}>
               <button className="rekap-user-btn" onClick={() => setShowUserFilter(!showUserFilter)}>
