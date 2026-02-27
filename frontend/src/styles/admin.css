@@ -4912,6 +4912,177 @@ img {
     0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
+@media (max-width: 768px) {
+  .rekap-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .rekap-tab-btn {
+    padding: 6px 14px;
+    font-size: 12px;
+    gap: 5px;
+  }
+  .rekap-tab-btn svg {
+    width: 13px;
+    height: 13px;
+  }
+}
+
+/* ============================================
+   ATTENDANCE RECAP TABLE STYLES
+   ============================================ */
+.rekap-absensi-table .rekap-th-date {
+  padding: 4px 2px;
+  min-width: 38px;
+  max-width: 44px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.rekap-absensi-table .rekap-th-weekend {
+  background: linear-gradient(135deg, #fef2f2, #fee2e2) !important;
+  color: #dc2626;
+}
+
+.rekap-date-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1.2;
+}
+
+.rekap-date-day {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  opacity: 0.7;
+}
+
+.rekap-date-num {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.rekap-th-summary {
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-700)) !important;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+  padding: 8px 10px;
+  min-width: 38px;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+.rekap-td-absensi {
+  text-align: center;
+  padding: 4px 2px !important;
+  vertical-align: middle;
+}
+
+.rekap-absensi-table .rekap-td-name {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rekap-td-summary {
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+  background: #f8fafc;
+}
+
+/* Status badges */
+.absensi-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.absensi-status-hadir {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.absensi-status-telat {
+  background: linear-gradient(135deg, #fef9c3, #fef08a);
+  color: #a16207;
+  border: 1px solid #fde047;
+}
+
+.absensi-status-izin {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  color: #1d4ed8;
+  border: 1px solid #93c5fd;
+}
+
+.absensi-status-sakit {
+  background: linear-gradient(135deg, #ffedd5, #fed7aa);
+  color: #c2410c;
+  border: 1px solid #fdba74;
+}
+
+.absensi-status-alpha {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+}
+
+.absensi-status-libur {
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+.absensi-status-none {
+  color: var(--gray-300);
+  font-size: 12px;
+}
+
+/* Attendance table scroll — freeze header & footer */
+.rekap-absensi-scroll {
+  max-height: 600px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.rekap-absensi-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+}
+
+.rekap-absensi-table thead th {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.rekap-absensi-table tfoot {
+  position: sticky;
+  bottom: 0;
+  z-index: 15;
+}
+
+.rekap-absensi-table tfoot td {
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.08);
+  border-top: 2px solid var(--primary-500);
+}
+
 /* ============================================
    MOBILE DATE PICKER PORTAL (Global)
    ============================================ */

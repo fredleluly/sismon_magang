@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { exportRekapitulasiExcel } from '../../utils/excelExport';
 import { useToast } from '../../context/ToastContext';
-import { UsersAPI, WorkLogAPI, TargetSectionAPI } from '../../services/api';
+import { UsersAPI, WorkLogAPI, TargetSectionAPI, AttendanceAPI } from '../../services/api';
 import type { User, TargetSection } from '../../types';
 import { formatJobType } from '../../utils/jobdesk';
 
@@ -52,7 +52,19 @@ const Rekapitulasi: React.FC = () => {
 
   // Filters
   const [filterType, setFilterType] = useState<'bulanan' | 'custom' | 'semua'>('bulanan');
-  const [activeTab, setActiveTab] = useState<'pekerjaan' | 'biaya'>('pekerjaan');
+  const [activeTab, setActiveTab] = useState<'pekerjaan' | 'biaya' | 'absensi'>('pekerjaan');
+
+  // Attendance recap state
+  interface AttendanceRecapRow {
+    userId: string;
+    userName: string;
+    tanggal: string;
+    status: string;
+    jamMasuk: string;
+    jamKeluar: string;
+  }
+  const [attendanceData, setAttendanceData] = useState<AttendanceRecapRow[]>([]);
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date()); // For monthly view
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -261,6 +273,97 @@ const Rekapitulasi: React.FC = () => {
     fetchRecap();
   }, [fetchRecap]);
 
+  // Fetch attendance recap data
+  const fetchAttendanceRecap = useCallback(async () => {
+    setLoadingAttendance(true);
+    try {
+      const params = new URLSearchParams();
+      if (dateFrom) params.append('from', dateFrom);
+      if (dateTo) params.append('to', dateTo);
+      if (selectedUsers.length > 0) params.append('userIds', selectedUsers.join(','));
+
+      const res = await AttendanceAPI.getRecap(params.toString());
+      if (res && res.success) {
+        setAttendanceData(res.data || []);
+      } else {
+        showToast(res?.message || 'Gagal memuat data absensi', 'error');
+      }
+    } catch {
+      showToast('Gagal memuat data absensi', 'error');
+    }
+    setLoadingAttendance(false);
+  }, [dateFrom, dateTo, selectedUsers, showToast]);
+
+  useEffect(() => {
+    if (activeTab === 'absensi') {
+      fetchAttendanceRecap();
+    }
+  }, [activeTab, fetchAttendanceRecap]);
+
+  // Build attendance pivot data
+  const attendanceDates = (() => {
+    const dates = new Set<string>();
+    attendanceData.forEach((r) => {
+      const d = new Date(r.tanggal).toISOString().split('T')[0];
+      dates.add(d);
+    });
+    // If we have from/to, fill in missing dates
+    if (dateFrom && dateTo) {
+      const start = new Date(dateFrom);
+      const end = new Date(dateTo);
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        dates.add(d.toISOString().split('T')[0]);
+      }
+    }
+    return Array.from(dates).sort();
+  })();
+
+  interface AttendancePivotRow {
+    userId: string;
+    userName: string;
+    statusByDate: Record<string, { status: string; jamMasuk: string; jamKeluar: string }>;
+    counts: { hadir: number; telat: number; izin: number; sakit: number; alpha: number; libur: number };
+  }
+
+  const attendancePivotRows: AttendancePivotRow[] = (() => {
+    const userMap: Record<string, AttendancePivotRow> = {};
+    attendanceData.forEach((r) => {
+      if (!userMap[r.userId]) {
+        userMap[r.userId] = {
+          userId: r.userId,
+          userName: r.userName,
+          statusByDate: {},
+          counts: { hadir: 0, telat: 0, izin: 0, sakit: 0, alpha: 0, libur: 0 },
+        };
+      }
+      const dateKey = new Date(r.tanggal).toISOString().split('T')[0];
+      userMap[r.userId].statusByDate[dateKey] = {
+        status: r.status,
+        jamMasuk: r.jamMasuk,
+        jamKeluar: r.jamKeluar,
+      };
+      const s = r.status.toLowerCase();
+      if (s === 'hadir') userMap[r.userId].counts.hadir++;
+      else if (s === 'telat') userMap[r.userId].counts.telat++;
+      else if (s === 'izin') userMap[r.userId].counts.izin++;
+      else if (s === 'sakit') userMap[r.userId].counts.sakit++;
+      else if (s === 'alpha') userMap[r.userId].counts.alpha++;
+      else if (s === 'hari libur' || s === 'libur') userMap[r.userId].counts.libur++;
+    });
+    return Object.values(userMap).sort((a, b) => a.userName.localeCompare(b.userName));
+  })();
+
+  const getStatusBadge = (status: string) => {
+    const s = status.toLowerCase();
+    if (s === 'hadir') return { label: 'H', className: 'absensi-status-hadir' };
+    if (s === 'telat') return { label: 'T', className: 'absensi-status-telat' };
+    if (s === 'izin') return { label: 'I', className: 'absensi-status-izin' };
+    if (s === 'sakit') return { label: 'S', className: 'absensi-status-sakit' };
+    if (s === 'alpha') return { label: 'A', className: 'absensi-status-alpha' };
+    if (s === 'hari libur' || s === 'libur') return { label: 'L', className: 'absensi-status-libur' };
+    return { label: '-', className: 'absensi-status-none' };
+  };
+
   // Build pivot table data
   const jenisList = selectedSections.length === 0 ? JENIS_LIST : JENIS_LIST.filter((j) => selectedSections.includes(j));
 
@@ -363,8 +466,57 @@ const Rekapitulasi: React.FC = () => {
       filterInfoStr += ` | Section: ${selectedSections.map(s => formatJobType(s)).join(', ')}`;
     }
 
+    // Fetch attendance data for export (always include in export)
+    let attExportData: { dates: string[]; rows: typeof attendancePivotRows } | undefined;
     try {
-      await exportRekapitulasiExcel(jenisList, pivotRows, totalsRow, grandTotalAll, filterInfoStr || undefined, upahHarian > 0 ? { upahHarian, getBiayaPerBerkas } : undefined);
+      const params = new URLSearchParams();
+      if (dateFrom) params.append('from', dateFrom);
+      if (dateTo) params.append('to', dateTo);
+      if (selectedUsers.length > 0) params.append('userIds', selectedUsers.join(','));
+      const attRes = await AttendanceAPI.getRecap(params.toString());
+      if (attRes && attRes.success && attRes.data && attRes.data.length > 0) {
+        // Build pivot data for export
+        const datesSet = new Set<string>();
+        const userMap: Record<string, typeof attendancePivotRows[0]> = {};
+        attRes.data.forEach((r: any) => {
+          const dateKey = new Date(r.tanggal).toISOString().split('T')[0];
+          datesSet.add(dateKey);
+          if (!userMap[r.userId]) {
+            userMap[r.userId] = {
+              userId: r.userId,
+              userName: r.userName,
+              statusByDate: {},
+              counts: { hadir: 0, telat: 0, izin: 0, sakit: 0, alpha: 0, libur: 0 },
+            };
+          }
+          userMap[r.userId].statusByDate[dateKey] = { status: r.status, jamMasuk: r.jamMasuk, jamKeluar: r.jamKeluar };
+          const s = r.status.toLowerCase();
+          if (s === 'hadir') userMap[r.userId].counts.hadir++;
+          else if (s === 'telat') userMap[r.userId].counts.telat++;
+          else if (s === 'izin') userMap[r.userId].counts.izin++;
+          else if (s === 'sakit') userMap[r.userId].counts.sakit++;
+          else if (s === 'alpha') userMap[r.userId].counts.alpha++;
+          else if (s === 'hari libur' || s === 'libur') userMap[r.userId].counts.libur++;
+        });
+        // Fill in date range
+        if (dateFrom && dateTo) {
+          const start = new Date(dateFrom);
+          const end = new Date(dateTo);
+          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            datesSet.add(d.toISOString().split('T')[0]);
+          }
+        }
+        attExportData = {
+          dates: Array.from(datesSet).sort(),
+          rows: Object.values(userMap).sort((a, b) => a.userName.localeCompare(b.userName)),
+        };
+      }
+    } catch {
+      // Attendance export is optional, don't fail the whole export
+    }
+    
+    try {
+      await exportRekapitulasiExcel(jenisList, pivotRows, totalsRow, grandTotalAll, filterInfoStr || undefined, upahHarian > 0 ? { upahHarian, getBiayaPerBerkas } : undefined, attExportData);
       showToast('Berhasil mengekspor data ke Excel', 'success');
     } catch (err) {
       console.error('Export error:', err);
@@ -719,6 +871,16 @@ const Rekapitulasi: React.FC = () => {
             Rincian Biaya
           </button>
         )}
+        <button className={`rekap-tab-btn ${activeTab === 'absensi' ? 'active' : ''}`} onClick={() => setActiveTab('absensi')}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+            <path d="M9 16l2 2 4-4" />
+          </svg>
+          Rekapitulasi Absensi
+        </button>
       </div>
 
       {/* Table */}
@@ -896,6 +1058,117 @@ const Rekapitulasi: React.FC = () => {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* ===== ATTENDANCE RECAP TABLE ===== */}
+      {activeTab === 'absensi' && (
+        <div className="rekap-table-card">
+          {loadingAttendance ? (
+            <div style={{ textAlign: 'center', padding: 60, color: 'var(--gray-400)' }}>
+              <div style={{ width: 36, height: 36, border: '3px solid var(--gray-200)', borderTop: '3px solid var(--primary-500)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
+              Memuat data absensi...
+            </div>
+          ) : (
+            <div className="rekap-table-wrapper rekap-absensi-scroll">
+              <table className="rekap-table rekap-absensi-table">
+                <thead>
+                  <tr>
+                    <th rowSpan={2} className="rekap-th-sticky">NAMA PESERTA</th>
+                    {attendanceDates.map((d) => {
+                      const date = new Date(d);
+                      const dayNum = date.getDate();
+                      const dayName = date.toLocaleDateString('id-ID', { weekday: 'short' });
+                      const isSunday = date.getDay() === 0;
+                      const isSaturday = date.getDay() === 6;
+                      return (
+                        <th key={d} className={`rekap-th-date ${isSunday || isSaturday ? 'rekap-th-weekend' : ''}`}>
+                          <div className="rekap-date-header">
+                            <span className="rekap-date-day">{dayName}</span>
+                            <span className="rekap-date-num">{dayNum}</span>
+                          </div>
+                        </th>
+                      );
+                    })}
+                    <th rowSpan={2} className="rekap-th-summary">H</th>
+                    <th rowSpan={2} className="rekap-th-summary">T</th>
+                    <th rowSpan={2} className="rekap-th-summary">I</th>
+                    <th rowSpan={2} className="rekap-th-summary">S</th>
+                    <th rowSpan={2} className="rekap-th-summary">A</th>
+                    <th rowSpan={2} className="rekap-th-summary">L</th>
+                  </tr>
+                  <tr>
+                    {attendanceDates.map((d) => {
+                      const date = new Date(d);
+                      const monthShort = date.toLocaleDateString('id-ID', { month: 'short' });
+                      return (
+                        <th key={d + '-month'} className="rekap-th-sub" style={{ fontSize: '9px', padding: '2px 4px' }}>
+                          {monthShort}
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                {attendancePivotRows.length > 0 && (
+                  <tfoot>
+                    <tr className="rekap-total-row">
+                      <td className="rekap-td-name" style={{ fontWeight: 800 }}>TOTAL</td>
+                      {attendanceDates.map((d) => {
+                        const count = attendancePivotRows.filter((r) => {
+                          const cell = r.statusByDate[d];
+                          return cell && (cell.status.toLowerCase() === 'hadir' || cell.status.toLowerCase() === 'telat');
+                        }).length;
+                        return (
+                          <td key={d} className="rekap-td-num" style={{ fontSize: '11px' }}>
+                            {count > 0 ? count : '-'}
+                          </td>
+                        );
+                      })}
+                      <td className="rekap-td-num rekap-td-summary" style={{ fontWeight: 800 }}>{attendancePivotRows.reduce((s, r) => s + r.counts.hadir, 0)}</td>
+                      <td className="rekap-td-num rekap-td-summary" style={{ fontWeight: 800 }}>{attendancePivotRows.reduce((s, r) => s + r.counts.telat, 0)}</td>
+                      <td className="rekap-td-num rekap-td-summary" style={{ fontWeight: 800 }}>{attendancePivotRows.reduce((s, r) => s + r.counts.izin, 0)}</td>
+                      <td className="rekap-td-num rekap-td-summary" style={{ fontWeight: 800 }}>{attendancePivotRows.reduce((s, r) => s + r.counts.sakit, 0)}</td>
+                      <td className="rekap-td-num rekap-td-summary" style={{ fontWeight: 800 }}>{attendancePivotRows.reduce((s, r) => s + r.counts.alpha, 0)}</td>
+                      <td className="rekap-td-num rekap-td-summary" style={{ fontWeight: 800 }}>{attendancePivotRows.reduce((s, r) => s + r.counts.libur, 0)}</td>
+                    </tr>
+                  </tfoot>
+                )}
+                <tbody>
+                  {attendancePivotRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={attendanceDates.length + 7} style={{ textAlign: 'center', padding: 40, color: 'var(--gray-400)' }}>
+                        Belum ada data absensi
+                      </td>
+                    </tr>
+                  ) : (
+                    attendancePivotRows.map((row) => (
+                      <tr key={row.userId}>
+                        <td className="rekap-td-name">{row.userName.toUpperCase()}</td>
+                        {attendanceDates.map((d) => {
+                          const cell = row.statusByDate[d];
+                          if (!cell) {
+                            return <td key={d} className="rekap-td-absensi"><span className="absensi-status-none">-</span></td>;
+                          }
+                          const badge = getStatusBadge(cell.status);
+                          return (
+                            <td key={d} className="rekap-td-absensi" title={`${cell.status}${cell.jamMasuk ? ' | Masuk: ' + cell.jamMasuk : ''}${cell.jamKeluar ? ' | Keluar: ' + cell.jamKeluar : ''}`}>
+                              <span className={`absensi-badge ${badge.className}`}>{badge.label}</span>
+                            </td>
+                          );
+                        })}
+                        <td className="rekap-td-num rekap-td-summary">{row.counts.hadir}</td>
+                        <td className="rekap-td-num rekap-td-summary">{row.counts.telat}</td>
+                        <td className="rekap-td-num rekap-td-summary">{row.counts.izin}</td>
+                        <td className="rekap-td-num rekap-td-summary">{row.counts.sakit}</td>
+                        <td className="rekap-td-num rekap-td-summary">{row.counts.alpha}</td>
+                        <td className="rekap-td-num rekap-td-summary">{row.counts.libur}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>
