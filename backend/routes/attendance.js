@@ -591,6 +591,41 @@ router.post('/cancel-holiday', auth, adminOnly, async (req, res) => {
   }
 });
 
+// GET /api/attendance/recap — admin: attendance recap for rekapitulasi (no limit)
+router.get('/recap', auth, adminOnly, async (req, res) => {
+  try {
+    const filter = {};
+    if (req.query.from || req.query.to) {
+      filter.tanggal = {};
+      if (req.query.from) filter.tanggal.$gte = new Date(req.query.from);
+      if (req.query.to) filter.tanggal.$lte = new Date(req.query.to + 'T23:59:59.999Z');
+    }
+    if (req.query.userIds) {
+      const ids = req.query.userIds.split(',').filter(Boolean);
+      if (ids.length > 0) filter.userId = { $in: ids };
+    }
+
+    const records = await Attendance.find(filter)
+      .select('userId userName tanggal status jamMasuk jamKeluar')
+      .populate('userId', 'name')
+      .sort({ tanggal: 1 })
+      .lean();
+
+    const data = records.map((r) => ({
+      userId: r.userId?._id?.toString() || r.userId?.toString() || '',
+      userName: r.userId?.name || r.userName || 'Pengguna Dihapus',
+      tanggal: r.tanggal,
+      status: r.status,
+      jamMasuk: r.jamMasuk || '',
+      jamKeluar: r.jamKeluar || '',
+    }));
+
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // GET /api/attendance/today — admin: who attended today
 // NOTE: Static routes MUST be defined before parameterized routes (/:id)
 router.get('/today', auth, adminOnly, async (req, res) => {

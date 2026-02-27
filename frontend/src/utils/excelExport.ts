@@ -444,6 +444,14 @@ export async function exportRekapitulasiExcel(
     upahHarian: number;
     getBiayaPerBerkas: (jobDesk: string) => number;
   },
+  attendanceData?: {
+    dates: string[];
+    rows: {
+      userName: string;
+      statusByDate: Record<string, { status: string; jamMasuk: string; jamKeluar: string }>;
+      counts: { hadir: number; telat: number; izin: number; sakit: number; alpha: number; libur: number };
+    }[];
+  },
 ): Promise<void> {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'SISMON Magang';
@@ -1033,6 +1041,371 @@ export async function exportRekapitulasiExcel(
 
     // Print setup
     ws2.pageSetup = {
+      orientation: 'landscape',
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 0,
+      paperSize: 9,
+    };
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // SHEET 3: Rekapitulasi Absensi (Emerald/Green theme)
+  // ══════════════════════════════════════════════════════════════
+  if (attendanceData && attendanceData.rows.length > 0) {
+    const EMERALD = {
+      titleBg: '064E3B',       // Dark emerald
+      titleFont: 'FFFFFF',
+      subtitleBg: '047857',    // Medium emerald
+      subtitleFont: 'FFFFFF',
+      headerBg: '065F46',      // Emerald header
+      headerLight: '059669',   // Lighter emerald
+      infoBg: 'D1FAE5',        // Light green
+      infoFont: '064E3B',
+      zebraLight: 'F0FDF4',    // Very light green
+      zebraDark: 'DCFCE7',     // Light green
+      summaryBg: 'A7F3D0',    // Green summary
+      summaryFont: '064E3B',
+      borderColor: '6EE7B7',
+      accentBg: '064E3B',
+    };
+
+    // Status colors for cell fills
+    const STATUS_COLORS: Record<string, { bg: string; font: string }> = {
+      'hadir': { bg: 'D1FAE5', font: '065F46' },
+      'telat': { bg: 'FEF3C7', font: '92400E' },
+      'izin': { bg: 'DBEAFE', font: '1E40AF' },
+      'sakit': { bg: 'FFEDD5', font: 'C2410C' },
+      'alpha': { bg: 'FEE2E2', font: 'DC2626' },
+      'hari libur': { bg: 'F1F5F9', font: '64748B' },
+      'libur': { bg: 'F1F5F9', font: '64748B' },
+    };
+
+    const getStatusLabel = (status: string): string => {
+      const s = status.toLowerCase();
+      if (s === 'hadir') return 'H';
+      if (s === 'telat') return 'T';
+      if (s === 'izin') return 'I';
+      if (s === 'sakit') return 'S';
+      if (s === 'alpha') return 'A';
+      if (s === 'hari libur' || s === 'libur') return 'L';
+      return '-';
+    };
+
+    const ws3 = workbook.addWorksheet('Rekapitulasi Absensi');
+
+    const { dates, rows: attRows } = attendanceData;
+    const attTotalCols = 2 + dates.length + 6; // No + Nama + dates + H/T/I/S/A/L
+
+    let ar = 1; // current row
+
+    // ─── Title ──────────────────────────────────────────────────
+    ws3.mergeCells(ar, 1, ar, attTotalCols);
+    const at = ws3.getCell(ar, 1);
+    at.value = 'REKAPITULASI ABSENSI';
+    at.font = { name: FONT_FAMILY, bold: true, size: 16, color: { argb: EMERALD.titleFont } };
+    at.fill = headerFill(EMERALD.titleBg);
+    at.alignment = { horizontal: 'center', vertical: 'middle' };
+    at.border = fullBorder(EMERALD.titleBg);
+    ws3.getRow(ar).height = 36;
+    ar++;
+
+    // Subtitle
+    ws3.mergeCells(ar, 1, ar, attTotalCols);
+    const as2 = ws3.getCell(ar, 1);
+    as2.value = 'Sistem Monitoring Magang';
+    as2.font = { name: FONT_FAMILY, size: 11, italic: true, color: { argb: EMERALD.subtitleFont } };
+    as2.fill = headerFill(EMERALD.subtitleBg);
+    as2.alignment = { horizontal: 'center', vertical: 'middle' };
+    as2.border = fullBorder(EMERALD.subtitleBg);
+    ws3.getRow(ar).height = 24;
+    ar++;
+
+    // Info lines
+    const totalHadir = attRows.reduce((s, r) => s + r.counts.hadir, 0);
+    const totalTelat = attRows.reduce((s, r) => s + r.counts.telat, 0);
+    const attInfoLines = [
+      `Total Peserta: ${attRows.length}`,
+      `Total Hadir: ${totalHadir} | Total Telat: ${totalTelat}`,
+    ];
+    if (filterInfo) attInfoLines.push(`Filter: ${filterInfo}`);
+    for (const info of attInfoLines) {
+      ws3.mergeCells(ar, 1, ar, attTotalCols);
+      const ic = ws3.getCell(ar, 1);
+      ic.value = info;
+      ic.font = { name: FONT_FAMILY, size: 10, bold: true, color: { argb: EMERALD.infoFont } };
+      ic.fill = headerFill(EMERALD.infoBg);
+      ic.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+      ic.border = fullBorder(EMERALD.borderColor);
+      ws3.getRow(ar).height = 20;
+      ar++;
+    }
+
+    // Legend row
+    ws3.mergeCells(ar, 1, ar, attTotalCols);
+    const legendCell = ws3.getCell(ar, 1);
+    legendCell.value = 'Keterangan: H = Hadir | T = Telat | I = Izin | S = Sakit | A = Alpha | L = Libur';
+    legendCell.font = { name: FONT_FAMILY, size: 9, italic: true, color: { argb: '6B7280' } };
+    legendCell.fill = headerFill('F9FAFB');
+    legendCell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+    legendCell.border = fullBorder(EMERALD.borderColor);
+    ws3.getRow(ar).height = 18;
+    ar++;
+
+    // Spacer
+    ws3.getRow(ar).height = 6;
+    ar++;
+
+    // ─── Header Row 1 (No + Nama + dates + summaries) ───────────
+    const ah1 = ar;
+    ws3.getRow(ah1).height = 32;
+
+    // No header merged 2 rows
+    ws3.mergeCells(ah1, 1, ah1 + 1, 1);
+    const aNoCell = ws3.getCell(ah1, 1);
+    aNoCell.value = 'No';
+    aNoCell.font = headerFont(11);
+    aNoCell.fill = headerFill(EMERALD.headerBg);
+    aNoCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    aNoCell.border = fullBorder(EMERALD.titleFont);
+
+    // Nama Peserta merged 2 rows
+    ws3.mergeCells(ah1, 2, ah1 + 1, 2);
+    const aNamaCell = ws3.getCell(ah1, 2);
+    aNamaCell.value = 'NAMA PESERTA';
+    aNamaCell.font = headerFont(11);
+    aNamaCell.fill = headerFill(EMERALD.headerBg);
+    aNamaCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    aNamaCell.border = fullBorder(EMERALD.titleFont);
+
+    // Date columns — row 1: day number, row 2: day name
+    let ac = 3;
+    for (const d of dates) {
+      const dateObj = new Date(d);
+      const dayNum = dateObj.getDate();
+      const isSunday = dateObj.getDay() === 0;
+      const isSaturday = dateObj.getDay() === 6;
+      const isWeekend = isSunday || isSaturday;
+
+      const cell1 = ws3.getCell(ah1, ac);
+      cell1.value = dayNum;
+      cell1.font = { name: FONT_FAMILY, bold: true, size: 11, color: { argb: isWeekend ? 'DC2626' : EMERALD.titleFont } };
+      cell1.fill = headerFill(isWeekend ? '991B1B' : EMERALD.headerBg);
+      if (isWeekend) {
+        cell1.font = { name: FONT_FAMILY, bold: true, size: 11, color: { argb: 'FCA5A5' } };
+      }
+      cell1.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell1.border = fullBorder(EMERALD.titleFont);
+      ac++;
+    }
+
+    // Summary headers (H, T, I, S, A, L) merged 2 rows
+    const summaryLabels = ['H', 'T', 'I', 'S', 'A', 'L'];
+    const summaryColors = ['065F46', '92400E', '1E40AF', 'C2410C', 'DC2626', '64748B'];
+    const summaryBgs = ['059669', 'B45309', '2563EB', 'EA580C', 'EF4444', '94A3B8'];
+    for (let si = 0; si < summaryLabels.length; si++) {
+      ws3.mergeCells(ah1, ac, ah1 + 1, ac);
+      const sc = ws3.getCell(ah1, ac);
+      sc.value = summaryLabels[si];
+      sc.font = { name: FONT_FAMILY, bold: true, size: 12, color: { argb: 'FFFFFF' } };
+      sc.fill = headerFill(summaryBgs[si]);
+      sc.alignment = { horizontal: 'center', vertical: 'middle' };
+      sc.border = fullBorder(EMERALD.titleFont);
+      ac++;
+    }
+
+    ar++;
+
+    // ─── Header Row 2 (day names under dates) ────────────────────
+    ws3.getRow(ar).height = 20;
+    ac = 3;
+    for (const d of dates) {
+      const dateObj = new Date(d);
+      const dayName = dateObj.toLocaleDateString('id-ID', { weekday: 'short' });
+      const isSunday = dateObj.getDay() === 0;
+      const isSaturday = dateObj.getDay() === 6;
+      const isWeekend = isSunday || isSaturday;
+
+      const cell2 = ws3.getCell(ar, ac);
+      cell2.value = dayName;
+      cell2.font = { name: FONT_FAMILY, bold: false, size: 8, color: { argb: isWeekend ? 'FCA5A5' : EMERALD.titleFont } };
+      cell2.fill = headerFill(isWeekend ? '991B1B' : EMERALD.headerLight);
+      if (!isWeekend) {
+        cell2.font = { name: FONT_FAMILY, bold: false, size: 8, color: { argb: EMERALD.titleFont } };
+      }
+      cell2.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell2.border = fullBorder(EMERALD.titleFont);
+      ac++;
+    }
+    // Summary columns already merged in row 1
+    ar++;
+
+    // ─── Data Rows ──────────────────────────────────────────────
+    for (let i = 0; i < attRows.length; i++) {
+      const row = attRows[i];
+      const isEven = i % 2 === 0;
+      const rowObj = ws3.getRow(ar);
+      rowObj.height = 22;
+
+      // No
+      const noCell = ws3.getCell(ar, 1);
+      noCell.value = i + 1;
+      noCell.font = bodyFont(10);
+      noCell.fill = headerFill(isEven ? EMERALD.zebraLight : EMERALD.zebraDark);
+      noCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      noCell.border = fullBorder(EMERALD.borderColor);
+
+      // Nama
+      const namaCell = ws3.getCell(ar, 2);
+      namaCell.value = row.userName;
+      namaCell.font = { ...bodyFont(10), bold: true };
+      namaCell.fill = headerFill(isEven ? EMERALD.zebraLight : EMERALD.zebraDark);
+      namaCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+      namaCell.border = fullBorder(EMERALD.borderColor);
+
+      // Date cells
+      ac = 3;
+      for (const d of dates) {
+        const cell = ws3.getCell(ar, ac);
+        const entry = row.statusByDate[d];
+        if (entry) {
+          const label = getStatusLabel(entry.status);
+          cell.value = label;
+          const sc = STATUS_COLORS[entry.status.toLowerCase()] || { bg: isEven ? EMERALD.zebraLight : EMERALD.zebraDark, font: '2C3E50' };
+          cell.font = { name: FONT_FAMILY, bold: true, size: 10, color: { argb: sc.font } };
+          cell.fill = headerFill(sc.bg);
+        } else {
+          cell.value = '-';
+          cell.font = { name: FONT_FAMILY, size: 9, color: { argb: 'CBD5E1' } };
+          cell.fill = headerFill(isEven ? EMERALD.zebraLight : EMERALD.zebraDark);
+        }
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = fullBorder(EMERALD.borderColor);
+        ac++;
+      }
+
+      // Summary counts
+      const countVals = [row.counts.hadir, row.counts.telat, row.counts.izin, row.counts.sakit, row.counts.alpha, row.counts.libur];
+      for (let ci = 0; ci < countVals.length; ci++) {
+        const cell = ws3.getCell(ar, ac);
+        cell.value = countVals[ci];
+        cell.font = { name: FONT_FAMILY, bold: true, size: 10, color: { argb: summaryColors[ci] } };
+        cell.fill = headerFill(isEven ? EMERALD.zebraLight : EMERALD.zebraDark);
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = fullBorder(EMERALD.borderColor);
+        cell.numFmt = '#,##0';
+        ac++;
+      }
+
+      ar++;
+    }
+
+    // ─── Summary Row ─────────────────────────────────────────────
+    const aSep = ws3.getRow(ar);
+    aSep.height = 4;
+    ar++;
+
+    const aSumRow = ws3.getRow(ar);
+    aSumRow.height = 30;
+
+    ws3.mergeCells(ar, 1, ar, 2);
+    const aTotLabel = ws3.getCell(ar, 1);
+    aTotLabel.value = 'TOTAL';
+    aTotLabel.font = { name: FONT_FAMILY, bold: true, size: 12, color: { argb: EMERALD.summaryFont } };
+    aTotLabel.fill = headerFill(EMERALD.summaryBg);
+    aTotLabel.alignment = { horizontal: 'center', vertical: 'middle' };
+    aTotLabel.border = {
+      top: { style: 'double', color: { argb: EMERALD.headerLight } },
+      left: { style: 'thin', color: { argb: EMERALD.borderColor } },
+      bottom: { style: 'double', color: { argb: EMERALD.headerLight } },
+      right: { style: 'thin', color: { argb: EMERALD.borderColor } },
+    };
+
+    // Total per date (Hadir + Telat count)
+    ac = 3;
+    for (const d of dates) {
+      const count = attRows.filter(r => {
+        const entry = r.statusByDate[d];
+        return entry && (entry.status.toLowerCase() === 'hadir' || entry.status.toLowerCase() === 'telat');
+      }).length;
+      const cell = ws3.getCell(ar, ac);
+      cell.value = count > 0 ? count : '-';
+      cell.font = { name: FONT_FAMILY, bold: true, size: 10, color: { argb: EMERALD.summaryFont } };
+      cell.fill = headerFill(EMERALD.summaryBg);
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'double', color: { argb: EMERALD.headerLight } },
+        left: { style: 'thin', color: { argb: EMERALD.borderColor } },
+        bottom: { style: 'double', color: { argb: EMERALD.headerLight } },
+        right: { style: 'thin', color: { argb: EMERALD.borderColor } },
+      };
+      ac++;
+    }
+
+    // Total summary columns
+    const totalCounts = [
+      attRows.reduce((s, r) => s + r.counts.hadir, 0),
+      attRows.reduce((s, r) => s + r.counts.telat, 0),
+      attRows.reduce((s, r) => s + r.counts.izin, 0),
+      attRows.reduce((s, r) => s + r.counts.sakit, 0),
+      attRows.reduce((s, r) => s + r.counts.alpha, 0),
+      attRows.reduce((s, r) => s + r.counts.libur, 0),
+    ];
+    for (let ci = 0; ci < totalCounts.length; ci++) {
+      const cell = ws3.getCell(ar, ac);
+      cell.value = totalCounts[ci];
+      cell.font = { name: FONT_FAMILY, bold: true, size: 11, color: { argb: 'FFFFFF' } };
+      cell.fill = headerFill(summaryBgs[ci]);
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'double', color: { argb: EMERALD.headerLight } },
+        left: { style: 'thin', color: { argb: EMERALD.borderColor } },
+        bottom: { style: 'double', color: { argb: EMERALD.headerLight } },
+        right: { style: 'thin', color: { argb: EMERALD.borderColor } },
+      };
+      cell.numFmt = '#,##0';
+      ac++;
+    }
+    ar++;
+
+    // Footer
+    ar++;
+    const now3 = new Date();
+    const dateStr3 = now3.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const timeStr3 = now3.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    ws3.mergeCells(ar, 1, ar, attTotalCols);
+    const aFooter = ws3.getCell(ar, 1);
+    aFooter.value = `Dicetak pada: ${dateStr3}, ${timeStr3} WIB`;
+    aFooter.font = { name: FONT_FAMILY, size: 9, italic: true, color: { argb: '7F8C8D' } };
+    aFooter.alignment = { horizontal: 'right', vertical: 'middle' };
+
+    // Column widths
+    ws3.getColumn(1).width = 6;
+    // Nama — auto width
+    let maxNameLen3 = 'NAMA PESERTA'.length;
+    for (const r of attRows) {
+      if (r.userName.length > maxNameLen3) maxNameLen3 = r.userName.length;
+    }
+    ws3.getColumn(2).width = Math.min(Math.max(maxNameLen3 + 3, 18), 35);
+    // Date columns
+    for (let di = 0; di < dates.length; di++) {
+      ws3.getColumn(3 + di).width = 5;
+    }
+    // Summary columns
+    for (let si = 0; si < 6; si++) {
+      ws3.getColumn(3 + dates.length + si).width = 6;
+    }
+
+    // Protection
+    ws3.protect('', {
+      autoFilter: true,
+      sort: true,
+      selectLockedCells: true,
+      selectUnlockedCells: true,
+    });
+
+    // Print setup
+    ws3.pageSetup = {
       orientation: 'landscape',
       fitToPage: true,
       fitToWidth: 1,

@@ -205,6 +205,17 @@ export const WorkLogAPI = {
 // ===== ATTENDANCE API =====
 export const AttendanceAPI = {
   getAll: (params = '') => API.get<Attendance[]>(`/attendance${params ? '?' + params : ''}`),
+  getRecap: (params = '') =>
+    API.get<
+      {
+        userId: string;
+        userName: string;
+        tanggal: string;
+        status: string;
+        jamMasuk: string;
+        jamKeluar: string;
+      }[]
+    >(`/attendance/recap${params ? '?' + params : ''}`),
   scan: (token: string) => API.post<Attendance>('/attendance/scan', { token }),
   photoCheckin: (
     foto: string,

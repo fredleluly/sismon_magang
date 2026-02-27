@@ -76,9 +76,9 @@ const MonitoringPekerjaan: React.FC = () => {
       const weekEnd = new Date(curr.setDate(first + 6));
       return { from: toDateString(weekStart), to: toDateString(weekEnd) };
     } else if (filterType === 'bulanan') {
-      // 26th prev month to 25th current month
-      const startOfMonth = new Date(year, month - 1, 26);
-      const endOfMonth = new Date(year, month, 25);
+      // Full calendar month (1st to last day)
+      const startOfMonth = new Date(year, month, 1);
+      const endOfMonth = new Date(year, month + 1, 0);
       return { from: toDateString(startOfMonth), to: toDateString(endOfMonth) };
     } else if (filterType === 'custom' && dateRangeStart && dateRangeEnd) {
       return { from: dateRangeStart, to: dateRangeEnd };
