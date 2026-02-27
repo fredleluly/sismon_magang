@@ -337,8 +337,8 @@
     padding: 16px;
   }
 
-  .super-manage-grid {
-    grid-template-columns: 1fr;
+  .super-manage-row {
+    grid-template-columns: 1fr !important;
   }
 
   .super-manage-card {

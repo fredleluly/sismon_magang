@@ -180,3 +180,42 @@
   background: #fca5a5;
   cursor: not-allowed;
 }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 480px) {
+  .super-photo-card {
+    padding: 16px;
+  }
+  .super-photo-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .super-photo-title {
+    font-size: 16px;
+  }
+  .super-photo-desc {
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+  .super-photo-badge {
+    padding: 2px 10px;
+    font-size: 11px;
+  }
+  .super-photo-count {
+    font-size: 12px;
+  }
+  .super-photo-selectall {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+  .super-photo-grid {
+    grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
+    gap: 8px;
+  }
+  .super-photo-date {
+    padding: 6px 0 4px 0;
+  }
+  .super-photo-date-day {
+    font-size: 14px;
+  }
+}
