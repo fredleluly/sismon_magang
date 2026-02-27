@@ -65,7 +65,13 @@ const Rekapitulasi: React.FC = () => {
   }
   const [attendanceData, setAttendanceData] = useState<AttendanceRecapRow[]>([]);
   const [loadingAttendance, setLoadingAttendance] = useState(false);
-  const [currentDate, setCurrentDate] = useState(new Date()); // For monthly view
+  const [currentDate, setCurrentDate] = useState(() => {
+    const now = new Date();
+    if (now.getDate() > 26) {
+      return new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    }
+    return now;
+  }); // For monthly view
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
@@ -145,26 +151,20 @@ const Rekapitulasi: React.FC = () => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Update dates when filter type changes or current month changes
-  // Rekapitulasi uses 26th prev month → 25th current month
-  useEffect(() => {
+  // Derived dates from current filter configuration (prevents race condition)
+  const getDerivedDates = useCallback(() => {
     if (filterType === 'bulanan') {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
-      // Start: 26th of previous month
       const start = new Date(year, month - 1, 26);
-      // End: 25th of current month
       const end = new Date(year, month, 25);
-
       const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
-      setDateFrom(fmt(start));
-      setDateTo(fmt(end));
+      return { from: fmt(start), to: fmt(end) };
     } else if (filterType === 'semua') {
-      setDateFrom('');
-      setDateTo('');
+      return { from: '', to: '' };
     }
-  }, [filterType, currentDate]);
+    return { from: dateFrom, to: dateTo };
+  }, [filterType, currentDate, dateFrom, dateTo]);
 
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
@@ -253,8 +253,9 @@ const Rekapitulasi: React.FC = () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (dateFrom) params.append('from', dateFrom);
-      if (dateTo) params.append('to', dateTo);
+      const { from, to } = getDerivedDates();
+      if (from) params.append('from', from);
+      if (to) params.append('to', to);
       if (selectedUsers.length > 0) params.append('userIds', selectedUsers.join(','));
 
       const res = await WorkLogAPI.getRecap(params.toString());
@@ -267,7 +268,7 @@ const Rekapitulasi: React.FC = () => {
       showToast('Gagal memuat data rekapitulasi', 'error');
     }
     setLoading(false);
-  }, [dateFrom, dateTo, selectedUsers, showToast]);
+  }, [getDerivedDates, selectedUsers, showToast]);
 
   useEffect(() => {
     fetchRecap();
@@ -278,8 +279,9 @@ const Rekapitulasi: React.FC = () => {
     setLoadingAttendance(true);
     try {
       const params = new URLSearchParams();
-      if (dateFrom) params.append('from', dateFrom);
-      if (dateTo) params.append('to', dateTo);
+      const { from, to } = getDerivedDates();
+      if (from) params.append('from', from);
+      if (to) params.append('to', to);
       if (selectedUsers.length > 0) params.append('userIds', selectedUsers.join(','));
 
       const res = await AttendanceAPI.getRecap(params.toString());
@@ -292,7 +294,7 @@ const Rekapitulasi: React.FC = () => {
       showToast('Gagal memuat data absensi', 'error');
     }
     setLoadingAttendance(false);
-  }, [dateFrom, dateTo, selectedUsers, showToast]);
+  }, [getDerivedDates, selectedUsers, showToast]);
 
   useEffect(() => {
     if (activeTab === 'absensi') {
@@ -308,9 +310,10 @@ const Rekapitulasi: React.FC = () => {
       dates.add(d);
     });
     // If we have from/to, fill in missing dates
-    if (dateFrom && dateTo) {
-      const start = new Date(dateFrom);
-      const end = new Date(dateTo);
+    const { from, to } = getDerivedDates();
+    if (from && to) {
+      const start = new Date(from);
+      const end = new Date(to);
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         dates.add(d.toISOString().split('T')[0]);
       }
@@ -449,14 +452,16 @@ const Rekapitulasi: React.FC = () => {
 
     // Build filter info string
     let filterInfoStr = '';
+    const { from, to } = getDerivedDates();
+    
     if (filterType === 'bulanan') {
       const monthName = currentDate.toLocaleDateString('id-ID', { month: 'long' });
       const year = currentDate.getFullYear();
       filterInfoStr = `Bulanan — ${monthName} ${year}`;
-    } else if (filterType === 'custom' && dateFrom && dateTo) {
-      const f = new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-      const t = new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-      filterInfoStr = `Custom — ${f} s/d ${t}`;
+    } else if (filterType === 'custom' && from && to) {
+      const fStr = new Date(from).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      const tStr = new Date(to).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      filterInfoStr = `Custom — ${fStr} s/d ${tStr}`;
     } else if (filterType === 'semua') {
       filterInfoStr = 'Semua Waktu';
     }
@@ -470,8 +475,8 @@ const Rekapitulasi: React.FC = () => {
     let attExportData: { dates: string[]; rows: typeof attendancePivotRows } | undefined;
     try {
       const params = new URLSearchParams();
-      if (dateFrom) params.append('from', dateFrom);
-      if (dateTo) params.append('to', dateTo);
+      if (from) params.append('from', from);
+      if (to) params.append('to', to);
       if (selectedUsers.length > 0) params.append('userIds', selectedUsers.join(','));
       const attRes = await AttendanceAPI.getRecap(params.toString());
       if (attRes && attRes.success && attRes.data && attRes.data.length > 0) {
@@ -499,9 +504,9 @@ const Rekapitulasi: React.FC = () => {
           else if (s === 'hari libur' || s === 'libur') userMap[r.userId].counts.libur++;
         });
         // Fill in date range
-        if (dateFrom && dateTo) {
-          const start = new Date(dateFrom);
-          const end = new Date(dateTo);
+        if (from && to) {
+          const start = new Date(from);
+          const end = new Date(to);
           for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
             datesSet.add(d.toISOString().split('T')[0]);
           }
@@ -526,13 +531,14 @@ const Rekapitulasi: React.FC = () => {
 
   const formatDateLabel = () => {
     if (filterType === 'semua') return 'Semua Waktu';
-    if (dateFrom && dateTo) {
-      const f = new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-      const t = new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    const { from, to } = getDerivedDates();
+    if (from && to) {
+      const f = new Date(from).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+      const t = new Date(to).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
       return `${f} — ${t}`;
     }
-    if (dateFrom) return `Dari ${new Date(dateFrom).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
-    if (dateTo) return `Sampai ${new Date(dateTo).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+    if (from) return `Dari ${new Date(from).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+    if (to) return `Sampai ${new Date(to).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
     return 'Semua Waktu';
   };
 
