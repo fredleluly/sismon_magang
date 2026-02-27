@@ -24,7 +24,14 @@ const LogAktivitas: React.FC = () => {
 
   // Filter State
   const [filterType, setFilterType] = useState<'bulanan' | 'custom' | 'semua'>('bulanan');
-  const [currentDate, setCurrentDate] = useState(new Date()); // For monthly view
+  const [currentDate, setCurrentDate] = useState(() => {
+    const now = new Date();
+    // Jika tanggal sekarang >= 26, masuk ke periode bulan berikutnya (karena cut-off tanggal 25)
+    if (now.getDate() >= 26) {
+      return new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    }
+    return now;
+  }); // For monthly view
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 

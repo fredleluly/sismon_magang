@@ -417,6 +417,66 @@ img {
   gap: 16px;
 }
 
+.topbar-clock {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  padding: 6px 16px 6px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-base);
+}
+
+.topbar-clock:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-200);
+  transform: translateY(-1px);
+}
+
+.topbar-clock .clock-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-600);
+  background: var(--primary-50);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+.topbar-clock .clock-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar-clock .clock-date {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-600);
+}
+
+.topbar-clock .clock-dot {
+  color: var(--gray-300);
+  font-size: 10px;
+}
+
+.topbar-clock .clock-time {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary-700);
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 768px) {
+  .topbar-clock {
+    display: flex;
+  }
+}
+
 .topbar-notif {
   position: relative;
   width: 40px;
