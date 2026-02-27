@@ -63,6 +63,12 @@ const Topbar: React.FC<TopbarProps> = ({ user, onMenuClick, onAvatarClick }) => 
             ⚠️ Admin Jangan Lupa Penilaian & Rekap Ya.
           </div>
         )}
+        {user && (user.role === 'user') && 
+          currentTime.getDate() === 25 && currentTime.getHours() < 16 && (
+          <div className="topbar-warning">
+            ⚠️ Jangan Lupa Final Rekap Ya Guys!.
+          </div>
+        )}
       </div>
 
       <div className="topbar-right">
