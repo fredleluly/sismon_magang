@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { PerformanceAPI } from '../../services/api';
 import type { PerformanceEvaluation, User } from '../../types';
 import MonthYearSelector from '../../components/MonthYearSelector';
+import { exportExcel } from '../../utils/excelExport';
 import './Ranking.css';
 
 const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -46,6 +47,52 @@ const Ranking: React.FC = () => {
     if (score >= 60) return 'C';
     if (score >= 50) return 'D';
     return 'E';
+  };
+
+  const handleExportExcel = async () => {
+    if (rankings.length === 0) {
+      alert('Tidak ada data untuk diekspor');
+      return;
+    }
+
+    const dataRows = rankings.map((ev, i) => {
+      const user = ev.userId as User;
+      return {
+        no: i + 1,
+        nama: user?.name || '-',
+        absen: ev.absen,
+        kuantitas: ev.kuantitas,
+        kualitas: ev.kualitas,
+        laporan: ev.laporan ? 5 : 0,
+        hasil: ev.hasil,
+        grade: getGrade(ev.hasil),
+      };
+    });
+
+    const monthName = MONTHS[bulan - 1];
+
+    await exportExcel({
+      fileName: `Ranking_Performa_${monthName}_${tahun}`,
+      companyName: 'PLN ICON+',
+      sheets: [
+        {
+          sheetName: 'Ranking',
+          title: 'RANKING PERFORMA PESERTA MAGANG',
+          subtitle: `Periode: ${monthName} ${tahun}`,
+          columns: [
+            { header: 'Rank', key: 'no', width: 8, type: 'number' },
+            { header: 'Nama Peserta', key: 'nama', width: 35 },
+            { header: 'Absen (%)', key: 'absen', width: 15, type: 'number' },
+            { header: 'Kuantitas (%)', key: 'kuantitas', width: 15, type: 'number' },
+            { header: 'Kualitas (%)', key: 'kualitas', width: 15, type: 'number' },
+            { header: 'Laporan (%)', key: 'laporan', width: 15, type: 'number' },
+            { header: 'Hasil Akhir (%)', key: 'hasil', width: 18, type: 'number' },
+            { header: 'Grade', key: 'grade', width: 12 },
+          ],
+          data: dataRows,
+        },
+      ],
+    });
   };
 
   return (
@@ -124,7 +171,13 @@ const Ranking: React.FC = () => {
               <h2>
                 Daftar Lengkap — {MONTHS[bulan - 1]} {tahun}
               </h2>
-              <span className="rank-count">{rankings.length} peserta</span>
+              <div className="flex items-center gap-3">
+                <span className="rank-count">{rankings.length} peserta</span>
+                <button className="btn-export" onClick={handleExportExcel} disabled={rankings.length === 0} title="Ekspor ke Excel">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  Ekspor Excel
+                </button>
+              </div>
             </div>
             <div className="rank-table-wrap max-h-[500px] overflow-y-auto">
               <table className="rank-table">

@@ -39,6 +39,8 @@ const AdminDashboard: React.FC = () => {
   const [attendanceList, setAttendanceList] = useState<any[]>([]);
   const [totalComplaints, setTotalComplaints] = useState(0);
   const [rankings, setRankings] = useState<PerformanceEvaluation[]>([]);
+  const [rankingBulan, setRankingBulan] = useState<number>(0);
+  const [rankingTahun, setRankingTahun] = useState<number>(0);
   const weeklyRef = useRef<HTMLCanvasElement>(null);
   const donutRef = useRef<HTMLCanvasElement>(null);
   const charts = useRef<Chart[]>([]);
@@ -110,7 +112,26 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     // Load total complaints
     loadComplaints();
-    loadRankings();
+    // Initialize ranking period based on today's date
+    const now = new Date();
+    const day = now.getDate();
+    let initBulan: number;
+    let initTahun: number;
+    if (day >= 25) {
+      initBulan = now.getMonth() + 1;
+      initTahun = now.getFullYear();
+    } else {
+      const pm = now.getMonth();
+      if (pm === 0) {
+        initBulan = 12;
+        initTahun = now.getFullYear() - 1;
+      } else {
+        initBulan = pm;
+        initTahun = now.getFullYear();
+      }
+    }
+    setRankingBulan(initBulan);
+    setRankingTahun(initTahun);
 
     loadAttendance();
     const iv = setInterval(loadAttendance, 15000);
@@ -119,6 +140,13 @@ const AdminDashboard: React.FC = () => {
       charts.current.forEach((c) => c.destroy());
     };
   }, []);
+
+  // Load rankings whenever rankingBulan/rankingTahun changes
+  useEffect(() => {
+    if (rankingBulan > 0 && rankingTahun > 0) {
+      loadRankings(rankingBulan, rankingTahun);
+    }
+  }, [rankingBulan, rankingTahun]);
 
   const handleFilterChange = (type: 'alltime' | 'bulanan' | 'custom') => {
     setFilterType(type);
@@ -218,10 +246,56 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const loadRankings = async () => {
+  const loadRankings = async (bulan: number, tahun: number) => {
+    const res = await PerformanceAPI.getRanking(bulan, tahun);
+    if (res && res.success) {
+      setRankings((res.data || []).slice(0, 3));
+    } else {
+      setRankings([]);
+    }
+  };
+
+  const getRankingPeriodLabel = () => {
+    if (!rankingBulan || !rankingTahun) return '';
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+    const endMonth = rankingBulan - 1; // 0-indexed
+    const startMonthIdx = endMonth === 0 ? 11 : endMonth - 1;
+    const startYear = endMonth === 0 ? rankingTahun - 1 : rankingTahun;
+    return `26 ${monthNames[startMonthIdx]} ${startYear} - 24 ${monthNames[endMonth]} ${rankingTahun}`;
+  };
+
+  const handleRankingPrev = () => {
+    if (rankingBulan === 1) {
+      setRankingBulan(12);
+      setRankingTahun(rankingTahun - 1);
+    } else {
+      setRankingBulan(rankingBulan - 1);
+    }
+  };
+
+  const handleRankingNext = () => {
+    // Don't navigate beyond current applicable period
     const now = new Date();
-    const res = await PerformanceAPI.getRanking(now.getMonth() + 1, now.getFullYear());
-    if (res && res.success) setRankings((res.data || []).slice(0, 3));
+    const day = now.getDate();
+    const maxBulan = day >= 25 ? now.getMonth() + 1 : (now.getMonth() === 0 ? 12 : now.getMonth());
+    const maxTahun = day >= 25 ? now.getFullYear() : (now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear());
+    const currentVal = rankingTahun * 12 + rankingBulan;
+    const maxVal = maxTahun * 12 + maxBulan;
+    if (currentVal >= maxVal) return;
+    if (rankingBulan === 12) {
+      setRankingBulan(1);
+      setRankingTahun(rankingTahun + 1);
+    } else {
+      setRankingBulan(rankingBulan + 1);
+    }
+  };
+
+  const isRankingNextDisabled = () => {
+    const now = new Date();
+    const day = now.getDate();
+    const maxBulan = day >= 25 ? now.getMonth() + 1 : (now.getMonth() === 0 ? 12 : now.getMonth());
+    const maxTahun = day >= 25 ? now.getFullYear() : (now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear());
+    return (rankingTahun * 12 + rankingBulan) >= (maxTahun * 12 + maxBulan);
   };
 
   const getScoreColor = (score: number) => {
@@ -1252,12 +1326,20 @@ const AdminDashboard: React.FC = () => {
             )}
           </div>
           <div className="chart-card">
-            <div className="chart-header">
+            <div className="chart-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div className="flex items-center gap-2.5 mb-1">
                 <span className="text-xl">🏆</span>
                 <h3>Top 3 Peserta Terbaik</h3>
               </div>
-              <p>Berdasarkan penilaian performa bulan ini</p>
+              <div className="ranking-period-nav">
+                <button className="ranking-nav-btn" onClick={handleRankingPrev} title="Periode Sebelumnya">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+                </button>
+                <span className="ranking-period-label">{getRankingPeriodLabel()}</span>
+                <button className="ranking-nav-btn" onClick={handleRankingNext} disabled={isRankingNextDisabled()} title="Periode Berikutnya">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                </button>
+              </div>
             </div>
             {rankings.length === 0 ? (
               <p className="text-center text-gray-400 p-8">Belum ada data ranking</p>
