@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose');
 const User = require('../models/User');
 const Attendance = require('../models/Attendance');
 const WorkLog = require('../models/WorkLog');
@@ -11,11 +10,6 @@ const random = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 // Helper to get random int
 const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-
-// Helper to generate random date in range
-const randomDate = (start, end) => {
-  return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
-};
 
 // GET /api/seed
 // Warning: Clears non-admin users and generates new dummy data
@@ -47,33 +41,41 @@ router.get('/', async (req, res) => {
       });
     }
 
-    // 1. Clear existing non-admin data
-    const nonAdminUsers = await User.find({ role: { $ne: 'admin' } }).select('_id');
-    const nonAdminIds = nonAdminUsers.map(u => u._id);
+    // 1. Only add new dummy users (DO NOT delete existing data)
+    // Skip users whose email already exists
 
-    if (nonAdminIds.length > 0) {
-      await Attendance.deleteMany({ userId: { $in: nonAdminIds } });
-      await WorkLog.deleteMany({ userId: { $in: nonAdminIds } });
-      await Complaint.deleteMany({ userId: { $in: nonAdminIds } });
-      await User.deleteMany({ _id: { $in: nonAdminIds } });
-    }
-
-    // 2. Create Dummy Users
+    // 2. Create Dummy Users with realistic Indonesian names
     const instansiList = ['UNJ', 'UI', 'UGM', 'BINUS', 'Telkom University', 'Politeknik Negeri Jakarta'];
+    const dummyNames = [
+      'Rizky Ramadhan',
+      'Anisa Putri',
+      'Fajar Nugroho',
+      'Lina Marlina',
+      'Hendra Wijaya',
+      'Novi Anggraini',
+      'Bagas Saputra',
+      'Mega Puspita',
+      'Arif Hidayat',
+      'Yuni Kartika',
+    ];
     const users = [];
 
-    for (let i = 1; i <= 10; i++) {
-        const user = new User({
-            name: `Peserta Magang ${i}`,
-            email: `peserta${i}@gmail.com`,
-            password: 'password123', // Will be hashed by pre-save hook
-            role: 'user',
-            instansi: random(instansiList),
-            status: 'Aktif',
-            jabatan: 'Mahasiswa Magang'
-        });
-        await user.save();
-        users.push(user);
+    for (let i = 0; i < dummyNames.length; i++) {
+      const email = `pesertab${i + 1}@gmail.com`;
+      const existing = await User.findOne({ email });
+      if (existing) continue; // Skip if already exists
+
+      const user = new User({
+        name: dummyNames[i],
+        email,
+        password: 'password123',
+        role: 'user',
+        instansi: random(instansiList),
+        status: 'Aktif',
+        jabatan: 'Mahasiswa Magang',
+      });
+      await user.save();
+      users.push(user);
     }
 
     // 3. Generate Data for Last 30 Days
@@ -81,100 +83,123 @@ router.get('/', async (req, res) => {
     const startDate = new Date();
     startDate.setDate(today.getDate() - 30);
 
+    // Real section names matching JENIS_LIST
+    const sectionList = ['Sortir', 'Register', 'Pencopotan Steples', 'Scanning', 'Rekardus', 'Stikering'];
+    const keteranganList = [
+      'Mengerjakan arsip bagian A',
+      'Memproses dokumen batch baru',
+      'Melanjutkan pekerjaan kemarin',
+      'Menyelesaikan target harian',
+      'Mengerjakan dokumen prioritas',
+      'Memproses berkas arsip lama',
+      'Mengerjakan bundle arsip tambahan',
+    ];
+
     let attendanceCount = 0;
     let workLogCount = 0;
     let complaintCount = 0;
 
     for (const user of users) {
-        // Loop through each day from startDate to today
-        // Note: new Date(startDate) creates a copy, so startDate itself isn't mutated by loop
-        for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
-            const currentDay = new Date(d);
-            const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
+      for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
+        const currentDay = new Date(d);
+        const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
 
-            if (isWeekend) continue; // Skip weekends
-
-            // 90% chance of attendance, 10% absence
-            if (Math.random() > 0.1) { 
-                const status = Math.random() > 0.1 ? 'Hadir' : random(['Telat', 'Sakit', 'Izin']);
-                
-                // Attendance Record
-                const attendance = new Attendance({
-                    userId: user._id,
-                    tanggal: currentDay,
-                    jamMasuk: status === 'Hadir' ? `0${randomInt(7, 8)}:${randomInt(10, 59)}` : (status === 'Telat' ? `09:${randomInt(10, 30)}` : ''),
-                    jamKeluar: (status === 'Hadir' || status === 'Telat') ? `17:${randomInt(0, 30)}` : '',
-                    status: status,
-                    fotoAbsensi: '', // No photo for dummy
-                    fotoTimestamp: currentDay.toISOString()
-                });
-                await attendance.save();
-                attendanceCount++;
-
-                // Work Log (Only if Hadir/Telat)
-                if (status === 'Hadir' || status === 'Telat') {
-                    const activity = random([
-                        'Mengembangkan fitur frontend',
-                        'Memperbaiki bug backend',
-                        'Meeting dengan mentor',
-                        'Dokumentasi API',
-                        'Testing aplikasi',
-                        'Belajar React Native',
-                        'Deploy ke server staging'
-                    ]);
-
-                    const workLog = new WorkLog({
-                        userId: user._id,
-                        tanggal: currentDay,
-                        jenis: random(['WFO', 'WFH']),
-                        keterangan: activity,
-                        berkas: randomInt(0, 2),
-                        buku: randomInt(0, 1),
-                        bundle: randomInt(0, 1),
-                        status: 'Selesai'
-                    });
-                    await workLog.save();
-                    workLogCount++;
-                }
-            } else {
-                 // Alpha / Tidak Hadir
-                 const attendance = new Attendance({
-                    userId: user._id,
-                    tanggal: currentDay,
-                    status: 'Alpha'
-                });
-                await attendance.save();
-                attendanceCount++;
-            }
+        if (isWeekend) {
+          const attendance = new Attendance({
+            userId: user._id,
+            tanggal: currentDay,
+            status: 'Hari Libur',
+          });
+          await attendance.save();
+          attendanceCount++;
+          continue;
         }
 
-        // 4. Random Complaints (1-3 per user)
-        const numComplaints = randomInt(0, 3);
-        const categories = ['Fasilitas', 'Teknis', 'Administrasi', 'Lainnya'];
-        
-        for (let k = 0; k < numComplaints; k++) {
-            const complaint = new Complaint({
+        // 90% chance of attendance
+        if (Math.random() > 0.1) {
+          const statusRoll = Math.random();
+          let status;
+          if (statusRoll > 0.15) status = 'Hadir';
+          else if (statusRoll > 0.08) status = 'Telat';
+          else if (statusRoll > 0.04) status = 'Sakit';
+          else status = 'Izin';
+
+          const attendance = new Attendance({
+            userId: user._id,
+            tanggal: currentDay,
+            jamMasuk: status === 'Hadir' ? `0${randomInt(7, 8)}:${String(randomInt(0, 59)).padStart(2, '0')}` : (status === 'Telat' ? `09:${String(randomInt(5, 45)).padStart(2, '0')}` : ''),
+            jamKeluar: (status === 'Hadir' || status === 'Telat') ? `17:${String(randomInt(0, 30)).padStart(2, '0')}` : '',
+            status: status,
+            fotoAbsensi: '',
+            fotoTimestamp: currentDay.toISOString(),
+          });
+          await attendance.save();
+          attendanceCount++;
+
+          // Work Logs — multiple sections per day (2 to 4 entries)
+          if (status === 'Hadir' || status === 'Telat') {
+            const numEntries = randomInt(2, 4);
+            const usedSections = new Set();
+            for (let w = 0; w < numEntries; w++) {
+              let section;
+              do {
+                section = random(sectionList);
+              } while (usedSections.has(section) && usedSections.size < sectionList.length);
+              usedSections.add(section);
+
+              const workLog = new WorkLog({
                 userId: user._id,
-                judul: `Kendala ${random(['Internet', 'AC', 'Komputer', 'Akses'])}`,
-                kategori: random(categories),
-                prioritas: random(['Low', 'Medium', 'High']),
-                deskripsi: 'Mohon bantuannya untuk kendala ini.',
-                status: random(['Menunggu', 'Diproses', 'Selesai'])
-            });
-            await complaint.save();
-            complaintCount++;
+                tanggal: currentDay,
+                jenis: section,
+                keterangan: random(keteranganList),
+                berkas: randomInt(5, 30),
+                buku: randomInt(0, 10),
+                bundle: randomInt(0, 5),
+                status: 'Selesai',
+              });
+              await workLog.save();
+              workLogCount++;
+            }
+          }
+        } else {
+          // Alpha
+          const attendance = new Attendance({
+            userId: user._id,
+            tanggal: currentDay,
+            status: 'Alpha',
+          });
+          await attendance.save();
+          attendanceCount++;
         }
+      }
+
+      // 4. Random Complaints (1-3 per user)
+      const numComplaints = randomInt(1, 3);
+      const categories = ['Fasilitas', 'Teknis', 'Administrasi', 'Lainnya'];
+
+      for (let k = 0; k < numComplaints; k++) {
+        const complaint = new Complaint({
+          userId: user._id,
+          judul: `Kendala ${random(['Internet Lambat', 'AC Mati', 'Komputer Error', 'Akses VPN', 'Printer Rusak'])}`,
+          kategori: random(categories),
+          prioritas: random(['Low', 'Medium', 'High']),
+          deskripsi: 'Mohon bantuannya untuk menyelesaikan kendala ini agar pekerjaan tidak terhambat.',
+          status: random(['Menunggu', 'Diproses', 'Selesai']),
+        });
+        await complaint.save();
+        complaintCount++;
+      }
     }
 
     res.json({
-        success: true,
-        message: 'Database seeded successfully',
-        data: {
-            usersCreated: users.length,
-            attendanceCreated: attendanceCount,
-            workLogsCreated: workLogCount,
-            complaintsCreated: complaintCount
-        }
+      success: true,
+      message: 'Database seeded successfully',
+      data: {
+        usersCreated: users.length,
+        attendanceCreated: attendanceCount,
+        workLogsCreated: workLogCount,
+        complaintsCreated: complaintCount,
+      },
     });
 
   } catch (error) {
