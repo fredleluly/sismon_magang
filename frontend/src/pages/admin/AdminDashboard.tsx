@@ -1129,9 +1129,17 @@ const AdminDashboard: React.FC = () => {
                       <polyline points="15 18 9 12 15 6"></polyline>
                     </svg>
                   </button>
-                  <span className="month-display" style={{ fontSize: '13px', fontWeight: 600 }}>
-                    {getPeriodLabel(currentDate)}
-                  </span>
+                  <div className="month-display-wrapper">
+                    <span className="month-display">
+                      {currentDate.toLocaleDateString('id-ID', {
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </span>
+                    <span className="month-range-label">
+                      {getPeriodLabel(currentDate)}
+                    </span>
+                  </div>
                   <button onClick={handleNextMonth} className="month-nav-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="9 18 15 12 9 6"></polyline>
@@ -1140,188 +1148,25 @@ const AdminDashboard: React.FC = () => {
                 </div>
               ) : (
                 <div className="dashboard-custom-date">
-                  <button onClick={() => setIsSelectingDateRange(!isSelectingDateRange)} className="dashboard-custom-trigger">
-                    {tempDateRangeStart && tempDateRangeEnd
-                      ? `${tempDateRangeStart} - ${tempDateRangeEnd}`
-                      : dateRangeStart && dateRangeEnd
-                        ? `${dateRangeStart} - ${dateRangeEnd}`
+                  <button ref={customTriggerRef} onClick={() => setIsSelectingDateRange(!isSelectingDateRange)} className="dashboard-custom-trigger">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.5 }}>
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span style={{ flex: 1, textAlign: 'left' }}>
+                      {dateRangeStart && dateRangeEnd
+                        ? `${dateRangeStart} — ${dateRangeEnd}`
                         : 'Pilih Tanggal'}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transform: isSelectingDateRange ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
                       <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
                   </button>
-          <div className="dashboard-month-export-row">
-            {filterType === 'alltime' ? (
-              <div />
-            ) : filterType === 'bulanan' ? (
-              <div className="month-picker-container">
-                <button onClick={handlePrevMonth} className="month-nav-btn">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="15 18 9 12 15 6"></polyline>
-                  </svg>
-                </button>
-                <span className="month-display">
-                  {currentDate.toLocaleDateString('id-ID', {
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </span>
-                <button onClick={handleNextMonth} className="month-nav-btn">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                  </svg>
-                </button>
-              </div>
-            ) : (
-              <div className="dashboard-custom-date">
-                <button ref={customTriggerRef} onClick={() => setIsSelectingDateRange(!isSelectingDateRange)} className="dashboard-custom-trigger">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.5 }}>
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  <span style={{ flex: 1, textAlign: 'left' }}>
-                    {dateRangeStart && dateRangeEnd
-                      ? `${dateRangeStart} — ${dateRangeEnd}`
-                      : 'Pilih Tanggal'}
-                  </span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transform: isSelectingDateRange ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </button>
 
                   {isSelectingDateRange && !isMobile && (
-                    <div className="custom-date-picker-dropdown" style={{ position: 'absolute', top: '170%', right: 0, left: 'auto', zIndex: 9999 }}>
-                      <div className="custom-date-picker-header">
-                        <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>←</button>
-                        <span>Pilih Rentang Tanggal</span>
-                        <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>→</button>
-                      </div>
-                      <div className="custom-calendars-container">
-                        {renderCalendarMonth(0)}
-                        {renderCalendarMonth(1)}
-                      </div>
-                      <div className="custom-date-range-info">
-                        {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
-                        {tempDateRangeStart && tempDateRangeEnd && <p>{tempDateRangeStart} sampai {tempDateRangeEnd}</p>}
-                      </div>
-                      <div className="custom-date-picker-footer">
-                        <button className="custom-date-apply-btn" onClick={() => {
-                          if (tempDateRangeStart && tempDateRangeEnd) {
-                            setDateRangeStart(tempDateRangeStart);
-                            setDateRangeEnd(tempDateRangeEnd);
-                            setIsSelectingDateRange(false);
-                            setIsSelectingStart(true);
-                          } else {
-                            showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
-                          }
-                        }}>Terapkan</button>
-                        <button className="custom-date-cancel-btn" onClick={() => {
-                          setIsSelectingDateRange(false);
-                          setTempDateRangeStart('');
-                          setTempDateRangeEnd('');
-                          setIsSelectingStart(true);
-                        }}>Batal</button>
-                      </div>
-                    </div>
-                  )}
-                {isSelectingDateRange && !isMobile && (
-                  <div ref={datePickerRef} className="dashboard-date-popup">
-                    <div className="dashboard-date-popup-header">
-                      <span className="dashboard-date-popup-title">Pilih Rentang Tanggal</span>
-                      {tempDateRangeStart && (
-                        <span className="dashboard-date-popup-info">
-                          {tempDateRangeStart}{tempDateRangeEnd ? ` — ${tempDateRangeEnd}` : ' → ...'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="dashboard-date-popup-nav">
-                      <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-                      </button>
-                      <div style={{ display: 'flex', flex: 1, justifyContent: 'space-around', padding: '0 8px' }}>
-                        <span className="dashboard-date-popup-month">
-                          {new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth()).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
-                        </span>
-                        <span className="dashboard-date-popup-month">
-                          {new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() + 1).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
-                        </span>
-                      </div>
-                      <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                      </button>
-                    </div>
-                    <div className="custom-calendars-container" style={{ flexDirection: 'row', gap: '0' }}>
-                      {renderCalendarMonth(0)}
-                      {renderCalendarMonth(1)}
-                    </div>
-                    <div className="dashboard-date-popup-footer">
-                      <button className="custom-date-cancel-btn" onClick={() => {
-                        setIsSelectingDateRange(false);
-                        setTempDateRangeStart('');
-                        setTempDateRangeEnd('');
-                        setIsSelectingStart(true);
-                      }}>Batal</button>
-                      <button className="custom-date-apply-btn" onClick={() => {
-                        if (tempDateRangeStart && tempDateRangeEnd) {
-                          setDateRangeStart(tempDateRangeStart);
-                          setDateRangeEnd(tempDateRangeEnd);
-                          setIsSelectingDateRange(false);
-                          setIsSelectingStart(true);
-                        } else {
-                          showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
-                        }
-                      }}>Terapkan</button>
-                    </div>
-                  </div>
-                )}
-
-                  {isSelectingDateRange && isMobile && ReactDOM.createPortal(
-                    <div className="mobile-date-picker-overlay" onClick={(e) => { if (e.target === e.currentTarget) { setIsSelectingDateRange(false); setTempDateRangeStart(''); setTempDateRangeEnd(''); setIsSelectingStart(true); } }}>
-                      <div className="custom-date-picker-dropdown mobile-portal">
-                        <div className="custom-date-picker-header">
-                          <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>←</button>
-                          <span>Pilih Rentang Tanggal</span>
-                          <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>→</button>
-                        </div>
-                        <div className="custom-calendars-container">
-                          {renderCalendarMonth(0)}
-                          {renderCalendarMonth(1)}
-                        </div>
-                        <div className="custom-date-range-info">
-                          {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
-                          {tempDateRangeStart && tempDateRangeEnd && <p>{tempDateRangeStart} sampai {tempDateRangeEnd}</p>}
-                        </div>
-                        <div className="custom-date-picker-footer">
-                          <button className="custom-date-apply-btn" onClick={() => {
-                            if (tempDateRangeStart && tempDateRangeEnd) {
-                              setDateRangeStart(tempDateRangeStart);
-                              setDateRangeEnd(tempDateRangeEnd);
-                              setIsSelectingDateRange(false);
-                              setIsSelectingStart(true);
-                            } else {
-                              showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
-                            }
-                          }}>Terapkan</button>
-                          <button className="custom-date-cancel-btn" onClick={() => {
-                            setIsSelectingDateRange(false);
-                            setTempDateRangeStart('');
-                            setTempDateRangeEnd('');
-                            setIsSelectingStart(true);
-                          }}>Batal</button>
-                        </div>
-                      </div>
-                    </div>,
-                    document.body
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-                {isSelectingDateRange && isMobile && ReactDOM.createPortal(
-                  <div className="mobile-date-picker-overlay" onClick={(e) => { if (e.target === e.currentTarget) { setIsSelectingDateRange(false); setTempDateRangeStart(''); setTempDateRangeEnd(''); setIsSelectingStart(true); } }}>
-                    <div className="custom-date-picker-dropdown mobile-portal">
+                    <div ref={datePickerRef} className="dashboard-date-popup">
                       <div className="dashboard-date-popup-header">
                         <span className="dashboard-date-popup-title">Pilih Rentang Tanggal</span>
                         {tempDateRangeStart && (
@@ -1334,14 +1179,19 @@ const AdminDashboard: React.FC = () => {
                         <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                         </button>
-                        <span className="dashboard-date-popup-month">
-                          {new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth()).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
-                        </span>
+                        <div style={{ display: 'flex', flex: 1, justifyContent: 'space-around', padding: '0 8px' }}>
+                          <span className="dashboard-date-popup-month">
+                            {new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth()).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                          </span>
+                          <span className="dashboard-date-popup-month">
+                            {new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() + 1).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                          </span>
+                        </div>
                         <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                       </div>
-                      <div className="custom-calendars-container" style={{ flexDirection: 'column', gap: '16px' }}>
+                      <div className="custom-calendars-container" style={{ flexDirection: 'row', gap: '0' }}>
                         {renderCalendarMonth(0)}
                         {renderCalendarMonth(1)}
                       </div>
@@ -1364,11 +1214,60 @@ const AdminDashboard: React.FC = () => {
                         }}>Terapkan</button>
                       </div>
                     </div>
-                  </div>,
-                  document.body
-                )}
-              </div>
-            )}
+                  )}
+
+                  {isSelectingDateRange && isMobile && ReactDOM.createPortal(
+                    <div className="mobile-date-picker-overlay" onClick={(e) => { if (e.target === e.currentTarget) { setIsSelectingDateRange(false); setTempDateRangeStart(''); setTempDateRangeEnd(''); setIsSelectingStart(true); } }}>
+                      <div className="custom-date-picker-dropdown mobile-portal">
+                        <div className="dashboard-date-popup-header">
+                          <span className="dashboard-date-popup-title">Pilih Rentang Tanggal</span>
+                          {tempDateRangeStart && (
+                            <span className="dashboard-date-popup-info">
+                              {tempDateRangeStart}{tempDateRangeEnd ? ` — ${tempDateRangeEnd}` : ' → ...'}
+                            </span>
+                          )}
+                        </div>
+                        <div className="dashboard-date-popup-nav">
+                          <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                          </button>
+                          <span className="dashboard-date-popup-month">
+                            {new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth()).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                          </span>
+                          <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                          </button>
+                        </div>
+                        <div className="custom-calendars-container" style={{ flexDirection: 'column', gap: '16px' }}>
+                          {renderCalendarMonth(0)}
+                          {renderCalendarMonth(1)}
+                        </div>
+                        <div className="dashboard-date-popup-footer">
+                          <button className="custom-date-cancel-btn" onClick={() => {
+                            setIsSelectingDateRange(false);
+                            setTempDateRangeStart('');
+                            setTempDateRangeEnd('');
+                            setIsSelectingStart(true);
+                          }}>Batal</button>
+                          <button className="custom-date-apply-btn" onClick={() => {
+                            if (tempDateRangeStart && tempDateRangeEnd) {
+                              setDateRangeStart(tempDateRangeStart);
+                              setDateRangeEnd(tempDateRangeEnd);
+                              setIsSelectingDateRange(false);
+                              setIsSelectingStart(true);
+                            } else {
+                              showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
+                            }
+                          }}>Terapkan</button>
+                        </div>
+                      </div>
+                    </div>,
+                    document.body
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Export button */}
           <button className="btn-export" onClick={exportToExcel} title="Ekspor ke Excel">

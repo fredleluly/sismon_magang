@@ -3828,6 +3828,22 @@ img {
   white-space: nowrap;
 }
 
+.month-display-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  gap: 1px;
+}
+
+.month-range-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--gray-400);
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
 .custom-date-range-toggle {
   min-width: 320px;
 }
