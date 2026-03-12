@@ -158,6 +158,19 @@ const AdminDashboard: React.FC = () => {
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
 
+  const getPeriodLabel = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+
+    // Previous month (26th)
+    const prevMonthDate = new Date(year, month - 1, 26);
+    // Current month (25th)
+    const currentMonthDate = new Date(year, month, 25);
+
+    const formatOpts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' };
+    return `${prevMonthDate.toLocaleDateString('id-ID', formatOpts)} - ${currentMonthDate.toLocaleDateString('id-ID', formatOpts)}`;
+  };
+
   // Calendar helper functions (matching user pages pattern)
   const handleDatePickerPrevMonth = () => setDatePickerMonth(new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() - 1));
   const handleDatePickerNextMonth = () => setDatePickerMonth(new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() + 1));
@@ -1057,7 +1070,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         <div className="dashboard-filter-bar">
-          {/* Filter UI */}
+          {/* Filter buttons */}
           <div className="dashboard-filter-group">
             <button onClick={() => handleFilterChange('alltime')} className={`dashboard-filter-btn ${filterType === 'alltime' ? 'active' : ''}`}>
               All Time
@@ -1076,80 +1089,40 @@ const AdminDashboard: React.FC = () => {
             </button>
           </div>
 
-          <div className="dashboard-month-export-row">
-            {filterType === 'alltime' ? (
-              <div />
-            ) : filterType === 'bulanan' ? (
-              <div className="month-picker-container">
-                <button onClick={handlePrevMonth} className="month-nav-btn">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="15 18 9 12 15 6"></polyline>
-                  </svg>
-                </button>
-                <span className="month-display">
-                  {currentDate.toLocaleDateString('id-ID', {
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </span>
-                <button onClick={handleNextMonth} className="month-nav-btn">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                  </svg>
-                </button>
-              </div>
-            ) : (
-              <div className="dashboard-custom-date">
-                <button onClick={() => setIsSelectingDateRange(!isSelectingDateRange)} className="dashboard-custom-trigger">
-                  {tempDateRangeStart && tempDateRangeEnd
-                    ? `${tempDateRangeStart} - ${tempDateRangeEnd}`
-                    : dateRangeStart && dateRangeEnd
-                      ? `${dateRangeStart} - ${dateRangeEnd}`
-                      : 'Pilih Tanggal'}
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </button>
+          {/* Date controls (month picker or custom date) */}
+          {filterType !== 'alltime' && (
+            <div className="dashboard-month-export-row">
+              {filterType === 'bulanan' ? (
+                <div className="month-picker-container">
+                  <button onClick={handlePrevMonth} className="month-nav-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                  </button>
+                  <span className="month-display" style={{ fontSize: '13px', fontWeight: 600 }}>
+                    {getPeriodLabel(currentDate)}
+                  </span>
+                  <button onClick={handleNextMonth} className="month-nav-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div className="dashboard-custom-date">
+                  <button onClick={() => setIsSelectingDateRange(!isSelectingDateRange)} className="dashboard-custom-trigger">
+                    {tempDateRangeStart && tempDateRangeEnd
+                      ? `${tempDateRangeStart} - ${tempDateRangeEnd}`
+                      : dateRangeStart && dateRangeEnd
+                        ? `${dateRangeStart} - ${dateRangeEnd}`
+                        : 'Pilih Tanggal'}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </button>
 
-                {isSelectingDateRange && !isMobile && (
-                  <div className="custom-date-picker-dropdown" style={{ position: 'absolute', top: '100%', left: 0, zIndex: 9999 }}>
-                    <div className="custom-date-picker-header">
-                      <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>←</button>
-                      <span>Pilih Rentang Tanggal</span>
-                      <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>→</button>
-                    </div>
-                    <div className="custom-calendars-container">
-                      {renderCalendarMonth(0)}
-                      {renderCalendarMonth(1)}
-                    </div>
-                    <div className="custom-date-range-info">
-                      {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
-                      {tempDateRangeStart && tempDateRangeEnd && <p>{tempDateRangeStart} sampai {tempDateRangeEnd}</p>}
-                    </div>
-                    <div className="custom-date-picker-footer">
-                      <button className="custom-date-apply-btn" onClick={() => {
-                        if (tempDateRangeStart && tempDateRangeEnd) {
-                          setDateRangeStart(tempDateRangeStart);
-                          setDateRangeEnd(tempDateRangeEnd);
-                          setIsSelectingDateRange(false);
-                          setIsSelectingStart(true);
-                        } else {
-                          showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
-                        }
-                      }}>Terapkan</button>
-                      <button className="custom-date-cancel-btn" onClick={() => {
-                        setIsSelectingDateRange(false);
-                        setTempDateRangeStart('');
-                        setTempDateRangeEnd('');
-                        setIsSelectingStart(true);
-                      }}>Batal</button>
-                    </div>
-                  </div>
-                )}
-
-                {isSelectingDateRange && isMobile && ReactDOM.createPortal(
-                  <div className="mobile-date-picker-overlay" onClick={(e) => { if (e.target === e.currentTarget) { setIsSelectingDateRange(false); setTempDateRangeStart(''); setTempDateRangeEnd(''); setIsSelectingStart(true); } }}>
-                    <div className="custom-date-picker-dropdown mobile-portal">
+                  {isSelectingDateRange && !isMobile && (
+                    <div className="custom-date-picker-dropdown" style={{ position: 'absolute', top: '170%', right: 0, left: 'auto', zIndex: 9999 }}>
                       <div className="custom-date-picker-header">
                         <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>←</button>
                         <span>Pilih Rentang Tanggal</span>
@@ -1182,21 +1155,60 @@ const AdminDashboard: React.FC = () => {
                         }}>Batal</button>
                       </div>
                     </div>
-                  </div>,
-                  document.body
-                )}
-              </div>
-            )}
+                  )}
 
-            <button className="btn-export" onClick={exportToExcel} title="Ekspor ke Excel">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              Ekspor Excel
-            </button>
-          </div>
+                  {isSelectingDateRange && isMobile && ReactDOM.createPortal(
+                    <div className="mobile-date-picker-overlay" onClick={(e) => { if (e.target === e.currentTarget) { setIsSelectingDateRange(false); setTempDateRangeStart(''); setTempDateRangeEnd(''); setIsSelectingStart(true); } }}>
+                      <div className="custom-date-picker-dropdown mobile-portal">
+                        <div className="custom-date-picker-header">
+                          <button className="custom-date-nav-btn" onClick={handleDatePickerPrevMonth}>←</button>
+                          <span>Pilih Rentang Tanggal</span>
+                          <button className="custom-date-nav-btn" onClick={handleDatePickerNextMonth}>→</button>
+                        </div>
+                        <div className="custom-calendars-container">
+                          {renderCalendarMonth(0)}
+                          {renderCalendarMonth(1)}
+                        </div>
+                        <div className="custom-date-range-info">
+                          {tempDateRangeStart && !tempDateRangeEnd && <p>Pilih tanggal akhir</p>}
+                          {tempDateRangeStart && tempDateRangeEnd && <p>{tempDateRangeStart} sampai {tempDateRangeEnd}</p>}
+                        </div>
+                        <div className="custom-date-picker-footer">
+                          <button className="custom-date-apply-btn" onClick={() => {
+                            if (tempDateRangeStart && tempDateRangeEnd) {
+                              setDateRangeStart(tempDateRangeStart);
+                              setDateRangeEnd(tempDateRangeEnd);
+                              setIsSelectingDateRange(false);
+                              setIsSelectingStart(true);
+                            } else {
+                              showToast('Pilih tanggal awal dan akhir terlebih dahulu', 'error');
+                            }
+                          }}>Terapkan</button>
+                          <button className="custom-date-cancel-btn" onClick={() => {
+                            setIsSelectingDateRange(false);
+                            setTempDateRangeStart('');
+                            setTempDateRangeEnd('');
+                            setIsSelectingStart(true);
+                          }}>Batal</button>
+                        </div>
+                      </div>
+                    </div>,
+                    document.body
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Export button */}
+          <button className="btn-export" onClick={exportToExcel} title="Ekspor ke Excel">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span className="export-text">Ekspor Excel</span>
+          </button>
         </div>
       </div>
       <div style={{ maxHeight: 'calc(100vh - 160px)', overflowY: 'auto', overflowX: 'hidden', paddingRight: '4px' }}>
